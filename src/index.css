@@ -1,1 +1,21 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+@theme {
+  --color-fondo: #F7F8FB;
+  --color-tarjeta: #FFFFFF;
+  --color-texto: #24243A;
+  --color-muted: #8A8AA3;
+
+  --color-azul: #4daeea;
+  --color-azul-suave: #E4E9FF;
+  --color-rosa: #FF6B8A;
+  --color-rosa-suave: #FFE3E9;
+  --color-ambar: #FFB648;
+  --color-ambar-suave: #FFF1DC;
+  --color-verde: #3FBF8F;
+  --color-verde-suave: #DFF6EC;
+  --color-marino: #0a1e2f;
+
+  --font-quicksand: 'Quicksand', sans-serif;
+}

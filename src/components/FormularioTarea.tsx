@@ -6,7 +6,6 @@ interface Props {
 
 function FormularioTarea({ onTareaCreada }: Props) {
   const [titulo, setTitulo] = useState('');
-  const [descripcion, setDescripcion] = useState('');
   const [estado, setEstado] = useState('pendiente');
   const [prioridad, setPrioridad] = useState('media');
   const [proyecto, setProyecto] = useState('');
@@ -28,7 +27,7 @@ function FormularioTarea({ onTareaCreada }: Props) {
         },
         body: JSON.stringify({
           titulo,
-          descripcion,
+          descripcion: null,
           estado,
           prioridad,
           proyecto,
@@ -44,7 +43,6 @@ function FormularioTarea({ onTareaCreada }: Props) {
       }
 
       setTitulo('');
-      setDescripcion('');
       setEstado('pendiente');
       setPrioridad('media');
       setProyecto('');
@@ -59,44 +57,64 @@ function FormularioTarea({ onTareaCreada }: Props) {
   };
 
   return (
-    <form onSubmit={manejarSubmit}>
+    <form onSubmit={manejarSubmit} className="border border-gray-200 rounded-xl p-5 flex flex-col gap-3">
       <input
         type="text"
-        placeholder="Título"
+        placeholder="¿Qué necesitas hacer?"
         value={titulo}
         onChange={(e) => setTitulo(e.target.value)}
         required
+        className="bg-fondo rounded-lg px-4 py-3 text-sm text-texto outline-none focus:ring-1 focus:ring-azul"
       />
-      <textarea
-        placeholder="Descripción"
-        value={descripcion}
-        onChange={(e) => setDescripcion(e.target.value)}
-      />
-      <select value={estado} onChange={(e) => setEstado(e.target.value)}>
-        <option value="pendiente">Pendiente</option>
-        <option value="en_progreso">En progreso</option>
-        <option value="en_pausa">En pausa</option>
-        <option value="completada">Completada</option>
-      </select>
-      <select value={prioridad} onChange={(e) => setPrioridad(e.target.value)}>
-        <option value="baja">Baja</option>
-        <option value="media">Media</option>
-        <option value="alta">Alta</option>
-        <option value="urgente">Urgente</option>
-      </select>
-      <input
-        type="text"
-        placeholder="Proyecto (ej. Casa, Trabajo)"
-        value={proyecto}
-        onChange={(e) => setProyecto(e.target.value)}
-      />
-      <input
-        type="date"
-        value={fechaLimite}
-        onChange={(e) => setFechaLimite(e.target.value)}
-      />
-      <button type="submit">Crear tarea</button>
-      {error && <p>{error}</p>}
+
+      <div className="grid grid-cols-2 gap-3">
+        <select
+          value={estado}
+          onChange={(e) => setEstado(e.target.value)}
+          className="bg-fondo rounded-lg px-3 py-2 text-sm text-texto outline-none"
+        >
+          <option value="pendiente">Pendiente</option>
+          <option value="en_progreso">En progreso</option>
+          <option value="en_pausa">En pausa</option>
+          <option value="completada">Completada</option>
+        </select>
+
+        <select
+          value={prioridad}
+          onChange={(e) => setPrioridad(e.target.value)}
+          className="bg-fondo rounded-lg px-3 py-2 text-sm text-texto outline-none"
+        >
+          <option value="baja">Baja</option>
+          <option value="media">Media</option>
+          <option value="alta">Alta</option>
+          <option value="urgente">Urgente</option>
+        </select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <input
+          type="text"
+          placeholder="Proyecto (ej. Casa)"
+          value={proyecto}
+          onChange={(e) => setProyecto(e.target.value)}
+          className="bg-fondo rounded-lg px-3 py-2 text-sm text-texto outline-none focus:ring-1 focus:ring-azul"
+        />
+        <input
+          type="date"
+          value={fechaLimite}
+          onChange={(e) => setFechaLimite(e.target.value)}
+          className="bg-fondo rounded-lg px-3 py-2 text-sm text-texto outline-none focus:ring-1 focus:ring-azul"
+        />
+      </div>
+
+      <button
+        type="submit"
+        className="bg-marino text-white font-semibold rounded-lg py-3 mt-1 hover:opacity-90 transition"
+      >
+        Crear tarea
+      </button>
+
+      {error && <p className="text-rosa text-sm text-center">{error}</p>}
     </form>
   );
 }
