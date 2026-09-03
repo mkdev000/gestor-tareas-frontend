@@ -2,9 +2,10 @@ import { useState } from 'react';
 
 interface Props {
   onTareaCreada: () => void;
+  onCancelar: () => void;
 }
 
-function FormularioTarea({ onTareaCreada }: Props) {
+function FormularioTarea({ onTareaCreada, onCancelar }: Props) {
   const [titulo, setTitulo] = useState('');
   const [estado, setEstado] = useState('pendiente');
   const [prioridad, setPrioridad] = useState('media');
@@ -49,6 +50,7 @@ function FormularioTarea({ onTareaCreada }: Props) {
       setFechaLimite('');
 
       onTareaCreada();
+      onCancelar();
 
     } catch (err) {
       console.error(err);
@@ -57,65 +59,89 @@ function FormularioTarea({ onTareaCreada }: Props) {
   };
 
   return (
-    <form onSubmit={manejarSubmit} className="border border-gray-200 rounded-xl p-5 flex flex-col gap-3">
-      <input
-        type="text"
-        placeholder="¿Qué necesitas hacer?"
-        value={titulo}
-        onChange={(e) => setTitulo(e.target.value)}
-        required
-        className="bg-fondo rounded-lg px-4 py-3 text-sm text-texto outline-none focus:ring-1 focus:ring-azul"
-      />
-
-      <div className="grid grid-cols-2 gap-3">
-        <select
-          value={estado}
-          onChange={(e) => setEstado(e.target.value)}
-          className="bg-fondo rounded-lg px-3 py-2 text-sm text-texto outline-none"
-        >
-          <option value="pendiente">Pendiente</option>
-          <option value="en_progreso">En progreso</option>
-          <option value="en_pausa">En pausa</option>
-          <option value="completada">Completada</option>
-        </select>
-
-        <select
-          value={prioridad}
-          onChange={(e) => setPrioridad(e.target.value)}
-          className="bg-fondo rounded-lg px-3 py-2 text-sm text-texto outline-none"
-        >
-          <option value="baja">Baja</option>
-          <option value="media">Media</option>
-          <option value="alta">Alta</option>
-          <option value="urgente">Urgente</option>
-        </select>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <input
-          type="text"
-          placeholder="Proyecto (ej. Casa)"
-          value={proyecto}
-          onChange={(e) => setProyecto(e.target.value)}
-          className="bg-fondo rounded-lg px-3 py-2 text-sm text-texto outline-none focus:ring-1 focus:ring-azul"
-        />
-        <input
-          type="date"
-          value={fechaLimite}
-          onChange={(e) => setFechaLimite(e.target.value)}
-          className="bg-fondo rounded-lg px-3 py-2 text-sm text-texto outline-none focus:ring-1 focus:ring-azul"
-        />
-      </div>
-
-      <button
-        type="submit"
-        className="bg-marino text-white font-semibold rounded-lg py-3 mt-1 hover:opacity-90 transition"
+    <div
+      className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 px-4"
+      onClick={onCancelar}
+    >
+      <form
+        onSubmit={manejarSubmit}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-2xl shadow-2xl border-t-4 border-marino p-7 w-full max-w-sm flex flex-col gap-3 relative"
       >
-        Crear tarea
-      </button>
+        <button
+          type="button"
+          onClick={onCancelar}
+          className="absolute top-4 right-4 text-muted hover:text-texto text-lg leading-none cursor-pointer"
+        >
+          ✕
+        </button>
 
-      {error && <p className="text-rosa text-sm text-center">{error}</p>}
-    </form>
+        <div className="mb-2">
+          <h2 className="font-bold text-lg text-texto mb-1">Nueva tarea</h2>
+          <p className="text-sm text-muted">Anótala ahora, tu yo del futuro te lo agradecerá.</p>
+        </div>
+
+        <input
+          id="input-nueva-tarea"
+          type="text"
+          placeholder="¿Qué necesitas hacer?"
+          value={titulo}
+          onChange={(e) => setTitulo(e.target.value)}
+          required
+          autoFocus
+          className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-texto outline-none focus:border-azul focus:ring-1 focus:ring-azul"
+        />
+
+        <div className="grid grid-cols-2 gap-3">
+          <select
+            value={estado}
+            onChange={(e) => setEstado(e.target.value)}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-texto outline-none focus:border-azul"
+          >
+            <option value="pendiente">Pendiente</option>
+            <option value="en_progreso">En progreso</option>
+            <option value="en_pausa">En pausa</option>
+            <option value="completada">Completada</option>
+          </select>
+
+          <select
+            value={prioridad}
+            onChange={(e) => setPrioridad(e.target.value)}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-texto outline-none focus:border-azul"
+          >
+            <option value="baja">Baja</option>
+            <option value="media">Media</option>
+            <option value="alta">Alta</option>
+            <option value="urgente">Urgente</option>
+          </select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            type="text"
+            placeholder="Proyecto"
+            value={proyecto}
+            onChange={(e) => setProyecto(e.target.value)}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-texto outline-none focus:border-azul focus:ring-1 focus:ring-azul"
+          />
+          <input
+            type="date"
+            value={fechaLimite}
+            onChange={(e) => setFechaLimite(e.target.value)}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-texto outline-none focus:border-azul focus:ring-1 focus:ring-azul"
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="bg-marino text-white font-semibold rounded-lg py-2.5 mt-1 hover:opacity-90 transition cursor-pointer"
+        >
+          Crear tarea
+        </button>
+
+        {error && <p className="text-rosa text-sm text-center">{error}</p>}
+      </form>
+    </div>
   );
 }
 

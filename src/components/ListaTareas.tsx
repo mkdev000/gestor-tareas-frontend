@@ -1,3 +1,6 @@
+import { formatearFecha } from '../utils/fechas';
+import { colorPorEstado } from '../utils/estado';
+
 interface Tarea {
     id: number;
     titulo: string;
@@ -83,13 +86,14 @@ function ListaTareas({ tareas, onCambio }: Props) {
                             </p>
                             <p className="text-xs text-muted mt-0.5">
                                 {tarea.proyecto || 'Sin proyecto'}
+                                {formatearFecha(tarea.fecha_limite) && ` · ${formatearFecha(tarea.fecha_limite)}`}
                             </p>
                         </div>
 
                         <select
                             value={tarea.estado}
                             onChange={(e) => cambiarEstado(tarea, e.target.value)}
-                            className="text-xs border border-gray-200 rounded-md px-2 py-1.5 text-muted outline-none"
+                            className={`text-xs font-bold rounded-full px-3 py-1.5 outline-none border-none cursor-pointer appearance-none ${colorPorEstado(tarea.estado)}`}
                         >
                             <option value="pendiente">Pendiente</option>
                             <option value="en_progreso">En progreso</option>
@@ -99,9 +103,11 @@ function ListaTareas({ tareas, onCambio }: Props) {
 
                         <button
                             onClick={() => borrarTarea(tarea.id)}
-                            className="text-muted hover:text-rosa text-xs font-medium transition"
+                            className="text-muted hover:text-rosa hover:bg-rosa-suave p-1.5 rounded-md transition"
                         >
-                            Borrar
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6h12z" />
+                            </svg>
                         </button>
                     </div>
                 );
