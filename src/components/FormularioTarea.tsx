@@ -1,16 +1,40 @@
 import { useState } from 'react';
 
+interface Tarea {
+  id: number;
+  titulo: string;
+  estado: string;
+  prioridad: string;
+  proyecto: string;
+  fecha_limite: string | null;
+}
+
 interface Props {
   onTareaCreada: () => void;
   onCancelar: () => void;
+  tareaEditar?: Tarea;
 }
 
-function FormularioTarea({ onTareaCreada, onCancelar }: Props) {
-  const [titulo, setTitulo] = useState('');
-  const [estado, setEstado] = useState('pendiente');
-  const [prioridad, setPrioridad] = useState('media');
-  const [proyecto, setProyecto] = useState('');
-  const [fechaLimite, setFechaLimite] = useState('');
+const prioridades = [
+  { valor: 'baja', texto: 'Baja', color: 'text-muted' },
+  { valor: 'media', texto: 'Media', color: 'text-azul' },
+  { valor: 'alta', texto: 'Alta', color: 'text-naranja' },
+  { valor: 'urgente', texto: 'Urgente', color: 'text-rosa' },
+];
+
+const estados = [
+  { valor: 'pendiente', texto: 'Pendiente', color: 'text-ambar' },
+  { valor: 'completada', texto: 'Completada', color: 'text-verde' },
+];
+
+function FormularioTarea({ onTareaCreada, onCancelar, tareaEditar }: Props) {
+  const esEdicion = !!tareaEditar;
+
+  const [titulo, setTitulo] = useState(tareaEditar?.titulo || '');
+  const [estado, setEstado] = useState(tareaEditar?.estado || 'pendiente');
+  const [prioridad, setPrioridad] = useState(tareaEditar?.prioridad || 'media');
+  const [proyecto, setProyecto] = useState(tareaEditar?.proyecto || '');
+  const [fechaLimite, setFechaLimite] = useState(tareaEditar?.fecha_limite?.slice(0, 10) || '');
   const [error, setError] = useState('');
 
   const manejarSubmit = async (e: React.FormEvent) => {
@@ -18,10 +42,14 @@ function FormularioTarea({ onTareaCreada, onCancelar }: Props) {
     setError('');
 
     const token = localStorage.getItem('token');
+    const url = esEdicion
+      ? `http://localhost:3000/api/tareas/${tareaEditar!.id}`
+      : 'http://localhost:3000/api/tareas';
+    const metodo = esEdicion ? 'PUT' : 'POST';
 
     try {
-      const respuesta = await fetch('http://localhost:3000/api/tareas', {
-        method: 'POST',
+      const respuesta = await fetch(url, {
+        method: metodo,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
@@ -39,15 +67,17 @@ function FormularioTarea({ onTareaCreada, onCancelar }: Props) {
 
       if (!respuesta.ok) {
         const datos = await respuesta.json();
-        setError(datos.mensaje || 'Error al crear la tarea');
+        setError(datos.mensaje || 'Error al guardar la tarea');
         return;
       }
 
-      setTitulo('');
-      setEstado('pendiente');
-      setPrioridad('media');
-      setProyecto('');
-      setFechaLimite('');
+      if (!esEdicion) {
+        setTitulo('');
+        setEstado('pendiente');
+        setPrioridad('media');
+        setProyecto('');
+        setFechaLimite('');
+      }
 
       onTareaCreada();
       onCancelar();
@@ -66,7 +96,7 @@ function FormularioTarea({ onTareaCreada, onCancelar }: Props) {
       <form
         onSubmit={manejarSubmit}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl shadow-2xl border-t-4 border-marino p-7 w-full max-w-sm flex flex-col gap-3 relative"
+        className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 w-full max-w-md relative"
       >
         <button
           type="button"
@@ -76,10 +106,9 @@ function FormularioTarea({ onTareaCreada, onCancelar }: Props) {
           ✕
         </button>
 
-        <div className="mb-2">
-          <h2 className="font-bold text-lg text-texto mb-1">Nueva tarea</h2>
-          <p className="text-sm text-muted">Anótala ahora, tu yo del futuro te lo agradecerá.</p>
-        </div>
+        <p className="text-[10px] uppercase font-bold text-muted mb-2">
+          {esEdicion ? 'Editar tarea' : 'Nueva tarea'}
+        </p>
 
         <input
           id="input-nueva-tarea"
@@ -89,57 +118,73 @@ function FormularioTarea({ onTareaCreada, onCancelar }: Props) {
           onChange={(e) => setTitulo(e.target.value)}
           required
           autoFocus
-          className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-texto outline-none focus:border-azul focus:ring-1 focus:ring-azul"
+          className="w-full border-none outline-none text-lg font-semibold text-texto placeholder:text-gray-300 mb-4"
         />
 
-        <div className="grid grid-cols-2 gap-3">
-          <select
-            value={estado}
-            onChange={(e) => setEstado(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-texto outline-none focus:border-azul"
-          >
-            <option value="pendiente">Pendiente</option>
-            <option value="en_progreso">En progreso</option>
-            <option value="en_pausa">En pausa</option>
-            <option value="completada">Completada</option>
-          </select>
-
-          <select
-            value={prioridad}
-            onChange={(e) => setPrioridad(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-texto outline-none focus:border-azul"
-          >
-            <option value="baja">Baja</option>
-            <option value="media">Media</option>
-            <option value="alta">Alta</option>
-            <option value="urgente">Urgente</option>
-          </select>
+        <div className="mb-3">
+          <p className="text-[10px] uppercase font-bold text-muted mb-1.5">Prioridad</p>
+          <div className="flex bg-fondo rounded-lg p-1 gap-0.5">
+            {prioridades.map((p) => (
+              <button
+                key={p.valor}
+                type="button"
+                onClick={() => setPrioridad(p.valor)}
+                className={`flex-1 rounded-md py-1.5 text-xs font-bold transition cursor-pointer ${
+                  prioridad === p.valor
+                    ? `bg-white shadow-sm ${p.color}`
+                    : 'text-muted/60'
+                }`}
+              >
+                {p.texto}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="mb-4">
+          <p className="text-[10px] uppercase font-bold text-muted mb-1.5">Estado</p>
+          <div className="flex bg-fondo rounded-lg p-1 gap-0.5">
+            {estados.map((e) => (
+              <button
+                key={e.valor}
+                type="button"
+                onClick={() => setEstado(e.valor)}
+                className={`flex-1 rounded-md py-1.5 text-xs font-bold transition cursor-pointer ${
+                  estado === e.valor
+                    ? `bg-white shadow-sm ${e.color}`
+                    : 'text-muted/60'
+                }`}
+              >
+                {e.texto}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex gap-3 mb-1">
           <input
             type="text"
-            placeholder="Proyecto"
+            placeholder="Etiqueta"
             value={proyecto}
             onChange={(e) => setProyecto(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-texto outline-none focus:border-azul focus:ring-1 focus:ring-azul"
+            className="flex-1 bg-fondo text-texto text-xs font-semibold rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-azul"
           />
           <input
             type="date"
             value={fechaLimite}
             onChange={(e) => setFechaLimite(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-texto outline-none focus:border-azul focus:ring-1 focus:ring-azul"
+            className="flex-1 bg-fondo text-texto text-xs font-semibold rounded-lg px-3 py-2 outline-none cursor-pointer border-none"
           />
         </div>
 
         <button
           type="submit"
-          className="bg-marino text-white font-semibold rounded-lg py-2.5 mt-1 hover:opacity-90 transition cursor-pointer"
+          className="w-full mt-4 bg-marino text-white text-sm font-bold rounded-full py-3 shadow-lg shadow-marino/30 hover:shadow-xl hover:shadow-azul/40 hover:bg-azul hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
         >
-          Crear tarea
+          {esEdicion ? 'Guardar cambios' : 'Crear tarea'}
         </button>
 
-        {error && <p className="text-rosa text-sm text-center">{error}</p>}
+        {error && <p className="text-rosa text-sm text-center mt-3">{error}</p>}
       </form>
     </div>
   );

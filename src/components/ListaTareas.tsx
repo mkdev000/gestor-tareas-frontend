@@ -10,6 +10,7 @@ interface Tarea {
     proyecto: string;
     fecha_limite: string | null;
     hora_limite: string | null;
+    fecha_creacion: string;
 }
 
 interface Props {
@@ -41,6 +42,11 @@ function ListaTareas({ tareas, onCambio }: Props) {
         } catch (err) {
             console.error(err);
         }
+    };
+
+    const alternarEstado = (tarea: Tarea) => {
+        const nuevoEstado = tarea.estado === 'completada' ? 'pendiente' : 'completada';
+        cambiarEstado(tarea, nuevoEstado);
     };
 
     const borrarTarea = async (id: number) => {
@@ -90,16 +96,12 @@ function ListaTareas({ tareas, onCambio }: Props) {
                             </p>
                         </div>
 
-                        <select
-                            value={tarea.estado}
-                            onChange={(e) => cambiarEstado(tarea, e.target.value)}
-                            className={`text-xs font-bold rounded-full px-3 py-1.5 outline-none border-none cursor-pointer appearance-none ${colorPorEstado(tarea.estado)}`}
+                        <button
+                            onClick={() => alternarEstado(tarea)}
+                            className={`text-xs font-bold rounded-full px-3 py-1.5 cursor-pointer transition ${colorPorEstado(tarea.estado)}`}
                         >
-                            <option value="pendiente">Pendiente</option>
-                            <option value="en_progreso">En progreso</option>
-                            <option value="en_pausa">En pausa</option>
-                            <option value="completada">Completada</option>
-                        </select>
+                            {completada ? 'Completada' : 'Pendiente'}
+                        </button>
 
                         <button
                             onClick={() => borrarTarea(tarea.id)}

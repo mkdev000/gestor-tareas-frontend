@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FormularioTarea from '../components/FormularioTarea';
 import ListaTareas from '../components/ListaTareas';
+import Recientes from '../components/Recientes';
 import Sidebar from '../components/Sidebar';
 import { colorBarraPrioridad } from '../utils/prioridad';
 import logo from '../assets/logo.png';
@@ -15,6 +16,7 @@ interface Tarea {
   proyecto: string;
   fecha_limite: string | null;
   hora_limite: string | null;
+  fecha_creacion: string;
 }
 
 function Tareas() {
@@ -73,8 +75,10 @@ function Tareas() {
     if (busqueda.trim() !== '') {
       return tareas.filter((t) => t.titulo.toLowerCase().includes(busqueda.toLowerCase()));
     }
-    if (vistaActiva === 'bandeja') {
-      return tareas.filter((t) => !t.proyecto || t.proyecto.trim() === '');
+    if (vistaActiva === 'recientes') {
+      return [...tareas]
+        .sort((a, b) => new Date(b.fecha_creacion.replace(' ', 'T')).getTime() - new Date(a.fecha_creacion.replace(' ', 'T')).getTime())
+        .slice(0, 5);
     }
     if (vistaActiva === 'hoy') {
       return tareasDeHoy;
@@ -101,7 +105,7 @@ function Tareas() {
     if (busqueda.trim() !== '') return 'Resultados de búsqueda';
     switch (vistaActiva) {
       case 'todas': return 'Todas tus tareas';
-      case 'bandeja': return 'Bandeja de entrada';
+      case 'recientes': return 'Recientes';
       case 'hoy': return 'Hoy';
       case 'proximo': return 'Próximo';
       default: return vistaActiva;
@@ -112,7 +116,7 @@ function Tareas() {
     if (busqueda.trim() !== '') return `${obtenerTareasFiltradas().length} tareas encontradas`;
     switch (vistaActiva) {
       case 'todas': return 'Todo lo que tienes por hacer, en un solo sitio.';
-      case 'bandeja': return 'Tareas que aún no has organizado en ningún proyecto.';
+      case 'recientes': return 'Las últimas tareas que has añadido.';
       case 'hoy': return 'Lo que toca resolver antes de que acabe el día.';
       case 'proximo': return 'Lo que se acerca, para que no te pille por sorpresa.';
       default: return `Todo lo relacionado con "${vistaActiva}", en un solo sitio.`;
@@ -138,10 +142,10 @@ function Tareas() {
 
       <main className="relative flex-1 px-8 py-10 overflow-hidden">
         <img
-  src={logo}
-  alt=""
-  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-150 opacity-[0.05] pointer-events-none select-none"
-/>
+          src={logo}
+          alt=""
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 opacity-[0.08] pointer-events-none select-none"
+        />
 
         <div className="relative z-10 max-w-2xl mx-auto">
 
@@ -219,7 +223,7 @@ function Tareas() {
               <p className="text-muted mb-6">Aún no tienes ninguna tarea añadida.</p>
               <button
                 onClick={abrirFormulario}
-                className="bg-marino text-white font-semibold rounded-lg px-6 py-3 hover:opacity-90 transition"
+                className="bg-marino text-white font-bold rounded-full px-7 py-3.5 shadow-lg shadow-marino/30 hover:shadow-xl hover:shadow-azul/40 hover:bg-azul hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
               >
                 Crear mi primera tarea
               </button>
@@ -230,7 +234,11 @@ function Tareas() {
               <p className="text-sm text-muted mb-6">{obtenerSubtitulo()}</p>
 
               {error && <p className="text-rosa text-sm mb-4">{error}</p>}
-              <ListaTareas tareas={obtenerTareasFiltradas()} onCambio={obtenerTareas} />
+              {vistaActiva === 'recientes' ? (
+                <Recientes tareas={obtenerTareasFiltradas()} onCambio={obtenerTareas} />
+              ) : (
+                <ListaTareas tareas={obtenerTareasFiltradas()} onCambio={obtenerTareas} />
+              )}
             </>
           )}
 

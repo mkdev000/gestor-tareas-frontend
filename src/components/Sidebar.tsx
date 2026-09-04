@@ -35,10 +35,10 @@ function Sidebar({ nombre, vistaActiva, setVistaActiva, busqueda, setBusqueda, p
         <span className="font-bold text-sm text-marino">¡Hola, {nombre}!</span>
       </div>
 
-      <div className="mb-10 relative">
+      <div className="flex items-center gap-2.5 px-2 py-2 rounded-md mb-6 transition focus-within:bg-white">
         <svg
-          width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+          width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
+          className="text-muted transition-colors flex-shrink-0 peer-focus:text-azul"
         >
           <circle cx="11" cy="11" r="7" />
           <path d="M21 21l-4.3-4.3" />
@@ -48,14 +48,14 @@ function Sidebar({ nombre, vistaActiva, setVistaActiva, busqueda, setBusqueda, p
           placeholder="Buscador de tareas"
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          className="w-full bg-white border border-gray-200 rounded-full pl-9 pr-3 py-2 text-sm text-texto outline-none shadow-sm focus:border-azul focus:ring-2 focus:ring-azul/15 transition"
+          className="peer bg-transparent border-none outline-none text-sm text-texto placeholder:text-muted w-full"
         />
       </div>
 
       <nav className="flex flex-col gap-0.5 mb-15">
         <button
           onClick={onAddTask}
-          className="flex items-center gap-2.5 px-2 py-2 rounded-md text-sm text-left w-full text-marino font-bold cursor-pointer hover:bg-white transition"
+          className="flex items-center gap-2.5 px-2 py-2 rounded-md text-sm text-left w-full text-marino font-bold cursor-pointer hover:bg-white transition mb-3 pb-3 border-b border-gray-200"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="flex-shrink-0">
             <circle cx="12" cy="12" r="9" />
@@ -65,10 +65,10 @@ function Sidebar({ nombre, vistaActiva, setVistaActiva, busqueda, setBusqueda, p
         </button>
 
         <ItemNav
-          activo={vistaActiva === 'bandeja'}
-          onClick={() => setVistaActiva('bandeja')}
-          texto="Bandeja de entrada"
-          icono={<path d="M4 12h4l2 3h4l2-3h4M5 12l1.5-7h11L19 12v6a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-6z" />}
+          activo={vistaActiva === 'recientes'}
+          onClick={() => setVistaActiva('recientes')}
+          texto="Recientes"
+          icono={<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></>}
         />
         <ItemNav
           activo={vistaActiva === 'hoy'}
@@ -92,7 +92,7 @@ function Sidebar({ nombre, vistaActiva, setVistaActiva, busqueda, setBusqueda, p
       </nav>
 
       <div className="text-[11px] uppercase tracking-wide text-muted font-bold mb-2 px-1">
-        Mis proyectos
+        Mis tareas
       </div>
       <div className="flex flex-col gap-0.5">
         {proyectos.length === 0 && (
