@@ -84,7 +84,7 @@ function ListaTareas({ tareas, onCambio }: Props) {
                 return (
                     <div
                         key={tarea.id}
-                        className={`flex items-center gap-3 bg-white border border-gray-200 border-l-4 ${bordePorPrioridad(tarea.prioridad)} rounded-lg px-4 py-3`}
+                       className={`flex items-center gap-3 bg-white border border-gray-200 border-l-[5px] ${bordePorPrioridad(tarea.prioridad)} rounded-xl px-4 py-3.5`}
                     >
                         <div className="flex-1 min-w-0">
                             <p className={`text-sm font-semibold text-texto ${completada ? 'line-through text-muted' : ''}`}>

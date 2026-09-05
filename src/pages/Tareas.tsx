@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import FormularioTarea from '../components/FormularioTarea';
 import ListaTareas from '../components/ListaTareas';
 import Recientes from '../components/Recientes';
+import Calendario from '../components/Calendario';
 import Sidebar from '../components/Sidebar';
 import { colorBarraPrioridad } from '../utils/prioridad';
+import { colorPorTexto } from '../utils/colores';
 import logo from '../assets/logo.png';
 
 interface Tarea {
@@ -25,6 +27,7 @@ function Tareas() {
   const [vistaActiva, setVistaActiva] = useState('todas');
   const [busqueda, setBusqueda] = useState('');
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [sidebarAbierto, setSidebarAbierto] = useState(false);
   const navigate = useNavigate();
 
   const nombre = localStorage.getItem('nombre') || 'Usuario';
@@ -138,9 +141,20 @@ function Tareas() {
         proyectos={proyectos}
         contadorHoy={tareasDeHoy.length}
         onAddTask={abrirFormulario}
+        abierto={sidebarAbierto}
+        onCerrar={() => setSidebarAbierto(false)}
       />
 
-      <main className="relative flex-1 px-8 py-10 overflow-hidden">
+      <main className="relative flex-1 px-4 py-6 md:px-8 md:py-10 overflow-hidden overflow-y-auto">
+        <button
+          onClick={() => setSidebarAbierto(true)}
+          className="md:hidden mb-4 text-marino"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+            <path d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+
         <img
           src={logo}
           alt=""
@@ -148,13 +162,6 @@ function Tareas() {
         />
 
         <div className="relative z-10 max-w-2xl mx-auto">
-
-          {mostrarFormulario && (
-            <FormularioTarea
-              onTareaCreada={obtenerTareas}
-              onCancelar={() => setMostrarFormulario(false)}
-            />
-          )}
 
           {vistaActiva === 'reportes' ? (
             <div>
@@ -208,7 +215,10 @@ function Tareas() {
                             <span className="text-muted">{p.total}</span>
                           </div>
                           <div className="w-full h-1.5 bg-fondo rounded-full overflow-hidden">
-                            <div className="h-full bg-azul rounded-full" style={{ width: `${ancho}%` }}></div>
+                            <div
+                              className="h-full rounded-full"
+                              style={{ width: `${ancho}%`, backgroundColor: colorPorTexto(p.nombre) }}
+                            ></div>
                           </div>
                         </div>
                       );
@@ -217,6 +227,8 @@ function Tareas() {
                 </div>
               )}
             </div>
+          ) : vistaActiva === 'calendario' ? (
+            <Calendario tareas={tareas} onCambio={obtenerTareas} />
           ) : tareas.length === 0 ? (
             <div className="text-center mt-20">
               <h1 className="font-bold text-2xl text-marino mb-2">¡Hola, {nombre}!</h1>
@@ -244,6 +256,13 @@ function Tareas() {
 
         </div>
       </main>
+
+      {mostrarFormulario && (
+        <FormularioTarea
+          onTareaCreada={obtenerTareas}
+          onCancelar={() => setMostrarFormulario(false)}
+        />
+      )}
     </div>
   );
 }

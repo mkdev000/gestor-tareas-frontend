@@ -90,7 +90,7 @@ function FormularioTarea({ onTareaCreada, onCancelar, tareaEditar }: Props) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 px-4"
+      className="fixed inset-0 bg-black/30 flex items-center justify-center z-[60] px-4"
       onClick={onCancelar}
     >
       <form
@@ -161,21 +161,21 @@ function FormularioTarea({ onTareaCreada, onCancelar, tareaEditar }: Props) {
           </div>
         </div>
 
-        <div className="flex gap-3 mb-1">
-          <input
-            type="text"
-            placeholder="Etiqueta"
-            value={proyecto}
-            onChange={(e) => setProyecto(e.target.value)}
-            className="flex-1 bg-fondo text-texto text-xs font-semibold rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-azul"
-          />
-          <input
-            type="date"
-            value={fechaLimite}
-            onChange={(e) => setFechaLimite(e.target.value)}
-            className="flex-1 bg-fondo text-texto text-xs font-semibold rounded-lg px-3 py-2 outline-none cursor-pointer border-none"
-          />
-        </div>
+       <div className="flex flex-col sm:flex-row gap-3 mb-1">
+  <input
+    type="text"
+    placeholder="Etiqueta"
+    value={proyecto}
+    onChange={(e) => setProyecto(e.target.value)}
+    className="flex-1 min-w-0 bg-fondo text-texto text-xs font-semibold rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-azul"
+  />
+  <input
+    type="date"
+    value={fechaLimite}
+    onChange={(e) => setFechaLimite(e.target.value)}
+    className="flex-1 min-w-0 bg-fondo text-texto text-xs font-semibold rounded-lg px-3 py-2 outline-none cursor-pointer border-none"
+  />
+</div>
 
         <button
           type="submit"
