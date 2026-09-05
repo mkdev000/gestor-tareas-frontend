@@ -43,8 +43,8 @@ function FormularioTarea({ onTareaCreada, onCancelar, tareaEditar }: Props) {
 
     const token = localStorage.getItem('token');
     const url = esEdicion
-      ? `http://localhost:3000/api/tareas/${tareaEditar!.id}`
-      : 'http://localhost:3000/api/tareas';
+      ? `https://backend-consolidado.onrender.com/api/tareas/${tareaEditar!.id}`
+      : 'https://backend-consolidado.onrender.com/api/tareas';
     const metodo = esEdicion ? 'PUT' : 'POST';
 
     try {

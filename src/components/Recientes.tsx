@@ -32,7 +32,7 @@ function Recientes({ tareas, onCambio }: Props) {
 
   const borrarTarea = async (id: number) => {
     try {
-      const respuesta = await fetch(`http://localhost:3000/api/tareas/${id}`, {
+      const respuesta = await fetch(`https://backend-consolidado.onrender.com/api/tareas/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });

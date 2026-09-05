@@ -14,7 +14,7 @@ function Registro() {
     setError('');
 
     try {
-      const respuesta = await fetch('http://localhost:3000/api/auth/register', {
+      const respuesta = await fetch('https://backend-consolidado.onrender.com/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre, email, contrasena }),

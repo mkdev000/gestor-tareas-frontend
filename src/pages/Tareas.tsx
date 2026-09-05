@@ -41,7 +41,7 @@ function Tareas() {
     }
 
     try {
-      const respuesta = await fetch('http://localhost:3000/api/tareas', {
+      const respuesta = await fetch('https://backend-consolidado.onrender.com/api/tareas', {
         headers: { Authorization: `Bearer ${token}` },
       });
 

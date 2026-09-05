@@ -72,7 +72,7 @@ function Calendario({ tareas, onCambio }: Props) {
 
   const borrarTarea = async (id: number) => {
     try {
-      const respuesta = await fetch(`http://localhost:3000/api/tareas/${id}`, {
+      const respuesta = await fetch(`https://backend-consolidado.onrender.com/api/tareas/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -84,7 +84,7 @@ function Calendario({ tareas, onCambio }: Props) {
 
   const cambiarEstado = async (tarea: Tarea, nuevoEstado: string) => {
     try {
-      const respuesta = await fetch(`http://localhost:3000/api/tareas/${tarea.id}`, {
+      const respuesta = await fetch(`https://backend-consolidado.onrender.com/api/tareas/${tarea.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
