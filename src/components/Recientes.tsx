@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { tiempoRelativo } from '../utils/tiempo';
 import FormularioTarea from './FormularioTarea';
+import { API_URL } from '../config';
 
 interface Tarea {
   id: number;
@@ -32,7 +33,7 @@ function Recientes({ tareas, onCambio }: Props) {
 
   const borrarTarea = async (id: number) => {
     try {
-      const respuesta = await fetch(`https://backend-consolidado.onrender.com/api/tareas/${id}`, {
+      const respuesta = await fetch(`${API_URL}/api/tareas/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });

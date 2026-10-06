@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { API_URL } from '../config';
 
 interface Tarea {
   id: number;
@@ -43,8 +44,8 @@ function FormularioTarea({ onTareaCreada, onCancelar, tareaEditar }: Props) {
 
     const token = localStorage.getItem('token');
     const url = esEdicion
-      ? `https://backend-consolidado.onrender.com/api/tareas/${tareaEditar!.id}`
-      : 'https://backend-consolidado.onrender.com/api/tareas';
+      ? `${API_URL}/api/tareas/${tareaEditar!.id}`
+      : `${API_URL}/api/tareas`;
     const metodo = esEdicion ? 'PUT' : 'POST';
 
     try {

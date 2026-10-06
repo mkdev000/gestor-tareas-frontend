@@ -8,6 +8,7 @@ import Sidebar from '../components/Sidebar';
 import { colorBarraPrioridad } from '../utils/prioridad';
 import { colorPorTexto } from '../utils/colores';
 import logo from '../assets/logo.png';
+import { API_URL } from '../config';
 
 interface Tarea {
   id: number;
@@ -41,7 +42,7 @@ function Tareas() {
     }
 
     try {
-      const respuesta = await fetch('https://backend-consolidado.onrender.com/api/tareas', {
+      const respuesta = await fetch(`${API_URL}/api/tareas`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

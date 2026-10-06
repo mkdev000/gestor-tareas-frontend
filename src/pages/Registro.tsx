@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import logo from '../assets/logo.png';
+import { API_URL } from '../config';
 
 function Registro() {
   const [nombre, setNombre] = useState('');
@@ -14,7 +15,7 @@ function Registro() {
     setError('');
 
     try {
-      const respuesta = await fetch('https://backend-consolidado.onrender.com/api/auth/register', {
+      const respuesta = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre, email, contrasena }),

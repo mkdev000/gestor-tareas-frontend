@@ -2,6 +2,7 @@ import { useState } from 'react';
 import FormularioTarea from './FormularioTarea';
 import { colorBarraPrioridad } from '../utils/prioridad';
 import { colorPorEstado } from '../utils/estado';
+import { API_URL } from '../config';
 
 interface Tarea {
   id: number;
@@ -72,7 +73,7 @@ function Calendario({ tareas, onCambio }: Props) {
 
   const borrarTarea = async (id: number) => {
     try {
-      const respuesta = await fetch(`https://backend-consolidado.onrender.com/api/tareas/${id}`, {
+      const respuesta = await fetch(`${API_URL}/api/tareas/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -84,7 +85,7 @@ function Calendario({ tareas, onCambio }: Props) {
 
   const cambiarEstado = async (tarea: Tarea, nuevoEstado: string) => {
     try {
-      const respuesta = await fetch(`https://backend-consolidado.onrender.com/api/tareas/${tarea.id}`, {
+      const respuesta = await fetch(`${API_URL}/api/tareas/${tarea.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
