@@ -1,6 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
+/* ===== Colores antiguos de KmTask (se mantienen para no romper nada) ===== */
 @theme {
   --color-fondo: #F7F8FB;
   --color-tarjeta: #FFFFFF;
@@ -17,8 +18,102 @@
   --color-verde-suave: #DFF6EC;
   --color-marino: #0a1e2f;
   --color-naranja: #F2711C;
---color-naranja-suave: #FDE9DA;
---color-marino-claro: #132b41;
+  --color-naranja-suave: #FDE9DA;
+  --color-marino-claro: #132b41;
 
   --font-quicksand: 'Quicksand', sans-serif;
+  --font-jakarta: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+/* ===== Tachit: clases de Tailwind que leen el tema activo ===== */
+@theme inline {
+  --color-tachit-panel: var(--tachit-panel);
+  --color-tachit-panel-hover: var(--tachit-panel-hover);
+  --color-tachit-panel-activo: var(--tachit-panel-activo);
+  --color-tachit-panel-2: var(--tachit-panel-2);
+  --color-tachit-panel-3: var(--tachit-panel-3);
+  --color-tachit-acento: var(--tachit-acento);
+  --color-tachit-acento-fuerte: var(--tachit-acento-fuerte);
+  --color-tachit-acento-suave: var(--tachit-acento-suave);
+  --color-tachit-acento-claro: var(--tachit-acento-claro);
+  --color-tachit-acento-borde: var(--tachit-acento-borde);
+  --color-tachit-acento-texto: var(--tachit-acento-texto);
+  --color-tachit-linea: var(--tachit-linea);
+  --color-tachit-fondo: var(--tachit-fondo);
+  --color-tachit-tinta: var(--tachit-tinta);
+}
+
+/* ===== Tachit: los 4 temas (Nube es el de por defecto) ===== */
+:root,
+[data-tema="nube"] {
+  --tachit-panel: #dfe7fd;
+  --tachit-panel-hover: #d5dffc;
+  --tachit-panel-activo: #c8d4fa;
+  --tachit-panel-2: #cfdafb;
+  --tachit-panel-3: #dce4fd;
+  --tachit-acento: #7d8cf0;
+  --tachit-acento-fuerte: #3a47b8;
+  --tachit-acento-suave: #eef2fe;
+  --tachit-acento-claro: #f7f9ff;
+  --tachit-acento-borde: #b8c6f5;
+  --tachit-acento-texto: #3a47b8;
+  --tachit-linea: #d9e1fb;
+  --tachit-fondo: #f4f6f9;
+  --tachit-tinta: #1b2559;
+}
+
+[data-tema="malva"] {
+  --tachit-panel: #f3e9ef;
+  --tachit-panel-hover: #ecdde6;
+  --tachit-panel-activo: #e2cdd9;
+  --tachit-panel-2: #e7d5e0;
+  --tachit-panel-3: #f0e5ec;
+  --tachit-acento: #b07a9a;
+  --tachit-acento-fuerte: #7a3f62;
+  --tachit-acento-suave: #f6eef3;
+  --tachit-acento-claro: #fbf7f9;
+  --tachit-acento-borde: #dcc0d0;
+  --tachit-acento-texto: #7a3f62;
+  --tachit-linea: #ecdce5;
+  --tachit-fondo: #f4f6f9;
+  --tachit-tinta: #34192a;
+}
+
+[data-tema="peonia"] {
+  --tachit-panel: #fad2e1;
+  --tachit-panel-hover: #f7c6d8;
+  --tachit-panel-activo: #f3b6cc;
+  --tachit-panel-2: #f5bed2;
+  --tachit-panel-3: #f9cede;
+  --tachit-acento: #e86f9a;
+  --tachit-acento-fuerte: #a93a64;
+  --tachit-acento-suave: #fdeef4;
+  --tachit-acento-claro: #fff7fa;
+  --tachit-acento-borde: #f2b0c8;
+  --tachit-acento-texto: #a93a64;
+  --tachit-linea: #f8d9e5;
+  --tachit-fondo: #f4f6f9;
+  --tachit-tinta: #4a1a2c;
+}
+
+[data-tema="cacao"] {
+  --tachit-panel: #6e5b5b;
+  --tachit-panel-hover: #786565;
+  --tachit-panel-activo: #8a7473;
+  --tachit-panel-2: #826c6c;
+  --tachit-panel-3: #725f5f;
+  --tachit-acento: #d6a58f;
+  --tachit-acento-fuerte: #7a4f4a;
+  --tachit-acento-suave: #f6eeec;
+  --tachit-acento-claro: #fbf7f6;
+  --tachit-acento-borde: #dcc5c0;
+  --tachit-acento-texto: #e6c9bd;
+  --tachit-linea: #ecdeda;
+  --tachit-fondo: #f4f6f9;
+  --tachit-tinta: #ffffff;
+}
+
+/* ===== Letra principal de Tachit ===== */
+body {
+  font-family: var(--font-jakarta);
 }
