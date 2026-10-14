@@ -41,6 +41,10 @@
   --color-tachit-linea: var(--tachit-linea);
   --color-tachit-fondo: var(--tachit-fondo);
   --color-tachit-tinta: var(--tachit-tinta);
+  --color-tachit-panel-texto: var(--tachit-panel-texto);
+  --color-tachit-panel-texto-suave: var(--tachit-panel-texto-suave);
+  --color-tachit-panel-texto-tenue: var(--tachit-panel-texto-tenue);
+  --color-tachit-panel-enlace: var(--tachit-panel-enlace);
 }
 
 /* ===== Tachit: los 4 temas (Nube es el de por defecto) ===== */
@@ -60,6 +64,11 @@
   --tachit-linea: #d9e1fb;
   --tachit-fondo: #f4f6f9;
   --tachit-tinta: #1b2559;
+  /* Textos sobre el panel (por ejemplo, el panel de bienvenida del login) */
+  --tachit-panel-texto: #1b2559;
+  --tachit-panel-texto-suave: #646b8e;
+  --tachit-panel-texto-tenue: #727898;
+  --tachit-panel-enlace: #3a47b8;
 }
 
 [data-tema="malva"] {
@@ -77,6 +86,11 @@
   --tachit-linea: #ecdce5;
   --tachit-fondo: #f4f6f9;
   --tachit-tinta: #34192a;
+  /* Textos sobre el panel (por ejemplo, el panel de bienvenida del login) */
+  --tachit-panel-texto: #34192a;
+  --tachit-panel-texto-suave: #75636e;
+  --tachit-panel-texto-tenue: #81707b;
+  --tachit-panel-enlace: #7a3f62;
 }
 
 [data-tema="peonia"] {
@@ -94,6 +108,11 @@
   --tachit-linea: #f8d9e5;
   --tachit-fondo: #f4f6f9;
   --tachit-tinta: #4a1a2c;
+  /* Textos sobre el panel (por ejemplo, el panel de bienvenida del login) */
+  --tachit-panel-texto: #4a1a2c;
+  --tachit-panel-texto-suave: #846370;
+  --tachit-panel-texto-tenue: #8f717c;
+  --tachit-panel-enlace: #a93a64;
 }
 
 [data-tema="cacao"] {
@@ -111,9 +130,202 @@
   --tachit-linea: #ecdeda;
   --tachit-fondo: #f4f6f9;
   --tachit-tinta: #ffffff;
+  /* Textos sobre el panel (por ejemplo, el panel de bienvenida del login) */
+  --tachit-panel-texto: #e8f1f8;
+  --tachit-panel-texto-suave: #a9bccd;
+  --tachit-panel-texto-tenue: #8ea4b8;
+  --tachit-panel-enlace: #d6a58f;
 }
 
 /* ===== Letra principal de Tachit ===== */
 body {
   font-family: var(--font-jakarta);
+}
+
+/* ===== Botón "Continuar con Google" (igual que en el prototipo) =====
+   Al pasar el ratón: se eleva un poco, aparece una barra con los 4 colores de Google
+   y el logo da una vuelta. */
+.boton-google {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.12), 0 3px 8px rgba(60, 64, 67, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.25s ease;
+}
+.boton-google::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #4285f4 0 25%, #ea4335 25% 50%, #fbbc05 50% 75%, #34a853 75%);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.45s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+.boton-google .logo-google {
+  transition: transform 0.45s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+.boton-google:hover,
+.boton-google:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(60, 64, 67, 0.12), 0 10px 22px rgba(60, 64, 67, 0.16);
+}
+.boton-google:hover::after,
+.boton-google:focus-visible::after {
+  transform: scaleX(1);
+}
+.boton-google:hover .logo-google,
+.boton-google:focus-visible .logo-google {
+  transform: rotate(-360deg);
+}
+.boton-google:active {
+  transform: translateY(0);
+}
+
+/* ===== Botón principal de Tachit ("Entrar" / "Crear cuenta") =====
+   Detalle propio de la marca: al pasar el ratón se dibuja un check,
+   como el que tacha la palabra "tachit" del logo. */
+.boton-tachit .check-tachit {
+  width: 0;
+  opacity: 0;
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  transition: width 0.25s ease, opacity 0.2s ease, stroke-dashoffset 0.35s cubic-bezier(0.3, 1.4, 0.5, 1) 0.08s;
+}
+.boton-tachit:enabled:hover .check-tachit,
+.boton-tachit:enabled:focus-visible .check-tachit {
+  width: 18px;
+  opacity: 1;
+  stroke-dashoffset: 0;
+}
+.boton-tachit:enabled:active {
+  transform: scale(0.98);
+}
+
+/* ===== Panel de bienvenida: las ventajas se tachan como tareas ===== */
+.caja-tarea {
+  position: relative;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2.5px solid var(--tachit-acento);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.caja-tarea svg {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
+.caja-tarea path {
+  /* 26 es algo más que lo que mide el check: así, sin marcar, no queda ningún puntito visible */
+  stroke-dasharray: 26;
+  stroke-dashoffset: 26;
+  transition: stroke-dashoffset 0.35s cubic-bezier(0.3, 1.4, 0.5, 1) 0.1s;
+}
+.titulo-tarea {
+  position: relative;
+  display: inline-block;
+  transition: color 0.4s ease;
+}
+/* La línea que tacha el título (se dibuja de izquierda a derecha) */
+.titulo-tarea::after {
+  content: "";
+  position: absolute;
+  left: -2px;
+  right: -4px;
+  top: 55%;
+  height: 2.5px;
+  border-radius: 3px;
+  background: var(--tachit-acento);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.45s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+.texto-tarea {
+  transition: opacity 0.4s ease;
+}
+.tarea-panel.hecha .caja-tarea {
+  background: var(--tachit-acento);
+}
+.tarea-panel.hecha .caja-tarea path {
+  stroke-dashoffset: 0;
+}
+.tarea-panel.hecha .titulo-tarea {
+  color: var(--tachit-panel-texto-suave);
+}
+.tarea-panel.hecha .titulo-tarea::after {
+  transform: scaleX(1);
+}
+.tarea-panel.hecha .texto-tarea {
+  opacity: 0.65;
+}
+
+/* Subrayado hecho a mano bajo "plan de hoy": se dibuja solo al cargar la pantalla */
+.subrayado-tachit {
+  stroke-dasharray: 320;
+  stroke-dashoffset: 320;
+  animation: dibujar-subrayado 1.1s cubic-bezier(0.2, 0.9, 0.2, 1) 0.5s forwards;
+}
+@keyframes dibujar-subrayado {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ===== Logo que se "tacha" al cargar (panel de acceso) ===== */
+/* 1) aparece la palabra  2) el trazo la atraviesa de izquierda a derecha y acaba en el check */
+.logo-animado text {
+  opacity: 0;
+  animation: aparecer-logo 0.6s ease 0.1s forwards;
+}
+.logo-animado .tachon {
+  stroke-dasharray: 520;
+  stroke-dashoffset: 520;
+  animation: tachar-logo 1s cubic-bezier(0.6, 0, 0.2, 1) 0.55s forwards;
+}
+/* La marca de agua gigante se tacha más despacio */
+.marca-agua {
+  color: var(--tachit-panel-texto);
+}
+.marca-agua .tachon {
+  stroke-dasharray: 520;
+  stroke-dashoffset: 520;
+  animation: tachar-logo 1.6s cubic-bezier(0.6, 0, 0.2, 1) 0.9s forwards;
+}
+@keyframes aparecer-logo {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes tachar-logo {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Si el usuario pide menos movimiento en su sistema, quitamos las animaciones */
+@media (prefers-reduced-motion: reduce) {
+  .boton-google,
+  .boton-google::after,
+  .boton-google .logo-google,
+  .boton-tachit .check-tachit,
+  .caja-tarea,
+  .caja-tarea path,
+  .titulo-tarea,
+  .titulo-tarea::after,
+  .texto-tarea {
+    transition: none;
+  }
+  .subrayado-tachit,
+  .logo-animado .tachon,
+  .marca-agua .tachon {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .logo-animado text {
+    animation: none;
+    opacity: 1;
+  }
 }
