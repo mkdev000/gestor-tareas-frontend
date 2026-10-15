@@ -2,13 +2,16 @@
 // Pantalla de acceso de Tachit: a la izquierda el panel de bienvenida y a la derecha el formulario.
 // Primero sale "Entrar"; abajo, "¿No tienes cuenta? Regístrate" lleva a "Crear cuenta" (y al revés).
 // La usan Login.tsx (modo "entrar") y Registro.tsx (modo "registro").
-import { useState } from 'react';
+// "Continuar con Google" abre la ventanita de Google y manda el código al backend (paso 8.3).
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { API_URL } from '../config';
 import LogoTachit from '../components/LogoTachit';
 import PanelBienvenida from '../components/PanelBienvenida';
 import CampoContrasena from '../components/CampoContrasena';
 import { evaluarContrasena } from '../utils/contrasena';
+import { GOOGLE_CLIENT_ID, cargarGoogle, crearClienteGoogle, type ClienteCodigoGoogle } from '../utils/google';
+import type { DatosAviso } from '../components/AvisoFlotante';
 
 type Modo = 'entrar' | 'registro';
 
@@ -22,6 +25,24 @@ interface RespuestaServidor {
   mensaje?: string;
   token?: string;
   nombre?: string;
+  nuevo?: boolean; // Google: true si la cuenta se acaba de crear
+  unida?: boolean; // Google: true si Google se acaba de unir a una cuenta que ya existía
+}
+
+// Estado del botón de Google:
+//  'preparando'   → cargando el script de Google
+//  'listo'        → se puede pulsar
+//  'conectando'   → la ventanita está abierta o estamos hablando con el servidor
+//  'no-disponible'→ falta el Client ID o Google no carga (bloqueador, sin internet...)
+type EstadoGoogle = 'preparando' | 'listo' | 'conectando' | 'no-disponible';
+
+const NO_DISPONIBLE = 'El acceso con Google no está disponible ahora mismo. De momento, entra con tu email.';
+
+// El aviso flotante que se enseña al llegar a "Mi día", según cómo se ha entrado (textos del prototipo)
+function avisoDeGoogle(datos: RespuestaServidor): DatosAviso {
+  if (datos.nuevo) return { titulo: 'Cuenta creada con Google', texto: 'Google confirmó tu identidad y Tachit creó tu cuenta.' };
+  if (datos.unida) return { titulo: 'Google unido a tu cuenta', texto: 'A partir de ahora entra con Google. Tu contraseña anterior ya no sirve.' };
+  return { titulo: 'Sesión iniciada con Google', texto: 'Google confirmó tu identidad y Tachit creó tu sesión.' };
 }
 
 // Envía datos al servidor y devuelve la respuesta ya leída.
@@ -54,10 +75,88 @@ function Acceso({ modo }: { modo: Modo }) {
   const [enviando, setEnviando] = useState(false);
   const [aviso, setAviso] = useState('');
   const [avisoContrasena, setAvisoContrasena] = useState(false);
+  const [errorGoogle, setErrorGoogle] = useState('');
+  const [estadoGoogle, setEstadoGoogle] = useState<EstadoGoogle>(GOOGLE_CLIENT_ID ? 'preparando' : 'no-disponible');
+  // El "cliente" de Google se guarda en una ref: no hace falta repintar la pantalla cuando se crea
+  const clienteGoogle = useRef<ClienteCodigoGoogle | null>(null);
+
+  // Al abrir la pantalla, cargamos Google y preparamos la ventanita.
+  // Se prepara ANTES de pulsar: así, al pulsar, la ventanita se abre al momento y el navegador
+  // no la bloquea (los navegadores solo dejan abrir ventanitas justo después de un clic).
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return;
+    let activo = true; // si salimos de la pantalla antes de que cargue, no tocamos nada
+
+    // Google nos devuelve el código: lo mandamos a nuestro backend
+    const alRecibirCodigo = async ({ code, error: errorDeGoogle }: { code?: string; error?: string }) => {
+      if (!code) {
+        setEstadoGoogle('listo');
+        setErrorGoogle(
+          errorDeGoogle === 'access_denied'
+            ? 'No has dado permiso a Tachit en Google. Pulsa «Continuar con Google» para volver a intentarlo.'
+            : 'No hemos podido conectar con Google. Inténtalo de nuevo.',
+        );
+        return;
+      }
+      try {
+        const respuesta = await enviar('/api/auth/google', { codigo: code });
+        if (!respuesta.ok || !respuesta.datos.token) {
+          setErrorGoogle(respuesta.datos.mensaje || 'No hemos podido entrar con Google. Inténtalo de nuevo.');
+          setEstadoGoogle('listo');
+          return;
+        }
+        guardarSesion(respuesta.datos);
+        navigate('/tareas', { replace: true, state: { bienvenida: avisoDeGoogle(respuesta.datos) } });
+      } catch {
+        setErrorGoogle('No se pudo conectar con el servidor');
+        setEstadoGoogle('listo');
+      }
+    };
+
+    // La ventanita se cerró sin elegir cuenta, o el navegador no la dejó abrirse
+    const alFallar = ({ type }: { type: string }) => {
+      setEstadoGoogle('listo');
+      if (type === 'popup_closed') {
+        setAviso('Has cerrado la ventana de Google. Pulsa «Continuar con Google» para volver a intentarlo.');
+      } else if (type === 'popup_failed_to_open') {
+        setErrorGoogle('Tu navegador ha bloqueado la ventana de Google. Permite las ventanas emergentes para Tachit y vuelve a intentarlo.');
+      } else {
+        setErrorGoogle('No hemos podido conectar con Google. Inténtalo de nuevo.');
+      }
+    };
+
+    cargarGoogle()
+      .then(() => {
+        if (!activo) return;
+        clienteGoogle.current = crearClienteGoogle(alRecibirCodigo, alFallar);
+        setEstadoGoogle('listo');
+      })
+      .catch(() => {
+        if (activo) setEstadoGoogle('no-disponible');
+      });
+
+    return () => {
+      activo = false;
+    };
+  }, [navigate]);
+
+  const pulsarGoogle = () => {
+    setError('');
+    setAviso('');
+    setErrorGoogle('');
+    if (estadoGoogle === 'no-disponible' || !clienteGoogle.current) {
+      setErrorGoogle(estadoGoogle === 'preparando' ? 'Un momento, Google todavía se está cargando…' : NO_DISPONIBLE);
+      return;
+    }
+    if (estadoGoogle === 'conectando') return; // evita abrir dos ventanitas con un doble clic
+    setEstadoGoogle('conectando');
+    clienteGoogle.current.requestCode();
+  };
+  const conectandoGoogle = estadoGoogle === 'conectando';
 
   const evaluacion = evaluarContrasena(contrasena);
   // En el registro, el botón solo se activa cuando la contraseña cumple los requisitos
-  const botonDesactivado = enviando || (esRegistro && !evaluacion.valida);
+  const botonDesactivado = enviando || conectandoGoogle || (esRegistro && !evaluacion.valida);
 
   let textoBoton = 'Entrar';
   if (esRegistro) textoBoton = evaluacion.valida ? 'Crear cuenta' : 'Completa los requisitos';
@@ -68,6 +167,7 @@ function Acceso({ modo }: { modo: Modo }) {
     if (botonDesactivado) return;
     setError('');
     setAviso('');
+    setErrorGoogle('');
     setEnviando(true);
 
     try {
@@ -92,7 +192,12 @@ function Acceso({ modo }: { modo: Modo }) {
       }
 
       guardarSesion(login.datos);
-      navigate('/tareas', { replace: true });
+      // Aviso flotante al llegar, con los textos del prototipo
+      const bienvenida: DatosAviso = {
+        titulo: esRegistro ? 'Cuenta creada' : 'Sesión iniciada',
+        texto: 'Contraseña validada en el navegador y en el servidor.',
+      };
+      navigate('/tareas', { replace: true, state: { bienvenida } });
     } catch {
       setError('No se pudo conectar con el servidor');
     } finally {
@@ -125,19 +230,23 @@ function Acceso({ modo }: { modo: Modo }) {
             </p>
           </div>
 
-          {/* Continuar con Google: el diseño ya es el del prototipo; la conexión real llega en el paso 8 */}
+          {/* Continuar con Google: abre la ventanita de Google para elegir cuenta.
+              Mientras tanto, el logo de Google se cambia por una ruedita y el texto por "Conectando con Google…" */}
           <button
             type="button"
-            onClick={() => setAviso('El acceso con Google estará disponible muy pronto. De momento, entra con tu email.')}
-            className="boton-google flex h-[52px] cursor-pointer items-center justify-center gap-3 rounded-[14px] border border-[#e3e8ef] bg-white text-base font-semibold text-[#3c4043] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-tachit-acento"
+            onClick={pulsarGoogle}
+            disabled={conectandoGoogle || enviando}
+            aria-busy={conectandoGoogle}
+            className="boton-google flex h-[52px] items-center justify-center gap-3 rounded-[14px] border border-[#e3e8ef] bg-white text-base font-semibold text-[#3c4043] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-tachit-acento enabled:cursor-pointer disabled:cursor-wait"
           >
-            <svg className="logo-google" width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
+            {conectandoGoogle && <span className="ruedita-google" aria-hidden="true" />}
+            <svg className={'logo-google' + (conectandoGoogle ? ' hidden' : '')} width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
               <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
               <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
               <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
               <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
             </svg>
-            <span className="relative">Continuar con Google</span>
+            <span className="relative">{conectandoGoogle ? 'Conectando con Google…' : 'Continuar con Google'}</span>
           </button>
 
           <div className="flex items-center gap-3 text-[13px] text-[#5b6b7c]">
@@ -145,6 +254,13 @@ function Acceso({ modo }: { modo: Modo }) {
             o con tu email
             <span className="h-px flex-1 bg-[#dde3ea]" />
           </div>
+
+          {/* Errores de Google (en rojo, justo debajo del botón de Google) */}
+          {errorGoogle && (
+            <p role="alert" className="rounded-[10px] bg-[#fdecea] px-3.5 py-2.5 text-sm font-semibold text-[#c4320a]">
+              {errorGoogle}
+            </p>
+          )}
 
           {(aviso || (estado.aviso && !esRegistro)) && (
             <p role="status" className="rounded-[10px] bg-tachit-acento-suave px-3.5 py-2.5 text-sm font-semibold text-tachit-acento-texto">

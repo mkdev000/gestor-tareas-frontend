@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import FormularioTarea from '../components/FormularioTarea';
 import ListaTareas from '../components/ListaTareas';
 import Recientes from '../components/Recientes';
 import Calendario from '../components/Calendario';
 import Sidebar from '../components/Sidebar';
+import AvisoFlotante, { type DatosAviso } from '../components/AvisoFlotante';
 import { colorBarraPrioridad } from '../utils/prioridad';
 import { colorPorTexto } from '../utils/colores';
 import logo from '../assets/logo.png';
@@ -30,6 +31,19 @@ function Tareas() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [sidebarAbierto, setSidebarAbierto] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Aviso flotante de bienvenida ("Sesión iniciada", "Cuenta creada con Google"...).
+  // Llega desde la pantalla de acceso dentro del "state" de la navegación.
+  const [bienvenida, setBienvenida] = useState<DatosAviso | null>(
+    (location.state as { bienvenida?: DatosAviso } | null)?.bienvenida ?? null,
+  );
+  const cerrarBienvenida = useCallback(() => setBienvenida(null), []);
+
+  // Borramos ese "state" del historial: si recargas la página, el aviso no vuelve a salir
+  useEffect(() => {
+    if (location.state) navigate(location.pathname, { replace: true, state: null });
+  }, [location.state, location.pathname, navigate]);
 
   const nombre = localStorage.getItem('nombre') || 'Usuario';
 
@@ -264,8 +278,9 @@ function Tareas() {
           onCancelar={() => setMostrarFormulario(false)}
         />
       )}
+      {bienvenida && <AvisoFlotante aviso={bienvenida} alCerrar={cerrarBienvenida} />}
     </div>
   );
 }
 
-export default Tareas;
+export default Tareas;

@@ -69,6 +69,8 @@
   --tachit-panel-texto-suave: #646b8e;
   --tachit-panel-texto-tenue: #727898;
   --tachit-panel-enlace: #3a47b8;
+  /* La "T" del icono pequeño (T tachada) */
+  --tachit-icono-t: #141826;
 }
 
 [data-tema="malva"] {
@@ -91,6 +93,8 @@
   --tachit-panel-texto-suave: #75636e;
   --tachit-panel-texto-tenue: #81707b;
   --tachit-panel-enlace: #7a3f62;
+  /* La "T" del icono pequeño (T tachada) */
+  --tachit-icono-t: #141826;
 }
 
 [data-tema="peonia"] {
@@ -113,6 +117,8 @@
   --tachit-panel-texto-suave: #846370;
   --tachit-panel-texto-tenue: #8f717c;
   --tachit-panel-enlace: #a93a64;
+  /* La "T" del icono pequeño (T tachada) */
+  --tachit-icono-t: #141826;
 }
 
 [data-tema="cacao"] {
@@ -135,6 +141,8 @@
   --tachit-panel-texto-suave: #a9bccd;
   --tachit-panel-texto-tenue: #8ea4b8;
   --tachit-panel-enlace: #d6a58f;
+  /* La "T" del icono pequeño (T tachada) */
+  --tachit-icono-t: #ffffff;
 }
 
 /* ===== Letra principal de Tachit ===== */
@@ -181,6 +189,27 @@ body {
 }
 .boton-google:active {
   transform: translateY(0);
+}
+/* Mientras se conecta con Google: el botón se queda quieto y sale una ruedita con los colores de Google */
+.boton-google:disabled {
+  transform: none;
+}
+.boton-google:disabled::after {
+  transform: scaleX(0);
+}
+.ruedita-google {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2.5px solid #dadce0;
+  border-top-color: #4285f4;
+  animation: girar-ruedita 0.8s linear infinite;
+}
+@keyframes girar-ruedita {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ===== Botón principal de Tachit ("Entrar" / "Crear cuenta") =====
@@ -327,5 +356,9 @@ body {
   .logo-animado text {
     animation: none;
     opacity: 1;
+  }
+  /* La ruedita sigue girando (indica que algo está pasando), pero más despacio */
+  .ruedita-google {
+    animation-duration: 1.6s;
   }
 }
