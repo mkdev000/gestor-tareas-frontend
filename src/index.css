@@ -335,6 +335,96 @@ body {
 }
 
 /* Si el usuario pide menos movimiento en su sistema, quitamos las animaciones */
+/* ===== Recuperar la contraseña (Fase 3, paso 9.3) ===== */
+/* Cada pantalla entra con un pequeño deslizamiento hacia arriba */
+.entrada-suave {
+  animation: entrada-suave 0.45s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+@keyframes entrada-suave {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* "Volver a entrar": la flechita se mueve a la izquierda al pasar el ratón */
+.flecha-volver {
+  transition: transform 0.25s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+.enlace-volver:hover .flecha-volver,
+.enlace-volver:focus-visible .flecha-volver {
+  transform: translateX(-4px);
+}
+/* El sobre se tacha solo con el trazo del logo (acaba en check): "enviado" */
+.sobre-tachon {
+  stroke-dasharray: 90;
+  stroke-dashoffset: 90;
+  animation: dibujar-trazo 0.9s cubic-bezier(0.2, 0.9, 0.2, 1) 0.25s forwards;
+}
+/* El check grande de "¡Listo!" se dibuja solo */
+.sello-check {
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: dibujar-trazo 0.6s cubic-bezier(0.3, 1.4, 0.5, 1) 0.2s forwards;
+}
+@keyframes dibujar-trazo {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+/* "Tu plan para volver a entrar": el paso hecho se marca y se tacha, como una tarea */
+.paso-plan .bola-paso {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--tachit-acento);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+.paso-plan .bola-paso path {
+  stroke-dasharray: 26;
+  stroke-dashoffset: 26;
+}
+.paso-plan .titulo-paso {
+  position: relative;
+  display: inline-block;
+}
+.paso-plan .titulo-paso::after {
+  content: "";
+  position: absolute;
+  left: -2px;
+  right: -3px;
+  top: 55%;
+  height: 2px;
+  border-radius: 3px;
+  background: var(--tachit-acento);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.paso-plan.hecho .bola-paso {
+  background: var(--tachit-acento);
+}
+.paso-plan.hecho .bola-paso path {
+  animation: dibujar-trazo 0.35s cubic-bezier(0.3, 1.4, 0.5, 1) 0.5s forwards;
+}
+.paso-plan.hecho .titulo-paso {
+  color: #5b6b7c;
+}
+.paso-plan.hecho .titulo-paso::after {
+  animation: tachar-paso 0.5s cubic-bezier(0.2, 0.9, 0.2, 1) 0.7s forwards;
+}
+@keyframes tachar-paso {
+  to {
+    transform: scaleX(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .boton-google,
   .boton-google::after,
@@ -356,6 +446,25 @@ body {
   .logo-animado text {
     animation: none;
     opacity: 1;
+  }
+  /* Recuperar la contraseña: sin animaciones, todo aparece ya dibujado */
+  .entrada-suave,
+  .sobre-tachon,
+  .sello-check,
+  .paso-plan.hecho .bola-paso path,
+  .paso-plan.hecho .titulo-paso::after {
+    animation: none;
+  }
+  .flecha-volver {
+    transition: none;
+  }
+  .sobre-tachon,
+  .sello-check,
+  .paso-plan.hecho .bola-paso path {
+    stroke-dashoffset: 0;
+  }
+  .paso-plan.hecho .titulo-paso::after {
+    transform: scaleX(1);
   }
   /* La ruedita sigue girando (indica que algo está pasando), pero más despacio */
   .ruedita-google {
