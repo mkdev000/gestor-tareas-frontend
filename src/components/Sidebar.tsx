@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { cerrarSesion } from '../utils/sesion';
 import { colorPorTexto } from '../utils/colores';
 
 interface Props {
@@ -19,10 +20,10 @@ function Sidebar({ nombre, vistaActiva, setVistaActiva, busqueda, setBusqueda, p
   const colorAvatar = colorPorTexto(nombre);
   const navigate = useNavigate();
 
-  const cerrarSesion = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('nombre');
-    navigate('/login');
+  // Cerrar sesión DE VERDAD: el servidor anula el pase de renovación de este dispositivo
+  const salir = async () => {
+    await cerrarSesion();
+    navigate('/login', { replace: true });
   };
 
   const seleccionar = (vista: string) => {
@@ -154,7 +155,7 @@ function Sidebar({ nombre, vistaActiva, setVistaActiva, busqueda, setBusqueda, p
 
         <div className="mt-auto pt-3 border-t border-white/10">
           <button
-            onClick={cerrarSesion}
+            onClick={salir}
             className="group flex items-center gap-2.5 w-full px-2 py-2.5 rounded-lg text-sm text-left text-white/60 cursor-pointer transition"
           >
             <span className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 transition group-hover:bg-rosa/20">
@@ -198,4 +199,4 @@ function ItemNav({ activo, onClick, texto, icono, badge }: ItemNavProps) {
   );
 }
 
-export default Sidebar;
+export default Sidebar;

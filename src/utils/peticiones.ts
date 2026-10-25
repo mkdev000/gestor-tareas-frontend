@@ -16,6 +16,8 @@ export async function enviar(ruta: string, cuerpo: object) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(cuerpo),
+    // 'include': deja que el navegador guarde (y envíe) la cookie del pase de renovación
+    credentials: 'include',
   });
   const datos: RespuestaServidor = await respuesta.json().catch(() => ({}));
   return { ok: respuesta.ok, estado: respuesta.status, datos };

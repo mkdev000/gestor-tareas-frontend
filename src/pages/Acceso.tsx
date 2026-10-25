@@ -9,6 +9,7 @@ import MarcoAcceso from '../components/MarcoAcceso';
 import CampoContrasena from '../components/CampoContrasena';
 import RequisitosContrasena from '../components/RequisitosContrasena';
 import { enviar, type RespuestaServidor } from '../utils/peticiones';
+import { guardarSesion, renovarSesion } from '../utils/sesion';
 import { evaluarContrasena } from '../utils/contrasena';
 import { GOOGLE_CLIENT_ID, cargarGoogle, crearClienteGoogle, type ClienteCodigoGoogle } from '../utils/google';
 import type { DatosAviso } from '../components/AvisoFlotante';
@@ -38,11 +39,6 @@ function avisoDeGoogle(datos: RespuestaServidor): DatosAviso {
   return { titulo: 'Sesión iniciada con Google', texto: 'Google confirmó tu identidad y Tachit creó tu sesión.' };
 }
 
-// Guarda la sesión y entra en la app
-function guardarSesion(datos: RespuestaServidor) {
-  localStorage.setItem('token', datos.token ?? '');
-  localStorage.setItem('nombre', datos.nombre ?? '');
-}
 
 function Acceso({ modo }: { modo: Modo }) {
   const navigate = useNavigate();
@@ -115,6 +111,18 @@ function Acceso({ modo }: { modo: Modo }) {
         if (activo) setEstadoGoogle('no-disponible');
       });
 
+    return () => {
+      activo = false;
+    };
+  }, [navigate]);
+
+  // Si ya tienes la sesión abierta (la cookie del pase de renovación sigue valiendo),
+  // entras directamente en tus tareas sin escribir nada, como en cualquier app.
+  useEffect(() => {
+    let activo = true;
+    renovarSesion().then((resultado) => {
+      if (activo && resultado === 'ok') navigate('/tareas', { replace: true });
+    });
     return () => {
       activo = false;
     };

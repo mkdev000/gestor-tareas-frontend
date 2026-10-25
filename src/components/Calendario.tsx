@@ -2,7 +2,7 @@ import { useState } from 'react';
 import FormularioTarea from './FormularioTarea';
 import { colorBarraPrioridad } from '../utils/prioridad';
 import { colorPorEstado } from '../utils/estado';
-import { API_URL } from '../config';
+import { pedirConSesion } from '../utils/sesion';
 
 interface Tarea {
   id: number;
@@ -36,7 +36,6 @@ function Calendario({ tareas, onCambio }: Props) {
   );
   const [tareaEditando, setTareaEditando] = useState<Tarea | null>(null);
 
-  const token = localStorage.getItem('token');
   const hoyTexto = ahora.toISOString().slice(0, 10);
 
   const irMesAnterior = () => {
@@ -73,10 +72,7 @@ function Calendario({ tareas, onCambio }: Props) {
 
   const borrarTarea = async (id: number) => {
     try {
-      const respuesta = await fetch(`${API_URL}/api/tareas/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const respuesta = await pedirConSesion(`/api/tareas/${id}`, { method: 'DELETE' });
       if (respuesta.ok) onCambio();
     } catch (err) {
       console.error(err);
@@ -85,12 +81,9 @@ function Calendario({ tareas, onCambio }: Props) {
 
   const cambiarEstado = async (tarea: Tarea, nuevoEstado: string) => {
     try {
-      const respuesta = await fetch(`${API_URL}/api/tareas/${tarea.id}`, {
+      const respuesta = await pedirConSesion(`/api/tareas/${tarea.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...tarea,
           estado: nuevoEstado,
@@ -235,4 +228,4 @@ function Calendario({ tareas, onCambio }: Props) {
   );
 }
 
-export default Calendario;
+export default Calendario;

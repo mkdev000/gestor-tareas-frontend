@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { tiempoRelativo } from '../utils/tiempo';
 import FormularioTarea from './FormularioTarea';
-import { API_URL } from '../config';
+import { pedirConSesion } from '../utils/sesion';
 
 interface Tarea {
   id: number;
@@ -29,14 +29,10 @@ const puntoPorPrioridad: Record<string, string> = {
 
 function Recientes({ tareas, onCambio }: Props) {
   const [tareaEditando, setTareaEditando] = useState<Tarea | null>(null);
-  const token = localStorage.getItem('token');
 
   const borrarTarea = async (id: number) => {
     try {
-      const respuesta = await fetch(`${API_URL}/api/tareas/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const respuesta = await pedirConSesion(`/api/tareas/${id}`, { method: 'DELETE' });
 
       if (respuesta.ok) {
         onCambio();
@@ -111,4 +107,4 @@ function Recientes({ tareas, onCambio }: Props) {
   );
 }
 
-export default Recientes;
+export default Recientes;

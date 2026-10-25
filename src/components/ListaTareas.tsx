@@ -1,6 +1,6 @@
 import { formatearFecha } from '../utils/fechas';
 import { colorPorEstado } from '../utils/estado';
-import { API_URL } from '../config';
+import { pedirConSesion } from '../utils/sesion';
 
 interface Tarea {
     id: number;
@@ -20,16 +20,11 @@ interface Props {
 }
 
 function ListaTareas({ tareas, onCambio }: Props) {
-    const token = localStorage.getItem('token');
-
     const cambiarEstado = async (tarea: Tarea, nuevoEstado: string) => {
         try {
-            const respuesta = await fetch(`${API_URL}/api/tareas/${tarea.id}`, {
+            const respuesta = await pedirConSesion(`/api/tareas/${tarea.id}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...tarea,
                     estado: nuevoEstado,
@@ -52,10 +47,7 @@ function ListaTareas({ tareas, onCambio }: Props) {
 
     const borrarTarea = async (id: number) => {
         try {
-            const respuesta = await fetch(`${API_URL}/api/tareas/${id}`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const respuesta = await pedirConSesion(`/api/tareas/${id}`, { method: 'DELETE' });
 
             if (respuesta.ok) {
                 onCambio();
@@ -119,4 +111,4 @@ function ListaTareas({ tareas, onCambio }: Props) {
     );
 }
 
-export default ListaTareas;
+export default ListaTareas;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { API_URL } from '../config';
+import { pedirConSesion } from '../utils/sesion';
 
 interface Tarea {
   id: number;
@@ -42,19 +42,13 @@ function FormularioTarea({ onTareaCreada, onCancelar, tareaEditar }: Props) {
     e.preventDefault();
     setError('');
 
-    const token = localStorage.getItem('token');
-    const url = esEdicion
-      ? `${API_URL}/api/tareas/${tareaEditar!.id}`
-      : `${API_URL}/api/tareas`;
+    const ruta = esEdicion ? `/api/tareas/${tareaEditar!.id}` : '/api/tareas';
     const metodo = esEdicion ? 'PUT' : 'POST';
 
     try {
-      const respuesta = await fetch(url, {
+      const respuesta = await pedirConSesion(ruta, {
         method: metodo,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           titulo,
           descripcion: null,
@@ -191,4 +185,4 @@ function FormularioTarea({ onTareaCreada, onCancelar, tareaEditar }: Props) {
   );
 }
 
-export default FormularioTarea;
+export default FormularioTarea;

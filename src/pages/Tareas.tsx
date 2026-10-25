@@ -9,7 +9,7 @@ import AvisoFlotante, { type DatosAviso } from '../components/AvisoFlotante';
 import { colorBarraPrioridad } from '../utils/prioridad';
 import { colorPorTexto } from '../utils/colores';
 import logo from '../assets/logo.png';
-import { API_URL } from '../config';
+import { alCaducarSesion, pedirConSesion } from '../utils/sesion';
 
 interface Tarea {
   id: number;
@@ -47,22 +47,22 @@ function Tareas() {
 
   const nombre = localStorage.getItem('nombre') || 'Usuario';
 
+  // Si la sesión caduca del todo (30 días sin usar la app, o se cerró desde otro sitio), a "Entrar"
+  useEffect(
+    () => alCaducarSesion(() => navigate('/login', { replace: true, state: { aviso: 'Tu sesión ha caducado. Vuelve a entrar.' } })),
+    [navigate],
+  );
+
   const obtenerTareas = async () => {
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-
     try {
-      const respuesta = await fetch(`${API_URL}/api/tareas`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // El cartero lleva el pase y lo renueva solo si ha caducado
+      const respuesta = await pedirConSesion('/api/tareas');
 
-      if (respuesta.status === 401 || respuesta.status === 403) {
-        localStorage.removeItem('token');
-        navigate('/login');
+      // 401: la sesión ha caducado del todo (el aviso de arriba ya nos lleva a "Entrar")
+      if (respuesta.status === 401) return;
+      // 403: pase falso o manipulado → a "Entrar"
+      if (respuesta.status === 403) {
+        navigate('/login', { replace: true });
         return;
       }
 
