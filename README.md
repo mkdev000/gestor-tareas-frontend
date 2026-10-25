@@ -1,8 +1,10 @@
-# ✅ KmTask — Gestor de Tareas (Frontend)
+# ✅ Tachit — Gestor de Tareas (Frontend)
 
-KmTask es una aplicación web full stack de gestión de tareas personales, con autenticación de usuarios: cada persona se registra, inicia sesión y organiza sus propias tareas por estado, prioridad, etiqueta y fecha límite, con vistas especiales como Recientes, Hoy, Próximo y Calendario.
+Tachit (antes KmTask) es una aplicación web full stack de gestión de tareas personales, con autenticación de usuarios: cada persona se registra, inicia sesión y organiza sus propias tareas por estado, prioridad, etiqueta y fecha límite, con vistas especiales como Recientes, Hoy, Próximo y Calendario.
 
-🔗 Repositorio del backend: [gestor-tareas-backend](https://github.com/mkdev000/gestor-tareas-backend)
+🔗 Repositorio del backend: [backend-consolidado](https://github.com/mkdev000/backend-consolidado)
+
+> ⚠️ **Aviso de uso:** este código se publica como **portfolio**, para que se pueda revisar. **Todos los derechos reservados**: no se permite copiarlo, reutilizarlo ni distribuirlo, total o parcialmente, sin mi permiso por escrito.
 
 ---
 
@@ -38,7 +40,7 @@ npm install
 npm run dev
 ```
 
-Necesita tener corriendo el [backend de KmTask](https://github.com/mkdev000/gestor-tareas-backend) para funcionar correctamente. Las URLs del backend están configuradas para apuntar al servicio ya desplegado en producción.
+Necesita tener corriendo el [backend de Tachit](https://github.com/mkdev000/backend-consolidado) para funcionar correctamente. La dirección del backend se configura con la variable `VITE_API_URL` (en local, el archivo `.env.development` apunta a `http://localhost:3000`).
 
 ---
 
@@ -87,13 +89,13 @@ frontend/
 
 ## Proyecto relacionado
 
-- [Backend de KmTask](https://github.com/mkdev000/gestor-tareas-backend)
+- [Backend de Tachit](https://github.com/mkdev000/backend-consolidado)
 
 ---
 
 ## 📄 Licencia
 
-Este proyecto está bajo la licencia [MIT](LICENSE).
+**Todos los derechos reservados** © Kevin Mecinas Jiménez. El código se puede consultar como portfolio, pero no se permite copiarlo, reutilizarlo ni distribuirlo sin permiso por escrito.
 
 ## 👤 Autor
 
