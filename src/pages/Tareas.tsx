@@ -10,6 +10,7 @@ import { colorBarraPrioridad } from '../utils/prioridad';
 import { colorPorTexto } from '../utils/colores';
 import logo from '../assets/logo.png';
 import { alCaducarSesion, pedirConSesion } from '../utils/sesion';
+import { useTema } from '../tema/contextoTema';
 
 interface Tarea {
   id: number;
@@ -46,6 +47,12 @@ function Tareas() {
   }, [location.state, location.pathname, navigate]);
 
   const nombre = localStorage.getItem('nombre') || 'Usuario';
+
+  // Al entrar, trae el tema que elegiste en tu cuenta (Fase 4, paso 4.2)
+  const { cargarTemaDeLaCuenta } = useTema();
+  useEffect(() => {
+    cargarTemaDeLaCuenta();
+  }, [cargarTemaDeLaCuenta]);
 
   // Si la sesión caduca del todo (30 días sin usar la app, o se cerró desde otro sitio), a "Entrar"
   useEffect(

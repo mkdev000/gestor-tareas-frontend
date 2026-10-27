@@ -5,6 +5,13 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>KmTask</title>
+    <!-- Tema de Tachit: se pone ANTES de que cargue la app, para que no se vea un instante en Nube -->
+    <script>
+      try {
+        var tema = localStorage.getItem('tachit-tema');
+        if (['nube', 'malva', 'peonia', 'cacao'].indexOf(tema) !== -1) document.documentElement.dataset.tema = tema;
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>
