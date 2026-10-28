@@ -45,6 +45,7 @@
   --color-tachit-panel-texto-suave: var(--tachit-panel-texto-suave);
   --color-tachit-panel-texto-tenue: var(--tachit-panel-texto-tenue);
   --color-tachit-panel-enlace: var(--tachit-panel-enlace);
+  --color-tachit-sobre-acento: var(--tachit-sobre-acento);
 }
 
 /* ===== Tachit: los 4 temas (Nube es el de por defecto) ===== */
@@ -71,6 +72,8 @@
   --tachit-panel-enlace: #3a47b8;
   /* La "T" del icono pequeño (T tachada) */
   --tachit-icono-t: #141826;
+  /* El texto encima del color de acento (por ejemplo, el botón "Nueva tarea") */
+  --tachit-sobre-acento: #1b2559;
 }
 
 [data-tema="malva"] {
@@ -95,6 +98,8 @@
   --tachit-panel-enlace: #7a3f62;
   /* La "T" del icono pequeño (T tachada) */
   --tachit-icono-t: #141826;
+  /* El texto encima del color de acento (por ejemplo, el botón "Nueva tarea") */
+  --tachit-sobre-acento: #34192a;
 }
 
 [data-tema="peonia"] {
@@ -119,6 +124,8 @@
   --tachit-panel-enlace: #a93a64;
   /* La "T" del icono pequeño (T tachada) */
   --tachit-icono-t: #141826;
+  /* El texto encima del color de acento (por ejemplo, el botón "Nueva tarea") */
+  --tachit-sobre-acento: #4a1a2c;
 }
 
 [data-tema="cacao"] {
@@ -143,6 +150,8 @@
   --tachit-panel-enlace: #d6a58f;
   /* La "T" del icono pequeño (T tachada) */
   --tachit-icono-t: #ffffff;
+  /* El texto encima del color de acento (por ejemplo, el botón "Nueva tarea") */
+  --tachit-sobre-acento: #45302f;
 }
 
 /* ===== Letra principal de Tachit ===== */
@@ -469,5 +478,46 @@ body {
   /* La ruedita sigue girando (indica que algo está pasando), pero más despacio */
   .ruedita-google {
     animation-duration: 1.6s;
+  }
+}
+
+/* ===== Componentes base (Fase 4, paso 4.3) ===== */
+/* Botón principal: la sombra es del color de acento del tema, un poco transparente */
+.boton-principal {
+  box-shadow: 0 6px 14px color-mix(in srgb, var(--tachit-acento) 35%, transparent);
+}
+
+/* Hoja inferior (móvil): el fondo oscuro aparece suave y la hoja sube desde abajo */
+.fondo-hoja {
+  animation: aparecer-fondo 0.25s ease;
+}
+.hoja-inferior {
+  background: linear-gradient(180deg, var(--tachit-linea) 0px, var(--tachit-acento-suave) 110px, var(--tachit-fondo) 230px);
+  box-shadow: 0 -12px 40px rgba(10, 30, 47, 0.3);
+  animation: subir-hoja 0.34s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+@keyframes aparecer-fondo {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes subir-hoja {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fondo-hoja,
+  .hoja-inferior {
+    animation: none;
+  }
+  .bola-interruptor {
+    transition: none;
   }
 }

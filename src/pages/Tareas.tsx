@@ -5,7 +5,7 @@ import ListaTareas from '../components/ListaTareas';
 import Recientes from '../components/Recientes';
 import Calendario from '../components/Calendario';
 import Sidebar from '../components/Sidebar';
-import AvisoFlotante, { type DatosAviso } from '../components/AvisoFlotante';
+import AvisoFlotante, { type DatosAviso } from '../componentes/base/AvisoFlotante';
 import { colorBarraPrioridad } from '../utils/prioridad';
 import { colorPorTexto } from '../utils/colores';
 import logo from '../assets/logo.png';

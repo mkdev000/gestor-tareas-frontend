@@ -1,4 +1,4 @@
-// components/AvisoFlotante.tsx
+// componentes/base/AvisoFlotante.tsx
 // El aviso que aparece abajo a la derecha unos segundos (un "toast"), igual que en el prototipo:
 // icono de Tachit, "Tachit · ahora", un título en negrita y una frase.
 // Se cierra solo a los 4,2 segundos (como en el prototipo).

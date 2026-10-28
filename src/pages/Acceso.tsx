@@ -12,7 +12,7 @@ import { enviar, type RespuestaServidor } from '../utils/peticiones';
 import { guardarSesion, renovarSesion } from '../utils/sesion';
 import { evaluarContrasena } from '../utils/contrasena';
 import { GOOGLE_CLIENT_ID, cargarGoogle, crearClienteGoogle, type ClienteCodigoGoogle } from '../utils/google';
-import type { DatosAviso } from '../components/AvisoFlotante';
+import type { DatosAviso } from '../componentes/base/AvisoFlotante';
 
 type Modo = 'entrar' | 'registro';
 

@@ -5,7 +5,8 @@
 import { useCallback, useState } from 'react';
 import { useTema } from './contextoTema';
 import { TEMAS, nombreDelTema, type ClaveTema } from './temas';
-import AvisoFlotante, { type DatosAviso } from '../components/AvisoFlotante';
+import AvisoFlotante, { type DatosAviso } from '../componentes/base/AvisoFlotante';
+import Panel from '../componentes/base/Panel';
 
 function SelectorTema() {
   const { tema, cambiarTema } = useTema();
@@ -23,11 +24,7 @@ function SelectorTema() {
   };
 
   return (
-    <section className="flex flex-col gap-3.5 rounded-2xl border border-[#e3e8ef] bg-white p-[22px]">
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h2 className="text-[17px] font-extrabold">Tema</h2>
-        <p className="text-[13px] text-[#5b6b7c]">Elige el color de Tachit. Se aplica al momento.</p>
-      </div>
+    <Panel titulo="Tema" subtitulo="Elige el color de Tachit. Se aplica al momento.">
 
       <div role="group" aria-label="Tema" className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-3.5">
         {TEMAS.map((opcion) => {
@@ -77,7 +74,7 @@ function SelectorTema() {
       <p className="text-[13px] text-[#33475b]">El tema se guarda en tu cuenta y se aplica en la web y en el móvil.</p>
 
       {aviso && <AvisoFlotante aviso={aviso} alCerrar={cerrarAviso} />}
-    </section>
+    </Panel>
   );
 }
 

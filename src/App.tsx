@@ -5,6 +5,7 @@ import OlvideContrasena from './pages/OlvideContrasena';
 import RestablecerContrasena from './pages/RestablecerContrasena';
 import Tareas from './pages/Tareas';
 import Ajustes from './pantallas/Ajustes';
+import Muestrario from './pantallas/Muestrario';
 
 function App() {
   return (
@@ -17,6 +18,8 @@ function App() {
       <Route path="/tareas" element={<Tareas />} />
       {/* Ajustes (Fase 4, paso 4.2): de momento solo el selector de tema */}
       <Route path="/ajustes" element={<Ajustes />} />
+      {/* Muestrario de componentes (Fase 4, paso 4.3): SOLO en tu ordenador, no sale en la web publicada */}
+      {import.meta.env.DEV && <Route path="/muestrario" element={<Muestrario />} />}
       <Route path="*" element={<Navigate to="/login" />} />
     </Routes>
   );
