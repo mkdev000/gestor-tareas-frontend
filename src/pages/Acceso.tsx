@@ -10,6 +10,7 @@ import CampoContrasena from '../components/CampoContrasena';
 import RequisitosContrasena from '../components/RequisitosContrasena';
 import { enviar, type RespuestaServidor } from '../utils/peticiones';
 import { guardarSesion, renovarSesion } from '../utils/sesion';
+import { destinoSeguro } from '../utils/destino';
 import { evaluarContrasena } from '../utils/contrasena';
 import { GOOGLE_CLIENT_ID, cargarGoogle, crearClienteGoogle, type ClienteCodigoGoogle } from '../utils/google';
 import type { DatosAviso } from '../componentes/base/AvisoFlotante';
@@ -20,6 +21,7 @@ type Modo = 'entrar' | 'registro';
 interface EstadoNavegacion {
   email?: string;
   aviso?: string;
+  desde?: string; // la pantalla que intentabas abrir sin sesión (Fase 4, paso 4.4)
 }
 
 
@@ -44,6 +46,8 @@ function Acceso({ modo }: { modo: Modo }) {
   const navigate = useNavigate();
   const estado = (useLocation().state ?? {}) as EstadoNavegacion;
   const esRegistro = modo === 'registro';
+  // Al entrar vamos a Mi día, o a la pantalla que intentabas abrir (solo si es una de la app)
+  const destino = destinoSeguro(estado.desde);
 
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState(estado.email ?? '');
@@ -82,7 +86,7 @@ function Acceso({ modo }: { modo: Modo }) {
           return;
         }
         guardarSesion(respuesta.datos);
-        navigate('/tareas', { replace: true, state: { bienvenida: avisoDeGoogle(respuesta.datos) } });
+        navigate(destino, { replace: true, state: { bienvenida: avisoDeGoogle(respuesta.datos) } });
       } catch {
         setErrorGoogle('No se pudo conectar con el servidor');
         setEstadoGoogle('listo');
@@ -114,19 +118,19 @@ function Acceso({ modo }: { modo: Modo }) {
     return () => {
       activo = false;
     };
-  }, [navigate]);
+  }, [navigate, destino]);
 
   // Si ya tienes la sesión abierta (la cookie del pase de renovación sigue valiendo),
-  // entras directamente en tus tareas sin escribir nada, como en cualquier app.
+  // entras directamente sin escribir nada, como en cualquier app.
   useEffect(() => {
     let activo = true;
     renovarSesion().then((resultado) => {
-      if (activo && resultado === 'ok') navigate('/tareas', { replace: true });
+      if (activo && resultado === 'ok') navigate(destino, { replace: true });
     });
     return () => {
       activo = false;
     };
-  }, [navigate]);
+  }, [navigate, destino]);
 
   const pulsarGoogle = () => {
     setError('');
@@ -185,7 +189,7 @@ function Acceso({ modo }: { modo: Modo }) {
         titulo: esRegistro ? 'Cuenta creada' : 'Sesión iniciada',
         texto: 'Contraseña validada en el navegador y en el servidor.',
       };
-      navigate('/tareas', { replace: true, state: { bienvenida } });
+      navigate(destino, { replace: true, state: { bienvenida } });
     } catch {
       setError('No se pudo conectar con el servidor');
     } finally {

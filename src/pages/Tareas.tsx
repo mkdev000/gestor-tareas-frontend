@@ -1,16 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import FormularioTarea from '../components/FormularioTarea';
 import ListaTareas from '../components/ListaTareas';
 import Recientes from '../components/Recientes';
 import Calendario from '../components/Calendario';
 import Sidebar from '../components/Sidebar';
-import AvisoFlotante, { type DatosAviso } from '../componentes/base/AvisoFlotante';
 import { colorBarraPrioridad } from '../utils/prioridad';
 import { colorPorTexto } from '../utils/colores';
 import logo from '../assets/logo.png';
-import { alCaducarSesion, pedirConSesion } from '../utils/sesion';
-import { useTema } from '../tema/contextoTema';
+import { pedirConSesion } from '../utils/sesion';
 
 interface Tarea {
   id: number;
@@ -32,40 +30,17 @@ function Tareas() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [sidebarAbierto, setSidebarAbierto] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
 
-  // Aviso flotante de bienvenida ("Sesión iniciada", "Cuenta creada con Google"...).
-  // Llega desde la pantalla de acceso dentro del "state" de la navegación.
-  const [bienvenida, setBienvenida] = useState<DatosAviso | null>(
-    (location.state as { bienvenida?: DatosAviso } | null)?.bienvenida ?? null,
-  );
-  const cerrarBienvenida = useCallback(() => setBienvenida(null), []);
-
-  // Borramos ese "state" del historial: si recargas la página, el aviso no vuelve a salir
-  useEffect(() => {
-    if (location.state) navigate(location.pathname, { replace: true, state: null });
-  }, [location.state, location.pathname, navigate]);
-
+  // El aviso de bienvenida, el tema de tu cuenta y "sesión caducada" ahora los lleva el marco
+  // de la app (marco/MarcoApp.tsx y marco/RutaProtegida.tsx), para todas las pantallas a la vez.
   const nombre = localStorage.getItem('nombre') || 'Usuario';
-
-  // Al entrar, trae el tema que elegiste en tu cuenta (Fase 4, paso 4.2)
-  const { cargarTemaDeLaCuenta } = useTema();
-  useEffect(() => {
-    cargarTemaDeLaCuenta();
-  }, [cargarTemaDeLaCuenta]);
-
-  // Si la sesión caduca del todo (30 días sin usar la app, o se cerró desde otro sitio), a "Entrar"
-  useEffect(
-    () => alCaducarSesion(() => navigate('/login', { replace: true, state: { aviso: 'Tu sesión ha caducado. Vuelve a entrar.' } })),
-    [navigate],
-  );
 
   const obtenerTareas = async () => {
     try {
       // El cartero lleva el pase y lo renueva solo si ha caducado
       const respuesta = await pedirConSesion('/api/tareas');
 
-      // 401: la sesión ha caducado del todo (el aviso de arriba ya nos lleva a "Entrar")
+      // 401: la sesión ha caducado del todo (RutaProtegida ya nos lleva a "Entrar")
       if (respuesta.status === 401) return;
       // 403: pase falso o manipulado → a "Entrar"
       if (respuesta.status === 403) {
@@ -285,7 +260,6 @@ function Tareas() {
           onCancelar={() => setMostrarFormulario(false)}
         />
       )}
-      {bienvenida && <AvisoFlotante aviso={bienvenida} alCerrar={cerrarBienvenida} />}
     </div>
   );
 }

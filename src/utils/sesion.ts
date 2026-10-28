@@ -25,6 +25,11 @@ let renovacionEnCurso: Promise<ResultadoRenovar> | null = null;
 // Quién quiere enterarse de que la sesión ha caducado del todo (por ejemplo, para ir a "Entrar")
 const avisosCaducada = new Set<() => void>();
 
+// ¿Hay un pase corto en memoria? (si no, hay que pedir uno con la cookie antes de usar la app)
+export function haySesion() {
+  return paseCorto !== null;
+}
+
 // Guarda la sesión al entrar o al renovar
 export function guardarSesion(datos: DatosSesion) {
   paseCorto = datos.token || null;
