@@ -85,7 +85,7 @@ function Acceso({ modo }: { modo: Modo }) {
           setEstadoGoogle('listo');
           return;
         }
-        guardarSesion(respuesta.datos);
+        guardarSesion(respuesta.datos, 'google');
         navigate(destino, { replace: true, state: { bienvenida: avisoDeGoogle(respuesta.datos) } });
       } catch {
         setErrorGoogle('No se pudo conectar con el servidor');
@@ -183,7 +183,7 @@ function Acceso({ modo }: { modo: Modo }) {
         return;
       }
 
-      guardarSesion(login.datos);
+      guardarSesion(login.datos, 'email');
       // Aviso flotante al llegar, con los textos del prototipo
       const bienvenida: DatosAviso = {
         titulo: esRegistro ? 'Cuenta creada' : 'Sesión iniciada',

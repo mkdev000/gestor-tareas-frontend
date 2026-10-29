@@ -9,6 +9,7 @@ import { colorBarraPrioridad } from '../utils/prioridad';
 import { colorPorTexto } from '../utils/colores';
 import logo from '../assets/logo.png';
 import { pedirConSesion } from '../utils/sesion';
+import { avisarCambioTareas } from '../utils/avisosTareas';
 
 interface Tarea {
   id: number;
@@ -60,6 +61,13 @@ function Tareas() {
   useEffect(() => {
     obtenerTareas();
   }, []);
+
+  // Al crear, completar o borrar una tarea: recargar la lista y tocar el "timbre"
+  // para que la barra lateral actualice el anillo de hoy y las categorías (Fase 4, paso 4.5)
+  const alCambiarTareas = () => {
+    obtenerTareas();
+    avisarCambioTareas();
+  };
 
   const hoy = new Date().toISOString().slice(0, 10);
 
@@ -225,7 +233,7 @@ function Tareas() {
               )}
             </div>
           ) : vistaActiva === 'calendario' ? (
-            <Calendario tareas={tareas} onCambio={obtenerTareas} />
+            <Calendario tareas={tareas} onCambio={alCambiarTareas} />
           ) : tareas.length === 0 ? (
             <div className="text-center mt-20">
               <h1 className="font-bold text-2xl text-marino mb-2">¡Hola, {nombre}!</h1>
@@ -244,9 +252,9 @@ function Tareas() {
 
               {error && <p className="text-rosa text-sm mb-4">{error}</p>}
               {vistaActiva === 'recientes' ? (
-                <Recientes tareas={obtenerTareasFiltradas()} onCambio={obtenerTareas} />
+                <Recientes tareas={obtenerTareasFiltradas()} onCambio={alCambiarTareas} />
               ) : (
-                <ListaTareas tareas={obtenerTareasFiltradas()} onCambio={obtenerTareas} />
+                <ListaTareas tareas={obtenerTareasFiltradas()} onCambio={alCambiarTareas} />
               )}
             </>
           )}
@@ -256,7 +264,7 @@ function Tareas() {
 
       {mostrarFormulario && (
         <FormularioTarea
-          onTareaCreada={obtenerTareas}
+          onTareaCreada={alCambiarTareas}
           onCancelar={() => setMostrarFormulario(false)}
         />
       )}

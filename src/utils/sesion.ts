@@ -16,6 +16,11 @@ export interface DatosSesion {
   nombre?: string;
 }
 
+// Cómo entraste: con Google o con tu email y contraseña (Fase 4, paso 4.5).
+// Solo sirve para enseñarlo en el "pase" de la barra lateral; no es secreto.
+export type MetodoDeAcceso = 'google' | 'email';
+const CLAVE_METODO = 'metodo-acceso';
+
 type ResultadoRenovar = 'ok' | 'caducada' | 'sin-conexion';
 
 let paseCorto: string | null = null;
@@ -30,17 +35,27 @@ export function haySesion() {
   return paseCorto !== null;
 }
 
-// Guarda la sesión al entrar o al renovar
-export function guardarSesion(datos: DatosSesion) {
+// Guarda la sesión al entrar o al renovar.
+// "metodo" solo llega al entrar (la pantalla de acceso sabe si usaste Google o tu email); al renovar
+// no llega y se queda el que ya estaba guardado.
+export function guardarSesion(datos: DatosSesion, metodo?: MetodoDeAcceso) {
   paseCorto = datos.token || null;
   if (datos.nombre) localStorage.setItem('nombre', datos.nombre); // el nombre no es secreto: solo para saludar
+  if (metodo) localStorage.setItem(CLAVE_METODO, metodo);
   localStorage.removeItem('token'); // limpieza: antes el pase se guardaba aquí
+}
+
+// Cómo entraste la última vez en este navegador (null si no se sabe)
+export function leerMetodoDeAcceso(): MetodoDeAcceso | null {
+  const metodo = localStorage.getItem(CLAVE_METODO);
+  return metodo === 'google' || metodo === 'email' ? metodo : null;
 }
 
 function olvidarSesion() {
   paseCorto = null;
   localStorage.removeItem('token');
   localStorage.removeItem('nombre');
+  localStorage.removeItem(CLAVE_METODO);
 }
 
 // Pide un pase corto nuevo con la cookie del pase de renovación

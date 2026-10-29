@@ -74,6 +74,12 @@
   --tachit-icono-t: #141826;
   /* El texto encima del color de acento (por ejemplo, el botón "Nueva tarea") */
   --tachit-sobre-acento: #1b2559;
+  /* Barra lateral web (paso 4.5): textos, "capa" (para fondos transparentes) y el pase de abajo */
+  --tachit-barra-texto: #3d4672;
+  --tachit-barra-tenue: #727898;
+  --tachit-barra-capa: 27, 37, 89;
+  --tachit-barra-carta: #ffffff9e;
+  --tachit-barra-borde: #1b255914;
 }
 
 [data-tema="malva"] {
@@ -100,6 +106,12 @@
   --tachit-icono-t: #141826;
   /* El texto encima del color de acento (por ejemplo, el botón "Nueva tarea") */
   --tachit-sobre-acento: #34192a;
+  /* Barra lateral web (paso 4.5): textos, "capa" (para fondos transparentes) y el pase de abajo */
+  --tachit-barra-texto: #523c4a;
+  --tachit-barra-tenue: #81707b;
+  --tachit-barra-capa: 27, 37, 89;
+  --tachit-barra-carta: #ffffff9e;
+  --tachit-barra-borde: #34192a14;
 }
 
 [data-tema="peonia"] {
@@ -126,6 +138,12 @@
   --tachit-icono-t: #141826;
   /* El texto encima del color de acento (por ejemplo, el botón "Nueva tarea") */
   --tachit-sobre-acento: #4a1a2c;
+  /* Barra lateral web (paso 4.5): textos, "capa" (para fondos transparentes) y el pase de abajo */
+  --tachit-barra-texto: #653c4c;
+  --tachit-barra-tenue: #8f717c;
+  --tachit-barra-capa: 27, 37, 89;
+  --tachit-barra-carta: #ffffff9e;
+  --tachit-barra-borde: #4a1a2c14;
 }
 
 [data-tema="cacao"] {
@@ -152,6 +170,12 @@
   --tachit-icono-t: #ffffff;
   /* El texto encima del color de acento (por ejemplo, el botón "Nueva tarea") */
   --tachit-sobre-acento: #45302f;
+  /* Barra lateral web (paso 4.5): textos, "capa" (para fondos transparentes) y el pase de abajo */
+  --tachit-barra-texto: #e8dcd8;
+  --tachit-barra-tenue: #cbbab5;
+  --tachit-barra-capa: 255, 255, 255;
+  --tachit-barra-carta: #ffffff1a;
+  --tachit-barra-borde: #ffffff1f;
 }
 
 /* ===== Letra principal de Tachit ===== */
@@ -518,6 +542,386 @@ body {
     animation: none;
   }
   .bola-interruptor {
+    transition: none;
+  }
+}
+
+/* ===== Barra lateral web (Fase 4, paso 4.5) ===== */
+/* El fondo: el color del panel del tema, un poco más intenso hacia abajo */
+.barra-lateral {
+  background: linear-gradient(180deg, var(--tachit-panel) 0%, var(--tachit-panel-hover) 100%);
+  color: var(--tachit-barra-texto);
+}
+
+/* Cada apartado (Mi día, Tareas...) */
+.barra-apartado {
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--tachit-barra-texto);
+  text-decoration: none;
+  transition: background 0.25s ease, color 0.2s ease;
+}
+/* El elegido: fondo del color de acento que se desvanece hacia la derecha */
+.barra-apartado[aria-current="page"] {
+  font-weight: 800;
+  color: var(--tachit-tinta);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--tachit-acento) 22%, transparent) 0%, color-mix(in srgb, var(--tachit-acento) 4%, transparent) 100%);
+}
+/* Al pasar el ratón: el mismo desvanecido, mucho más flojo (6 %) y sin movimiento */
+.barra-apartado:not([aria-current="page"]):hover,
+.barra-apartado:not([aria-current="page"]):focus-visible {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--tachit-acento) 6%, transparent) 0%, transparent 100%);
+  color: var(--tachit-tinta);
+}
+/* Con el teclado (Tab) se ve bien dónde estás */
+.barra-apartado:focus-visible,
+.barra-categoria:focus-visible {
+  outline: 2px solid var(--tachit-acento-texto);
+  outline-offset: 2px;
+}
+.barra-icono {
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+.barra-apartado[aria-current="page"] .barra-icono {
+  color: var(--tachit-acento-texto);
+}
+/* El subrayado suave de Tachit: se dibuja al llegar a la pantalla */
+.barra-subrayado {
+  position: absolute;
+  left: -2px;
+  right: -10px;
+  bottom: -6px;
+  height: 9px;
+  overflow: visible;
+  pointer-events: none;
+}
+.barra-subrayado path {
+  stroke: color-mix(in srgb, var(--tachit-acento) 75%, transparent);
+  stroke-dasharray: 140;
+  stroke-dashoffset: 140;
+  animation: dibujar-trazo 0.6s cubic-bezier(0.3, 0.8, 0.3, 1) forwards;
+}
+
+/* El anillo de hoy (en Tareas) */
+.barra-anillo {
+  margin-left: auto;
+  position: relative;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--tachit-tinta);
+}
+.barra-anillo svg {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg); /* para que el anillo empiece a llenarse desde arriba */
+}
+.barra-anillo-fondo {
+  stroke: rgba(var(--tachit-barra-capa), 0.12);
+}
+.barra-anillo-lleno {
+  stroke: var(--tachit-acento);
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+/* Categorías · esta semana */
+.barra-seccion {
+  color: var(--tachit-barra-tenue);
+}
+/* La lista se puede desplazar si hay muchas, pero sin barra de desplazamiento visible */
+.barra-sin-scroll {
+  scrollbar-width: none;
+}
+.barra-sin-scroll::-webkit-scrollbar {
+  display: none;
+}
+.barra-categoria {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 8px 12px 9px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: var(--tachit-barra-texto);
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+.barra-categoria:hover,
+.barra-categoria:focus-visible {
+  background: rgba(var(--tachit-barra-capa), 0.06);
+}
+.barra-categoria.activa {
+  background: rgba(var(--tachit-barra-capa), 0.08);
+}
+.barra-categoria-nombre {
+  position: relative;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tachit-tinta);
+}
+.barra-categoria-nombre.vacia {
+  font-weight: 500;
+  color: var(--tachit-barra-tenue);
+}
+.barra-categoria-nombre.completa {
+  color: var(--tachit-barra-tenue);
+}
+.barra-categoria-cuenta {
+  margin-left: auto;
+  padding-left: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--tachit-barra-tenue);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* El trazo de Tachit que tacha la categoría terminada */
+.barra-tachon {
+  position: absolute;
+  left: -2px;
+  top: 50%;
+  height: 12px;
+  width: calc(100% + 10px);
+  overflow: visible;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.barra-tachon path {
+  stroke-dasharray: 160;
+  stroke-dashoffset: 160;
+  animation: dibujar-trazo 0.9s cubic-bezier(0.3, 0.8, 0.3, 1) 0.1s forwards;
+}
+
+/* El pase de abajo: una tarjeta con dos muescas (los círculos de los lados) */
+.barra-pase {
+  margin-top: auto;
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px 10px 12px;
+  border-radius: 14px;
+  background: var(--tachit-barra-carta);
+  box-shadow: 0 0 0 1px var(--tachit-barra-borde);
+}
+.barra-pase::before,
+.barra-pase::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 99px;
+  background: var(--tachit-panel-hover); /* el mismo color que el fondo de la barra: parece un agujero */
+  transform: translateY(-50%);
+}
+.barra-pase::before {
+  left: -6px;
+}
+.barra-pase::after {
+  right: -6px;
+}
+.barra-pase-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 99px;
+  background: #7c5cd6;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px var(--tachit-panel-hover), 0 0 0 4px color-mix(in srgb, var(--tachit-acento) 60%, transparent);
+}
+.barra-pase-nombre {
+  color: var(--tachit-tinta);
+  font-weight: 700;
+  font-size: 14px;
+}
+.barra-pase-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--tachit-barra-texto);
+  background: rgba(var(--tachit-barra-capa), 0.07);
+  border-radius: 99px;
+  padding: 2px 8px 2px 6px;
+}
+/* La línea de corte (discontinua) antes del botón de salir */
+.barra-pase-corte {
+  align-self: stretch;
+  border-left: 1.5px dashed rgba(var(--tachit-barra-capa), 0.18);
+  margin: 0 2px 0 auto;
+}
+/* Salir: al pasar el ratón se rellena de rojo desde la izquierda y la flecha sale por la puerta */
+.boton-salir {
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 0;
+  background: rgba(var(--tachit-barra-capa), 0.06);
+  color: var(--tachit-barra-texto);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.25s ease, box-shadow 0.25s ease;
+}
+.boton-salir::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #e04a4a, #ec6464);
+  transform: translateX(-102%);
+  transition: transform 0.34s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+.boton-salir svg {
+  position: relative;
+}
+.boton-salir .salir-flecha {
+  transition: transform 0.34s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.boton-salir .salir-puerta {
+  transition: opacity 0.25s ease;
+}
+.boton-salir:hover,
+.boton-salir:focus-visible {
+  color: #ffffff;
+  box-shadow: 0 5px 14px rgba(224, 74, 74, 0.26);
+}
+.boton-salir:focus-visible {
+  outline: 2px solid #e04a4a;
+  outline-offset: 2px;
+}
+.boton-salir:hover::before,
+.boton-salir:focus-visible::before {
+  transform: translateX(0);
+}
+.boton-salir:hover .salir-flecha,
+.boton-salir:focus-visible .salir-flecha {
+  transform: translateX(3px);
+}
+.boton-salir:hover .salir-puerta,
+.boton-salir:focus-visible .salir-puerta {
+  opacity: 0.7;
+}
+.boton-salir:active .salir-flecha {
+  transform: translateX(5px);
+}
+
+/* ===== Cabecera: botón "Nueva tarea" (Fase 4, paso 4.5) =====
+   Idea A, "el borde que se dibuja": al pasar el ratón, un trazo recorre el borde como un bolígrafo,
+   el fondo se rellena de izquierda a derecha y el + gira un cuarto de vuelta. */
+.boton-nueva-tarea {
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 16px 0 13px;
+  border-radius: 12px;
+  border: 0;
+  background: var(--tachit-acento-suave);
+  color: var(--tachit-acento-fuerte);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1.5px var(--tachit-acento-borde);
+}
+/* El relleno: una capa del color de acento escondida a la izquierda que entra al pasar el ratón */
+.boton-nueva-tarea::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--tachit-acento) 16%, transparent);
+  transform: translateX(-101%);
+  transition: transform 0.45s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+.boton-nueva-tarea > * {
+  position: relative;
+}
+.boton-nueva-tarea .trazo-borde {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+/* pathLength="400" en el SVG: el borde "mide" 400, así que con 400 de hueco está escondido entero */
+.boton-nueva-tarea .trazo-borde rect {
+  fill: none;
+  stroke: var(--tachit-acento-fuerte);
+  stroke-width: 1.5;
+  stroke-dasharray: 400;
+  stroke-dashoffset: 400;
+  transition: stroke-dashoffset 0.7s cubic-bezier(0.3, 0.8, 0.3, 1);
+}
+.boton-nueva-tarea .mas-nueva-tarea {
+  flex-shrink: 0;
+  transition: transform 0.4s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+.boton-nueva-tarea:hover::before,
+.boton-nueva-tarea:focus-visible::before {
+  transform: none;
+}
+.boton-nueva-tarea:hover .trazo-borde rect,
+.boton-nueva-tarea:focus-visible .trazo-borde rect {
+  stroke-dashoffset: 0;
+}
+.boton-nueva-tarea:hover .mas-nueva-tarea,
+.boton-nueva-tarea:focus-visible .mas-nueva-tarea {
+  transform: rotate(90deg);
+}
+.boton-nueva-tarea:focus-visible {
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 3px;
+}
+
+/* Menos movimiento: los trazos aparecen ya dibujados y nada se desliza */
+@media (prefers-reduced-motion: reduce) {
+  .barra-subrayado path,
+  .barra-tachon path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .barra-anillo-lleno,
+  .boton-salir,
+  .boton-salir::before,
+  .boton-salir .salir-flecha,
+  .boton-salir .salir-puerta,
+  .boton-nueva-tarea::before,
+  .boton-nueva-tarea .trazo-borde rect,
+  .boton-nueva-tarea .mas-nueva-tarea {
     transition: none;
   }
 }

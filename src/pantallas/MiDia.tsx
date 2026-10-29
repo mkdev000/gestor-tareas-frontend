@@ -3,7 +3,7 @@
 import PantallaProvisional from './PantallaProvisional';
 
 function MiDia() {
-  return <PantallaProvisional titulo="Mi día" fase={7} />;
+  return <PantallaProvisional fase={7} />;
 }
 
 export default MiDia;

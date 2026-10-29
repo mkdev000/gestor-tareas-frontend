@@ -3,7 +3,7 @@
 import PantallaProvisional from './PantallaProvisional';
 
 function MiRitmo() {
-  return <PantallaProvisional titulo="Mi ritmo" fase={9} />;
+  return <PantallaProvisional fase={9} />;
 }
 
 export default MiRitmo;

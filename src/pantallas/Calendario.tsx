@@ -4,7 +4,7 @@
 import PantallaProvisional from './PantallaProvisional';
 
 function PantallaCalendario() {
-  return <PantallaProvisional titulo="Calendario" fase={8} />;
+  return <PantallaProvisional fase={8} />;
 }
 
 export default PantallaCalendario;

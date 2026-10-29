@@ -1,6 +1,8 @@
 // pantallas/PantallaProvisional.tsx
 // Contenido provisional de las pantallas que todavía no se han construido (Fase 4, paso 4.4).
-// Cada una se rellena en su fase. Los enlaces de abajo son temporales: en el paso 4.5 los sustituye la barra lateral.
+// Cada una se rellena en su fase. El título lo pone la cabecera del marco (paso 4.5).
+// Los enlaces de abajo son temporales y solo salen en pantallas estrechas (en las anchas ya está
+// la barra lateral). En el paso 4.6 los sustituye la barra de abajo del móvil.
 import { NavLink } from 'react-router-dom';
 
 const ENLACES = [
@@ -11,10 +13,10 @@ const ENLACES = [
   { ruta: '/ajustes', texto: 'Ajustes' },
 ];
 
-function PantallaProvisional({ titulo, fase }: { titulo: string; fase: number }) {
+function PantallaProvisional({ fase }: { fase: number }) {
   return (
-    <main className="mx-auto flex max-w-[1100px] flex-col gap-3 px-4 py-8 sm:px-8">
-      <nav aria-label="Pantallas (provisional)" className="flex flex-wrap gap-2 text-sm font-bold">
+    <div className="flex max-w-[1100px] flex-col gap-3">
+      <nav aria-label="Pantallas (provisional)" className="flex flex-wrap gap-2 text-sm font-bold lg:hidden">
         {ENLACES.map((enlace) => (
           <NavLink
             key={enlace.ruta}
@@ -28,9 +30,8 @@ function PantallaProvisional({ titulo, fase }: { titulo: string; fase: number })
           </NavLink>
         ))}
       </nav>
-      <h1 className="mt-4 text-xl font-extrabold tracking-[-0.3px]">{titulo}</h1>
       <p className="text-sm text-[#5b6b7c]">Esta pantalla se construye en la Fase {fase}.</p>
-    </main>
+    </div>
   );
 }
 
