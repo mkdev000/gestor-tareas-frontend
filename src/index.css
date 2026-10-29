@@ -80,6 +80,8 @@
   --tachit-barra-capa: 27, 37, 89;
   --tachit-barra-carta: #ffffff9e;
   --tachit-barra-borde: #1b255914;
+  /* Móvil (paso 4.6): el icono del apartado elegido en la barra de abajo */
+  --tachit-barra-activo: #3a47b8;
 }
 
 [data-tema="malva"] {
@@ -112,6 +114,8 @@
   --tachit-barra-capa: 27, 37, 89;
   --tachit-barra-carta: #ffffff9e;
   --tachit-barra-borde: #34192a14;
+  /* Móvil (paso 4.6): el icono del apartado elegido en la barra de abajo */
+  --tachit-barra-activo: #7a3f62;
 }
 
 [data-tema="peonia"] {
@@ -144,6 +148,8 @@
   --tachit-barra-capa: 27, 37, 89;
   --tachit-barra-carta: #ffffff9e;
   --tachit-barra-borde: #4a1a2c14;
+  /* Móvil (paso 4.6): el icono del apartado elegido en la barra de abajo */
+  --tachit-barra-activo: #a93a64;
 }
 
 [data-tema="cacao"] {
@@ -176,6 +182,8 @@
   --tachit-barra-capa: 255, 255, 255;
   --tachit-barra-carta: #ffffff1a;
   --tachit-barra-borde: #ffffff1f;
+  /* Móvil (paso 4.6): el icono del apartado elegido en la barra de abajo */
+  --tachit-barra-activo: #d6a58f;
 }
 
 /* ===== Letra principal de Tachit ===== */
@@ -923,5 +931,379 @@ body {
   .boton-nueva-tarea .trazo-borde rect,
   .boton-nueva-tarea .mas-nueva-tarea {
     transition: none;
+  }
+}
+
+/* ===== Móvil: barra de abajo (Fase 4, paso 4.6) =====
+   Flota sobre la página, con la forma del prototipo móvil. El apartado elegido lleva
+   una pastilla del color de acento que se desvanece hacia abajo (opción A). */
+.barra-inferior {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  /* env(safe-area-inset-bottom): en los iPhone sin botón, deja libre la rayita de abajo */
+  bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  max-width: 520px;
+  margin: 0 auto;
+  height: 68px;
+  border-radius: 24px;
+  background: var(--tachit-panel);
+  box-shadow: 0 14px 30px rgba(10, 30, 47, 0.32);
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: center;
+}
+.pestana {
+  position: relative;
+  height: 64px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  color: var(--tachit-barra-tenue);
+  font-family: inherit;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.2s ease;
+}
+/* La pastilla que se desvanece (escondida hasta que el apartado está elegido) */
+.pestana::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 52px;
+  height: 48px;
+  margin-left: -26px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tachit-acento) 26%, transparent) 0%, color-mix(in srgb, var(--tachit-acento) 3%, transparent) 100%);
+  opacity: 0;
+  transform: scale(0.85);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.pestana.marcada::before {
+  opacity: 1;
+  transform: none;
+}
+.pestana > * {
+  position: relative;
+}
+.pestana-texto {
+  font-size: 10px;
+  font-weight: 700;
+}
+.pestana.marcada {
+  color: var(--tachit-tinta);
+}
+.pestana.marcada .pestana-texto {
+  font-weight: 800;
+}
+.pestana.marcada .pestana-icono {
+  color: var(--tachit-barra-activo);
+}
+.pestana:focus-visible,
+.boton-crear:focus-visible {
+  outline: 2px solid var(--tachit-acento-texto);
+  outline-offset: 2px;
+}
+/* El mini anillo de hoy, pegado al icono de Tareas */
+.mini-anillo {
+  position: absolute;
+  top: -7px;
+  right: -12px;
+  min-width: 19px;
+  height: 19px;
+  border-radius: 99px;
+  background: var(--tachit-panel);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--tachit-tinta);
+}
+.mini-anillo svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: rotate(-90deg); /* para que el anillo empiece a llenarse desde arriba */
+}
+.mini-anillo-fondo {
+  stroke: rgba(var(--tachit-barra-capa), 0.16);
+}
+.mini-anillo-lleno {
+  stroke: var(--tachit-acento);
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+/* El rombo + (nueva tarea): un cuadrado girado 45°, con el + girado al revés para que quede recto */
+.boton-crear {
+  width: 62px;
+  height: 62px;
+  margin-top: -34px;
+  border-radius: 20px;
+  border: 5px solid var(--tachit-fondo);
+  background: var(--tachit-acento);
+  color: var(--tachit-sobre-acento);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transform: rotate(45deg);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--tachit-acento) 45%, transparent);
+  -webkit-tap-highlight-color: transparent;
+}
+.boton-crear svg {
+  transform: rotate(-45deg);
+}
+
+/* ===== Móvil: menú lateral (Fase 4, paso 4.6) =====
+   Entra desde la izquierda. Idea 2: cada opción enseña su dato sin entrar. */
+.menu-cajon {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 330px;
+  max-width: 86vw;
+  border-radius: 0 34px 34px 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  box-shadow: 14px 0 40px rgba(10, 30, 47, 0.3);
+  outline: none;
+  animation: entrar-menu 0.32s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+@keyframes entrar-menu {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.menu-cabecera {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 16px 16px;
+  background: linear-gradient(160deg, var(--tachit-panel) 0%, var(--tachit-panel-activo) 100%);
+  color: var(--tachit-panel-texto);
+}
+.menu-saludo {
+  font-size: 13px;
+  color: var(--tachit-acento-texto);
+}
+.menu-cerrar {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 0;
+  background: rgba(var(--tachit-barra-capa), 0.1);
+  color: var(--tachit-tinta);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.menu-cuerpo {
+  flex-grow: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 16px 14px;
+  display: flex;
+  flex-direction: column;
+}
+.menu-opcion {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 4px;
+  border: 0;
+  border-bottom: 1px solid #eef1f5;
+  background: transparent;
+  text-align: left;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+button.menu-opcion {
+  cursor: pointer;
+}
+button.menu-opcion:active {
+  background: #f6f8fb;
+}
+.menu-opcion:focus-visible,
+.menu-punto:focus-visible,
+.menu-cerrar:focus-visible {
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 2px;
+}
+/* El icono, en una baldosa con los colores suaves del tema */
+.menu-icono {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--tachit-acento-suave);
+  color: var(--tachit-acento-fuerte);
+  box-shadow: inset 0 0 0 1px var(--tachit-acento-borde);
+}
+.menu-textos {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.menu-titulo {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #0f1f2e;
+}
+.menu-dato {
+  font-size: 11.5px;
+  color: #5b6b7c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.menu-derecha {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.menu-flecha {
+  color: #9aa7b5;
+  transition: transform 0.25s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+button.menu-opcion:hover .menu-flecha,
+button.menu-opcion:active .menu-flecha {
+  transform: translateX(3px);
+}
+/* La racha: una barrita por día, más alta hacia hoy; gris si ese día no tachaste nada */
+.menu-racha {
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+}
+.menu-racha > span {
+  display: block;
+  width: 5px;
+  border-radius: 3px;
+  background: #0f1f2e1a;
+}
+.menu-racha > span.hizo {
+  background: var(--tachit-acento);
+}
+/* Los puntitos de Tema (el color de fondo y el del aro llegan en el style de cada uno) */
+.menu-punto {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(15, 31, 46, 0.12);
+}
+.menu-punto[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px currentColor;
+}
+/* El pase del menú: como el de la web, pero sobre fondo blanco */
+.menu-pase {
+  margin-top: auto;
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px 10px 12px;
+  border-radius: 14px;
+  background: var(--tachit-acento-suave);
+  box-shadow: 0 0 0 1px #0f1f2e14;
+}
+.menu-pase::before,
+.menu-pase::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 99px;
+  background: #ffffff;
+  transform: translateY(-50%);
+  box-shadow: inset 0 0 0 1px #0f1f2e14;
+}
+.menu-pase::before {
+  left: -6px;
+}
+.menu-pase::after {
+  right: -6px;
+}
+.menu-pase-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 99px;
+  background: #7c5cd6;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px color-mix(in srgb, var(--tachit-acento) 60%, transparent);
+}
+.menu-pase-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #33475b;
+  background: #0f1f2e0d;
+  border-radius: 99px;
+  padding: 2px 8px 2px 6px;
+}
+.menu-pase-corte {
+  align-self: stretch;
+  border-left: 1.5px dashed #0f1f2e2e;
+  margin: 0 2px 0 auto;
+}
+/* El botón de salir es el mismo de la web (.boton-salir), con colores para fondo claro */
+.boton-salir.menu-salir {
+  background: #0f1f2e0f;
+  color: #33475b;
+}
+.boton-salir.menu-salir:hover,
+.boton-salir.menu-salir:active,
+.boton-salir.menu-salir:focus-visible {
+  color: #ffffff;
+}
+.boton-salir.menu-salir:active::before {
+  transform: translateX(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pestana,
+  .pestana::before,
+  .mini-anillo-lleno,
+  .menu-flecha {
+    transition: none;
+  }
+  .menu-cajon {
+    animation: none;
   }
 }

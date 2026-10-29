@@ -1,13 +1,15 @@
 // marco/useResumenBarra.ts
-// Los datos que enseña la barra lateral (Fase 4, paso 4.5):
+// Los datos que enseñan la barra lateral (paso 4.5) y la barra de abajo + el menú del móvil (paso 4.6):
 //  - el anillo de hoy (en "Tareas"): cuántas te quedan pendientes y cuántas has hecho hoy
 //  - "Categorías · esta semana": de lunes a domingo, cuántas tareas de cada categoría has hecho
+//  - la racha (menú del móvil): cuántos días seguidos has tachado algo y los últimos 7 días
+// Se pide UNA vez en el marco (MarcoApp) y se pasa a las tres piezas, así no se repiten peticiones.
 // Es un "hook" propio: una función que empieza por "use" y que puede usar otros hooks de React
 // (useState, useEffect). Así la barra solo se preocupa de dibujar, y aquí se piden y se cuentan los datos.
 import { useEffect, useState } from 'react';
 import { pedirConSesion } from '../utils/sesion';
 import { alCambiarTareas } from '../utils/avisosTareas';
-import { hoyISO, semanaDe } from '../utils/dias';
+import { hoyISO, semanaDe, sumarDias } from '../utils/dias';
 
 // Solo lo que la barra necesita de cada tarea y de cada categoría (la API manda más campos)
 interface TareaApi {
@@ -33,9 +35,11 @@ export interface ResumenBarra {
   pendientes: number;
   hechasHoy: number;
   categorias: ResumenCategoria[];
+  racha: number; // días seguidos (hasta hoy o hasta ayer) con alguna tarea tachada
+  ultimos7: boolean[]; // de hace 6 días a hoy: ¿tachaste algo ese día?
 }
 
-const VACIO: ResumenBarra = { pendientes: 0, hechasHoy: 0, categorias: [] };
+const VACIO: ResumenBarra = { pendientes: 0, hechasHoy: 0, categorias: [], racha: 0, ultimos7: Array(7).fill(false) };
 
 // Cuenta todo a partir de las tareas y categorías que manda el servidor
 function calcularResumen(tareas: TareaApi[], categorias: CategoriaApi[]): ResumenBarra {
@@ -64,7 +68,19 @@ function calcularResumen(tareas: TareaApi[], categorias: CategoriaApi[]): Resume
     };
   });
 
-  return { pendientes, hechasHoy, categorias: resumenCategorias };
+  // La racha. De momento se cuenta con la FECHA de las tareas completadas; en la Fase 9 (Mi ritmo)
+  // se contará con el historial (tarea_eventos), que sabe el día exacto en que las tachaste.
+  const diasConHechas = new Set(tareas.filter(hecha).map(dia).filter((d): d is string => d !== null));
+  const ultimos7 = [6, 5, 4, 3, 2, 1, 0].map((n) => diasConHechas.has(sumarDias(hoy, -n)));
+  // Si hoy aún no has tachado nada, la racha no se rompe: se cuenta desde ayer
+  let cursor = diasConHechas.has(hoy) ? hoy : sumarDias(hoy, -1);
+  let racha = 0;
+  while (diasConHechas.has(cursor)) {
+    racha++;
+    cursor = sumarDias(cursor, -1);
+  }
+
+  return { pendientes, hechasHoy, categorias: resumenCategorias, racha, ultimos7 };
 }
 
 export function useResumenBarra(): ResumenBarra {

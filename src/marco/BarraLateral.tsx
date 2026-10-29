@@ -6,69 +6,22 @@
 //  - "Categorías · esta semana": un trocito por tarea; al acabarlas todas, el nombre se tacha
 //  - el "pase" de abajo: tu nombre, cómo entraste (Google o email) y el botón de salir
 // Los colores salen de las variables del tema (--tachit-...), así cambia sola al cambiar de tema.
-import { useLocation, useNavigate, NavLink, Link } from 'react-router-dom';
-import type { ReactNode } from 'react';
+import { useLocation, NavLink, Link } from 'react-router-dom';
 import LogoTachit from '../components/LogoTachit';
-import { cerrarSesion, leerMetodoDeAcceso } from '../utils/sesion';
 import { useTema } from '../tema/contextoTema';
-import { useResumenBarra, type ResumenCategoria } from './useResumenBarra';
+import type { ResumenBarra, ResumenCategoria } from './useResumenBarra';
+import { Icono } from './iconos';
+import { useCuenta } from './useCuenta';
+import { ChipMetodo, IconoSalir } from './cuenta';
 
 // ---------- Los apartados ----------
-const APARTADOS: { ruta: string; texto: string; icono: ReactNode }[] = [
-  {
-    ruta: '/hoy',
-    texto: 'Mi día',
-    // Un sol que sale por el horizonte
-    icono: (
-      <>
-        <path d="M12 6v3M5.6 9.6l2 2M18.4 9.6l-2 2" />
-        <path d="M7 18a5 5 0 0 1 10 0" />
-        <path d="M3 18h18" />
-      </>
-    ),
-  },
-  {
-    ruta: '/tareas',
-    texto: 'Tareas',
-    // Una casilla con su check
-    icono: (
-      <>
-        <rect x="3.5" y="3.5" width="17" height="17" rx="5" />
-        <path d="M8 12.5l2.6 2.6L16.5 9" />
-      </>
-    ),
-  },
-  {
-    ruta: '/calendario',
-    texto: 'Calendario',
-    // Un calendario con un punto en el día de hoy
-    icono: (
-      <>
-        <rect x="3.5" y="5" width="17" height="15.5" rx="4" />
-        <path d="M3.5 10h17M8 3v4M16 3v4" />
-        <circle cx="12" cy="15" r="1.6" fill="currentColor" stroke="none" />
-      </>
-    ),
-  },
-  {
-    ruta: '/ritmo',
-    texto: 'Mi ritmo',
-    // El pulso
-    icono: <path d="M3 12h4l2.5-6 4 12 2.5-6H21" />,
-  },
-  {
-    ruta: '/ajustes',
-    texto: 'Ajustes',
-    // Dos deslizadores
-    icono: (
-      <>
-        <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
-        <circle cx="16" cy="7" r="2" />
-        <circle cx="10" cy="17" r="2" />
-      </>
-    ),
-  },
-];
+const APARTADOS = [
+  { ruta: '/hoy', texto: 'Mi día', icono: 'hoy' },
+  { ruta: '/tareas', texto: 'Tareas', icono: 'tareas' },
+  { ruta: '/calendario', texto: 'Calendario', icono: 'calendario' },
+  { ruta: '/ritmo', texto: 'Mi ritmo', icono: 'ritmo' },
+  { ruta: '/ajustes', texto: 'Ajustes', icono: 'ajustes' },
+] as const;
 
 // El subrayado suave de Tachit: una línea que acaba en un pequeño check
 function Subrayado() {
@@ -174,24 +127,16 @@ function grupo(c: ResumenCategoria) {
 }
 
 // ---------- La barra entera ----------
-function BarraLateral() {
-  const navigate = useNavigate();
+// Los datos (anillo y categorías) llegan del marco (MarcoApp), que los pide una sola vez
+function BarraLateral({ resumen }: { resumen: ResumenBarra }) {
   const location = useLocation();
   const { tema } = useTema();
-  const { pendientes, hechasHoy, categorias } = useResumenBarra();
-
-  const nombre = localStorage.getItem('nombre') || 'Tu cuenta';
-  const inicial = nombre.trim().charAt(0).toUpperCase() || 'T';
-  const metodo = leerMetodoDeAcceso();
+  const { pendientes, hechasHoy, categorias } = resumen;
+  const { nombre, inicial, metodo, salir } = useCuenta();
 
   // ¿Qué categoría estás mirando? (/tareas?categoria=3 → la 3)
   const categoriaActiva = location.pathname === '/tareas' ? new URLSearchParams(location.search).get('categoria') : null;
   const ordenadas = [...categorias].sort((a, b) => grupo(a) - grupo(b));
-
-  const salir = async () => {
-    await cerrarSesion();
-    navigate('/login', { replace: true });
-  };
 
   return (
     <nav aria-label="Principal" className="barra-lateral sticky top-0 flex h-screen w-[248px] shrink-0 flex-col gap-1.5 px-4 py-6">
@@ -209,9 +154,7 @@ function BarraLateral() {
         >
           {({ isActive }) => (
             <>
-              <svg className="barra-icono" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                {apartado.icono}
-              </svg>
+              <Icono trazo={apartado.icono} className="barra-icono" />
               <span className="relative">
                 {apartado.texto}
                 {isActive && <Subrayado />}
@@ -249,44 +192,14 @@ function BarraLateral() {
         </span>
         <div className="flex min-w-0 flex-col">
           <span className="barra-pase-nombre truncate">{nombre}</span>
-          {metodo && (
-            <span>
-              <span className="barra-pase-chip">
-                {metodo === 'google' ? <LogoGoogle /> : <IconoEmail />}
-                {metodo === 'google' ? 'Google' : 'Email'}
-              </span>
-            </span>
-          )}
+          <ChipMetodo metodo={metodo} className="barra-pase-chip" />
         </div>
         <span className="barra-pase-corte" aria-hidden="true" />
         <button type="button" onClick={salir} className="boton-salir" aria-label="Cerrar sesión" title="Cerrar sesión">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path className="salir-puerta" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <path className="salir-flecha" d="M16 17l5-5-5-5M21 12H9" />
-          </svg>
+          <IconoSalir />
         </button>
       </div>
     </nav>
-  );
-}
-
-function LogoGoogle() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 48 48" aria-hidden="true">
-      <path fill="#4285F4" d="M44.5 24.5c0-1.6-.1-2.8-.4-4.1H24v7.7h11.6c-.5 2.9-2.2 5.3-4.8 7l7.4 5.7c4.3-4 6.3-9.8 6.3-16.3z" />
-      <path fill="#34A853" d="M24 45c5.8 0 10.7-1.9 14.2-5.2l-7.4-5.7c-2 1.3-4.6 2.2-6.8 2.2-5.6 0-10.4-3.8-12.1-8.9l-7.6 5.9C7.8 40.1 15.3 45 24 45z" />
-      <path fill="#FBBC05" d="M11.9 27.4c-.4-1.3-.7-2.6-.7-4s.3-2.7.7-4l-7.6-5.9C2.8 16.5 2 19.6 2 23.4s.8 6.9 2.3 9.9l7.6-5.9z" />
-      <path fill="#EA4335" d="M24 10.5c3.1 0 5.9 1.1 8.1 3.2l6.5-6.5C34.7 3.5 29.8 1.5 24 1.5 15.3 1.5 7.8 6.4 4.3 13.5l7.6 5.9c1.7-5.1 6.5-8.9 12.1-8.9z" />
-    </svg>
-  );
-}
-
-function IconoEmail() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3" y="5" width="18" height="14" rx="3" />
-      <path d="M4 7l8 6 8-6" />
-    </svg>
   );
 }
 

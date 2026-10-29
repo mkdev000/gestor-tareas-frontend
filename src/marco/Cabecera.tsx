@@ -1,6 +1,7 @@
 // marco/Cabecera.tsx
 // La cabecera de la web (Fase 4, paso 4.5), igual que en el prototipo:
 // a la izquierda el nombre de la pantalla y la fecha de hoy; a la derecha el botón "Nueva tarea".
+// Solo en pantallas anchas (lg); en el móvil están el título grande y el rombo + de la barra de abajo (paso 4.6).
 // El botón (idea A, "el borde que se dibuja"): al pasar el ratón, un trazo recorre el borde como un
 // bolígrafo, el fondo se rellena de izquierda a derecha y el + gira. Todo con CSS (ver index.css).
 import { hoyISO, fechaLarga } from '../utils/dias';
@@ -12,7 +13,7 @@ interface Props {
 
 function Cabecera({ titulo, alNuevaTarea }: Props) {
   return (
-    <header className="sticky top-0 z-10 flex h-[72px] shrink-0 items-center gap-3 border-b border-[#e3e8ef] bg-white px-4 sm:px-8">
+    <header className="sticky top-0 z-10 hidden h-[72px] shrink-0 items-center gap-3 border-b border-[#e3e8ef] bg-white px-8 lg:flex">
       <div className="flex min-w-0 grow flex-col">
         <h1 className="truncate text-xl font-extrabold tracking-[-0.3px]">{titulo}</h1>
         <span className="text-[13px] text-[#5b6b7c]">{fechaLarga(hoyISO())}</span>

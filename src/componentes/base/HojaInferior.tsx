@@ -7,8 +7,9 @@
 //  - se cierra con Escape, tocando el fondo oscuro o la rayita
 //  - mientras está abierta, el tabulador no se escapa de ella, y al cerrarla el foco vuelve a donde estaba
 //  - la página de detrás no se mueve con el scroll
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { useDialogo } from './useDialogo';
 
 interface Props {
   abierta: boolean;
@@ -17,56 +18,10 @@ interface Props {
   children: ReactNode;
 }
 
-const ENFOCABLES = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
 function HojaInferior({ abierta, alCerrar, etiqueta, children }: Props) {
   const hoja = useRef<HTMLDivElement>(null);
-  // Guardamos alCerrar en una referencia para no volver a montar los efectos si la función cambia
-  const cerrar = useRef(alCerrar);
-  useEffect(() => {
-    cerrar.current = alCerrar;
-  }, [alCerrar]);
-
-  useEffect(() => {
-    if (!abierta) return;
-
-    const focoAnterior = document.activeElement as HTMLElement | null;
-    const overflowAnterior = document.body.style.overflow;
-    document.body.style.overflow = 'hidden'; // la página de detrás no se mueve
-    hoja.current?.focus();
-
-    const alPulsarTecla = (evento: KeyboardEvent) => {
-      if (evento.key === 'Escape') {
-        evento.preventDefault();
-        cerrar.current();
-        return;
-      }
-      // Tabulador: al llegar al último elemento vuelve al primero (y al revés con Mayús)
-      if (evento.key === 'Tab' && hoja.current) {
-        const elementos = Array.from(hoja.current.querySelectorAll<HTMLElement>(ENFOCABLES));
-        if (elementos.length === 0) {
-          evento.preventDefault();
-          return;
-        }
-        const primero = elementos[0];
-        const ultimo = elementos[elementos.length - 1];
-        if (evento.shiftKey && (document.activeElement === primero || document.activeElement === hoja.current)) {
-          evento.preventDefault();
-          ultimo.focus();
-        } else if (!evento.shiftKey && document.activeElement === ultimo) {
-          evento.preventDefault();
-          primero.focus();
-        }
-      }
-    };
-    document.addEventListener('keydown', alPulsarTecla);
-
-    return () => {
-      document.removeEventListener('keydown', alPulsarTecla);
-      document.body.style.overflow = overflowAnterior;
-      focoAnterior?.focus(); // el foco vuelve al botón que la abrió
-    };
-  }, [abierta]);
+  // Escape, foco atrapado, foco de vuelta y página quieta: todo en useDialogo (paso 4.6)
+  useDialogo(abierta, hoja, alCerrar);
 
   if (!abierta) return null;
 
