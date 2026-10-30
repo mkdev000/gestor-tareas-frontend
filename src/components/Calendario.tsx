@@ -3,6 +3,7 @@ import FormularioTarea from './FormularioTarea';
 import { colorBarraPrioridad } from '../utils/prioridad';
 import { colorPorEstado } from '../utils/estado';
 import { pedirConSesion } from '../utils/sesion';
+import { hoyISO } from '../utils/dias';
 
 interface Tarea {
   id: number;
@@ -36,7 +37,8 @@ function Calendario({ tareas, onCambio }: Props) {
   );
   const [tareaEditando, setTareaEditando] = useState<Tarea | null>(null);
 
-  const hoyTexto = ahora.toISOString().slice(0, 10);
+  // Hoy en TU hora (antes con toISOString, que entre las 00:00 y las 02:00 decía "ayer") (paso 4.7)
+  const hoyTexto = hoyISO();
 
   const irMesAnterior = () => {
     if (mes === 0) {
@@ -101,18 +103,21 @@ function Calendario({ tareas, onCambio }: Props) {
   return (
     <>
       <div className="flex items-center justify-between mb-5">
-        <h1 className="font-bold text-xl text-marino">
+        {/* h2: el título principal (h1) de la pantalla ya lo pone el marco (paso 4.7) */}
+        <h2 className="font-bold text-xl text-marino">
           {nombresMeses[mes]} {anio}
-        </h1>
+        </h2>
         <div className="flex gap-1">
           <button
             onClick={irMesAnterior}
+            aria-label="Mes anterior"
             className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-muted hover:bg-fondo transition cursor-pointer"
           >
             ‹
           </button>
           <button
             onClick={irMesSiguiente}
+            aria-label="Mes siguiente"
             className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-muted hover:bg-fondo transition cursor-pointer"
           >
             ›
