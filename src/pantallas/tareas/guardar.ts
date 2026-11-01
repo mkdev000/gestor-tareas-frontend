@@ -58,7 +58,8 @@ function guardarCategorias(tareaId: number, ids: number[]) {
 
 // ---------- Crear ----------
 // Recibe la frase ya leída (y con los paneles aplicados). Devuelve el id de la tarea nueva.
-export async function crearTarea(p: FraseLeida, hoy: string, categorias: Categoria[]) {
+// subtareas: los títulos de las subtareas escritas en la hoja del móvil (en la web, ninguna)
+export async function crearTarea(p: FraseLeida, hoy: string, categorias: Categoria[], subtareas: string[] = []) {
   const fecha = p.fecha || hoy;
   const { id } = await pedir<{ id: number }>('/api/tareas', 'POST', {
     titulo: p.titulo,
@@ -73,6 +74,7 @@ export async function crearTarea(p: FraseLeida, hoy: string, categorias: Categor
     icono: p.icono,
   });
   if (p.categorias.length) await guardarCategorias(id, await idsDeCategorias(p.categorias, categorias));
+  for (const titulo of subtareas) await crearSubtarea(id, titulo);
   return id;
 }
 
@@ -165,4 +167,20 @@ export function crearSubtarea(tareaId: number, titulo: string) {
 
 export function marcarSubtarea(id: number, hecha: boolean) {
   return pedir(`/api/subtareas/${id}`, 'PATCH', { hecha });
+}
+
+export function borrarSubtarea(id: number) {
+  return pedir(`/api/subtareas/${id}`, 'DELETE');
+}
+
+// Hoja del móvil al editar: deja las subtareas de la tarea igual que la lista de títulos de la hoja.
+// Las que siguen se quedan como están (con su marca de hecha), las quitadas se borran y las nuevas se crean.
+export async function sincronizarSubtareas(t: Tarea, titulos: string[]) {
+  const actuales = [...(t.subtareas ?? [])];
+  for (const titulo of titulos) {
+    const i = actuales.findIndex((s) => s.titulo === titulo);
+    if (i >= 0) actuales.splice(i, 1); // ya existía: se queda
+    else await crearSubtarea(t.id, titulo);
+  }
+  for (const sobrante of actuales) await borrarSubtarea(sobrante.id);
 }
