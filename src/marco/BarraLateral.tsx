@@ -82,8 +82,7 @@ function FilaCategoria({ categoria, activa, oscuro }: { categoria: ResumenCatego
   const base = ES_COLOR.test(categoria.color) ? categoria.color : COLOR_POR_DEFECTO;
   const color = oscuro ? aclarar(base, 0.45) : base;
   const apagado = `${color}38`; // "38" al final = 22 % de opacidad: el trocito sin hacer
-  const vacia = total === 0;
-  const completa = !vacia && hechas === total;
+  const completa = total > 0 && hechas === total;
 
   return (
     <Link
@@ -92,7 +91,7 @@ function FilaCategoria({ categoria, activa, oscuro }: { categoria: ResumenCatego
       aria-current={activa ? 'page' : undefined}
     >
       <span className="flex items-baseline gap-2">
-        <span className={'barra-categoria-nombre' + (vacia ? ' vacia' : completa ? ' completa' : '')}>
+        <span className={'barra-categoria-nombre' + (completa ? ' completa' : '')}>
           {categoria.nombre}
           {completa && (
             // El trazo de Tachit tacha el nombre: ¡categoría terminada esta semana!
@@ -101,9 +100,9 @@ function FilaCategoria({ categoria, activa, oscuro }: { categoria: ResumenCatego
             </svg>
           )}
         </span>
-        <span className="barra-categoria-cuenta">{vacia ? 'Sin tareas' : `${hechas}/${total}${completa ? ' ✓' : ''}`}</span>
+        <span className="barra-categoria-cuenta">{`${hechas}/${total}${completa ? ' ✓' : ''}`}</span>
       </span>
-      {!vacia && total <= MAXIMO_TROZOS && (
+      {total <= MAXIMO_TROZOS && (
         <span className="flex gap-1" aria-hidden="true">
           {Array.from({ length: total }, (_, i) => (
             <span key={i} className="h-1.5 flex-1 rounded-full" style={{ background: i < hechas ? color : apagado }} />
@@ -119,10 +118,10 @@ function FilaCategoria({ categoria, activa, oscuro }: { categoria: ResumenCatego
   );
 }
 
-// Orden: primero las que tienen tareas por hacer, luego las terminadas y al final las que no tienen tareas
-// (dentro de cada grupo se respeta el orden alfabético que manda el servidor)
+// Orden: primero las que tienen tareas por hacer y después las terminadas hoy
+// (dentro de cada grupo se respeta el orden alfabético que manda el servidor).
+// Las que no tienen tareas esta semana o se terminaron antes de hoy ya no llegan (useResumenBarra las oculta).
 function grupo(c: ResumenCategoria) {
-  if (c.total === 0) return 2;
   return c.hechas === c.total ? 1 : 0;
 }
 
@@ -165,7 +164,7 @@ function BarraLateral({ resumen }: { resumen: ResumenBarra }) {
         </NavLink>
       ))}
 
-      {/* Si aún no tienes categorías, la sección no sale (su estado vacío se diseña en la Fase 5) */}
+      {/* Si ninguna categoría tiene tareas esta semana, la sección no sale */}
       {ordenadas.length > 0 && (
         <>
           <div className="barra-seccion mx-2 mt-[22px] mb-2 text-[11px] font-bold tracking-[1.2px]">
