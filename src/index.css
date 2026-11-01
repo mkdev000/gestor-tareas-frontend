@@ -1,10 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+/* La letra de Tachit: Plus Jakarta Sans (las antiguas de KmTask, Quicksand e Inter, ya no se descargan) */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
-/* ===== Colores antiguos de KmTask (se mantienen para no romper nada) ===== */
+/* ===== Colores antiguos de KmTask =====
+   Solo quedan los que todavía usan la lista de tareas y el calendario antiguos.
+   Se borran cuando esas pantallas se rehagan como el prototipo (Fases 5, 6 y 8). */
 @theme {
   --color-fondo: #F7F8FB;
-  --color-tarjeta: #FFFFFF;
   --color-texto: #24243A;
   --color-muted: #8A8AA3;
 
@@ -18,10 +20,7 @@
   --color-verde-suave: #DFF6EC;
   --color-marino: #0a1e2f;
   --color-naranja: #F2711C;
-  --color-naranja-suave: #FDE9DA;
-  --color-marino-claro: #132b41;
 
-  --font-quicksand: 'Quicksand', sans-serif;
   --font-jakarta: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
 
