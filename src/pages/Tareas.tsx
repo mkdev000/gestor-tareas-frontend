@@ -4,6 +4,9 @@
 //  2. La caja para crear escribiendo como hablas, con la frase de colores y sus paneles (paso 5.3)
 //  3. Los filtros: Hoy · Próximo · Todas · Completadas · #categorías, y el buscador (paso 5.4)
 //  4. Las tarjetas de tarea con sus subtareas (pasos 5.4 y 5.5)
+// En el móvil (paso 5.6), como en el prototipo móvil: filtros que se deslizan de lado, tarjetas que se
+// deslizan con el dedo (derecha = completar, izquierda = borrar, tocar = editar) y, para crear o editar,
+// la hoja que sube desde abajo (HojaCrearMovil) en lugar de la caja de la web.
 // La pantalla guarda "qué se ve" (filtro, búsqueda, qué tarjeta está abierta...);
 // lo que se habla con el servidor está en pantallas/tareas/guardar.ts.
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -13,6 +16,9 @@ import AvisoFlotante, { type DatosAviso } from '../componentes/base/AvisoFlotant
 import CabeceraTareas from '../pantallas/tareas/CabeceraTareas';
 import CajaCrear, { type ResultadoCaja } from '../pantallas/tareas/CajaCrear';
 import TarjetaTarea from '../pantallas/tareas/TarjetaTarea';
+import TarjetaMovil from '../pantallas/tareas/TarjetaMovil';
+import HojaCrearMovil, { type ResultadoHoja } from '../pantallas/tareas/HojaCrearMovil';
+import { useEsWeb } from '../utils/useEsWeb';
 import { useTareas, type Tarea } from '../pantallas/useTareas';
 import { alternarCompletada, borrarTarea, crearSubtarea, marcarSubtarea } from '../pantallas/tareas/guardar';
 import { normalizar, textoDia } from '../pantallas/tareas/frase';
@@ -48,6 +54,8 @@ function Tareas() {
   const [ahora, setAhora] = useState(minutosAhora);
   const temporizador = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const ocupadas = useRef(new Set<number>()); // tareas que se están guardando (evita dobles clics)
+  const esWeb = useEsWeb();
+  const [cajaCerradaEn, setCajaCerradaEn] = useState<number | undefined>(undefined);
 
   // La hora avanza cada minuto (para saber qué tareas van "atrasadas")
   useEffect(() => {
@@ -110,7 +118,28 @@ function Tareas() {
       return (minutosDe(a.hora_limite) ?? 9999) - (minutosDe(b.hora_limite) ?? 9999);
     });
 
-  const editando = editandoId !== null ? tareas.find((t) => t.id === editandoId) ?? null : null;
+  const editando = editandoId !== null ? (tareas.find((t) => t.id === editandoId) ?? null) : null;
+  // Móvil: la hoja de crear está abierta si editas una tarea o si has pulsado "+" y aún no la has cerrado
+  // (se calcula al dibujar: así no hace falta un useEffect que cambie el estado)
+  const hojaAbierta = !esWeb && (editando !== null || (pedirFoco !== undefined && pedirFoco !== cajaCerradaEn));
+  const cerrarHoja = () => {
+    if (editando) setEditandoId(null);
+    else setCajaCerradaEn(pedirFoco);
+  };
+  const alGuardarHoja = (r: ResultadoHoja) => {
+    if (r.tipo === 'varias') {
+      avisar('Pegado múltiple', r.ids.length === 1 ? '1 tarea creada.' : `${r.ids.length} tareas creadas, una por línea.`);
+      elegirFiltro('todas');
+      resaltar(r.ids);
+    } else {
+      avisar(r.titulo, r.texto);
+      resaltar([r.id]);
+    }
+    setEditandoId(null);
+    setCajaCerradaEn(pedirFoco);
+    setCreandoPrimera(false);
+    alCambiar();
+  };
 
   // ---------- Acciones ----------
   const alGuardarCaja = (r: ResultadoCaja) => {
@@ -162,7 +191,7 @@ function Tareas() {
 
   const marcarSub = async (t: Tarea, id: number, valor: boolean) => {
     cambiarLocal((lista) =>
-      lista.map((x) => (x.id !== t.id ? x : { ...x, subtareas: (x.subtareas ?? []).map((s) => (s.id === id ? { ...s, hecha: valor } : s)) }))
+      lista.map((x) => (x.id !== t.id ? x : { ...x, subtareas: (x.subtareas ?? []).map((s) => (s.id === id ? { ...s, hecha: valor } : s)) })),
     );
     try {
       await marcarSubtarea(id, valor);
@@ -224,20 +253,64 @@ function Tareas() {
         <>
           <CabeceraTareas tareas={tareas} alIrATarea={irATarea} />
 
-          <CajaCrear
-            key={editando ? `editar-${editando.id}` : 'nueva'}
-            hoy={hoy}
-            categorias={categorias}
-            editando={editando}
-            pedirFoco={pedirFoco}
-            alGuardar={alGuardarCaja}
-            alError={avisarError}
-            alCancelarEdicion={() => setEditandoId(null)}
-            alBorrar={borrar}
-          />
+          {/* Web: la caja de crear escribiendo. En el móvil se crea con la hoja de abajo (al final de la pantalla) */}
+          {esWeb && (
+            <CajaCrear
+              key={editando ? `editar-${editando.id}` : 'nueva'}
+              hoy={hoy}
+              categorias={categorias}
+              editando={editando}
+              pedirFoco={pedirFoco}
+              alGuardar={alGuardarCaja}
+              alError={avisarError}
+              alCancelarEdicion={() => setEditandoId(null)}
+              alBorrar={borrar}
+            />
+          )}
 
-          {/* Filtros y buscador */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Móvil: filtros que se deslizan de lado (sin contadores) y la pista de los gestos */}
+          <div className="relative -mx-5 lg:hidden">
+            <div role="group" aria-label="Filtrar tareas" className="sin-barra flex gap-2 overflow-x-auto px-5 pb-1">
+              {FILTROS.map((f) => (
+                <button
+                  key={f.clave}
+                  type="button"
+                  aria-pressed={idCategoria === null && filtro === f.clave}
+                  onClick={() => elegirFiltro(f.clave)}
+                  className="filtro-movil"
+                >
+                  {f.clave === 'hechas' ? 'Hechas' : f.texto}
+                </button>
+              ))}
+              {categorias.map((c) => (
+                <button key={c.id} type="button" aria-pressed={idCategoria === c.id} onClick={() => elegirCategoria(c.id)} className="filtro-movil">
+                  #{c.nombre}
+                </button>
+              ))}
+              <span aria-hidden="true" className="w-6 shrink-0" />
+            </div>
+            <span aria-hidden="true" className="filtro-movil-degradado" />
+          </div>
+          <p className="flex items-center gap-2 text-xs text-[#5b6b7c] lg:hidden">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              className="shrink-0"
+            >
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+            Toca una tarea para editarla · desliza a la derecha para completar, a la izquierda para borrar
+          </p>
+
+          {/* Web: filtros y buscador */}
+          <div className="hidden flex-wrap items-center gap-2 lg:flex">
             <div role="group" aria-label="Filtrar tareas" className="flex flex-wrap items-center gap-2">
               {FILTROS.map((f) => (
                 <ChipFiltro
@@ -274,28 +347,62 @@ function Tareas() {
 
           {/* La lista */}
           <div className="flex flex-col gap-2.5">
-            {visibles.map((t) => (
-              <TarjetaTarea
-                key={t.id}
-                tarea={t}
-                hoy={hoy}
-                ahora={ahora}
-                abierta={!!abiertas[t.id]}
-                resaltada={resaltadas.includes(t.id)}
-                editandose={editandoId === t.id}
-                alCompletar={() => completar(t)}
-                alAbrir={() => setAbiertas((a) => ({ ...a, [t.id]: !a[t.id] }))}
-                alEditar={() => setEditandoId(t.id)}
-                alBorrar={() => borrar(t)}
-                alMarcarSubtarea={(id, valor) => marcarSub(t, id, valor)}
-                alAnadirSubtarea={(titulo) => anadirSub(t, titulo)}
-              />
-            ))}
-            {cargadas && visibles.length === 0 && (
-              <p className="rounded-xl border border-dashed border-[#cfd8e3] bg-white p-10 text-center text-[#5b6b7c]">No hay tareas en esta vista.</p>
+            {visibles.map((t) =>
+              esWeb ? (
+                <TarjetaTarea
+                  key={t.id}
+                  tarea={t}
+                  hoy={hoy}
+                  ahora={ahora}
+                  abierta={!!abiertas[t.id]}
+                  resaltada={resaltadas.includes(t.id)}
+                  editandose={editandoId === t.id}
+                  alCompletar={() => completar(t)}
+                  alAbrir={() => setAbiertas((a) => ({ ...a, [t.id]: !a[t.id] }))}
+                  alEditar={() => setEditandoId(t.id)}
+                  alBorrar={() => borrar(t)}
+                  alMarcarSubtarea={(id, valor) => marcarSub(t, id, valor)}
+                  alAnadirSubtarea={(titulo) => anadirSub(t, titulo)}
+                />
+              ) : (
+                <TarjetaMovil
+                  key={t.id}
+                  tarea={t}
+                  hoy={hoy}
+                  ahora={ahora}
+                  resaltada={resaltadas.includes(t.id)}
+                  alCompletar={() => completar(t)}
+                  alBorrar={() => borrar(t)}
+                  alEditar={() => setEditandoId(t.id)}
+                />
+              ),
             )}
+            {cargadas &&
+              visibles.length === 0 &&
+              (esWeb ? (
+                <p className="rounded-xl border border-dashed border-[#cfd8e3] bg-white p-10 text-center text-[#5b6b7c]">
+                  No hay tareas en esta vista.
+                </p>
+              ) : (
+                <p className="rounded-2xl border border-dashed border-[#cfd8e3] p-8 text-center text-[#5b6b7c]">No hay tareas aquí.</p>
+              ))}
           </div>
         </>
+      )}
+
+      {hojaAbierta && (
+        <HojaCrearMovil
+          key={editando ? `editar-${editando.id}` : `nueva-${pedirFoco}`}
+          hoy={hoy}
+          ahora={ahora}
+          tareas={tareas}
+          categorias={categorias}
+          editando={editando}
+          alCerrar={cerrarHoja}
+          alGuardar={alGuardarHoja}
+          alError={avisarError}
+          alBorrar={borrar}
+        />
       )}
 
       {aviso && <AvisoFlotante aviso={aviso} alCerrar={cerrarAviso} />}

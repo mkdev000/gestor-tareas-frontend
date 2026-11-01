@@ -8,9 +8,8 @@
 // Al pulsar el lápiz de una tarea, esta misma caja pasa a "EDITANDO" con los datos de esa tarea.
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { Tarea, CategoriaDeLista } from '../useTareas';
-import { deTextoISO } from '../../utils/dias';
 import {
-  leerFrase, aplicarOpciones, avisoActual, normalizar, textoDia, textoDuracion, textoAviso, textoRepeticion, horaConCeros,
+  leerFrase, aplicarOpciones, avisoActual, desdeTarea, normalizar, textoDia, textoDuracion, textoAviso, textoRepeticion, horaConCeros,
   OPCIONES_VACIAS, type OpcionesFrase,
 } from './frase';
 import { ICONOS_TAREA } from './iconosTarea';
@@ -41,27 +40,6 @@ interface Props {
   alError: (mensaje: string) => void;
   alCancelarEdicion: () => void;
   alBorrar: (tarea: Tarea) => void;
-}
-
-// Al editar: la tarea se convierte en frase + opciones (como editPatch en el prototipo)
-function desdeTarea(t: Tarea): { borrador: string; op: OpcionesFrase } {
-  const etiquetas = (t.categorias ?? []).map((c) => `#${c.nombre.replace(/\s+/g, '_')}`).join(' ');
-  const fecha = t.fecha_limite ? t.fecha_limite.slice(0, 10) : '';
-  let dias: number[] = [];
-  if (t.repeticion === 'diaria') dias = [1, 2, 3, 4, 5, 6, 0];
-  if (t.repeticion === 'semanal') dias = t.dias_semana && t.dias_semana.length ? [...t.dias_semana] : fecha ? [deTextoISO(fecha).getDay()] : [];
-  return {
-    borrador: t.titulo + (etiquetas ? ` ${etiquetas}` : ''),
-    op: {
-      fecha,
-      hora: t.hora_limite ? t.hora_limite.slice(0, 5) : '',
-      aviso: t.aviso_min !== null && t.aviso_min !== undefined ? (String(t.aviso_min) as OpcionesFrase['aviso']) : 'sin',
-      dias,
-      mensual: t.repeticion === 'mensual',
-      duracion: t.duracion_min ?? null,
-      icono: t.icono ?? '',
-    },
-  };
 }
 
 // Las palabras de colores de la frase (como wTok en el prototipo)
