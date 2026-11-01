@@ -1,93 +1,220 @@
 // pages/Tareas.tsx
-// La pantalla de Tareas DENTRO del marco nuevo (Fase 4, paso 4.7).
-// Es la lista que ya tenías, sin su barra oscura antigua: ahora para moverse están la barra lateral
-// (web) y la barra de abajo (móvil). En la Fase 5 se rehace entera como en el prototipo.
-//  - Filtros: Todas · Hoy · Próximas · Recientes (con los botones redondos del paso 4.3)
-//  - Categoría: si llegas desde la barra lateral (/tareas?categoria=3), solo se ven las de esa categoría
-//  - "Nueva tarea" (cabecera o rombo +): abre el formulario
-// "Mi ritmo" (antes "Reportes") y el calendario ya tienen su propia pantalla.
-import { useState } from 'react';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import FormularioTarea from '../components/FormularioTarea';
-import ListaTareas from '../components/ListaTareas';
-import Recientes from '../components/Recientes';
+// La pantalla de Tareas, igual que en el prototipo (Fase 5):
+//  1. Arriba (web): el saludo y el "Pulso del día" (paso 5.2)
+//  2. La caja para crear escribiendo como hablas, con la frase de colores y sus paneles (paso 5.3)
+//  3. Los filtros: Hoy · Próximo · Todas · Completadas · #categorías, y el buscador (paso 5.4)
+//  4. Las tarjetas de tarea con sus subtareas (pasos 5.4 y 5.5)
+// La pantalla guarda "qué se ve" (filtro, búsqueda, qué tarjeta está abierta...);
+// lo que se habla con el servidor está en pantallas/tareas/guardar.ts.
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import ChipFiltro from '../componentes/base/ChipFiltro';
+import AvisoFlotante, { type DatosAviso } from '../componentes/base/AvisoFlotante';
+import CabeceraTareas from '../pantallas/tareas/CabeceraTareas';
+import CajaCrear, { type ResultadoCaja } from '../pantallas/tareas/CajaCrear';
+import TarjetaTarea from '../pantallas/tareas/TarjetaTarea';
 import { useTareas, type Tarea } from '../pantallas/useTareas';
+import { alternarCompletada, borrarTarea, crearSubtarea, marcarSubtarea } from '../pantallas/tareas/guardar';
+import { normalizar, textoDia } from '../pantallas/tareas/frase';
+import { minutosDe } from '../pantallas/tareas/pulso';
 import { hoyISO } from '../utils/dias';
 
-type Filtro = 'todas' | 'hoy' | 'proximas' | 'recientes';
+type Filtro = 'hoy' | 'proximo' | 'todas' | 'hechas';
 
-const SUBTITULOS: Record<Filtro, string> = {
-  todas: 'Todo lo que tienes por hacer, en un solo sitio.',
-  hoy: 'Lo que toca resolver antes de que acabe el día.',
-  proximas: 'Lo que se acerca, para que no te pille por sorpresa.',
-  recientes: 'Las últimas tareas que has añadido.',
+const FILTROS: { clave: Filtro; texto: string }[] = [
+  { clave: 'hoy', texto: 'Hoy' },
+  { clave: 'proximo', texto: 'Próximo' },
+  { clave: 'todas', texto: 'Todas' },
+  { clave: 'hechas', texto: 'Completadas' },
+];
+
+const minutosAhora = () => {
+  const d = new Date();
+  return d.getHours() * 60 + d.getMinutes();
 };
 
 function Tareas() {
-  const { tareas, cargadas, error, alCambiar } = useTareas();
+  const { tareas, categorias, cargadas, error, alCambiar, cambiarLocal } = useTareas();
   const location = useLocation();
-  const navigate = useNavigate();
-  const [parametros] = useSearchParams();
-  const [filtro, setFiltro] = useState<Filtro>('todas');
-  const [formularioAbierto, setFormularioAbierto] = useState(false);
-  const nombre = localStorage.getItem('nombre') || 'Usuario';
+  const [parametros, setParametros] = useSearchParams();
+  const [filtro, setFiltro] = useState<Filtro>('hoy');
+  const [busqueda, setBusqueda] = useState('');
+  const [abiertas, setAbiertas] = useState<Record<number, boolean>>({});
+  const [resaltadas, setResaltadas] = useState<number[]>([]);
+  const [editandoId, setEditandoId] = useState<number | null>(null);
+  const [aviso, setAviso] = useState<DatosAviso | null>(null);
+  const [focoLocal, setFocoLocal] = useState<number | undefined>(undefined);
+  const [creandoPrimera, setCreandoPrimera] = useState(false);
+  const [ahora, setAhora] = useState(minutosAhora);
+  const temporizador = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const ocupadas = useRef(new Set<number>()); // tareas que se están guardando (evita dobles clics)
 
-  // "Nueva tarea" desde el marco: llega un número distinto cada vez que lo pulsas (Date.now()).
-  // Recordamos el último que ya atendimos; si llega uno nuevo, el formulario se abre.
-  // (Así no hace falta un useEffect que cambie el estado: se calcula al dibujar.)
+  // La hora avanza cada minuto (para saber qué tareas van "atrasadas")
+  useEffect(() => {
+    const reloj = setInterval(() => setAhora(minutosAhora()), 60_000);
+    return () => {
+      clearInterval(reloj);
+      clearTimeout(temporizador.current);
+    };
+  }, []);
+
+  const hoy = hoyISO();
+  const cerrarAviso = useCallback(() => setAviso(null), []);
+  const avisar = (titulo: string, texto: string) => setAviso({ titulo, texto });
+  const avisarError = (texto: string) => setAviso({ titulo: 'No se pudo guardar', texto });
+
+  // "Nueva tarea" desde el marco (botón de la barra o rombo +): llega un número nuevo cada vez
   const peticionNueva = (location.state as { nuevaTarea?: number } | null)?.nuevaTarea;
-  const [peticionAtendida, setPeticionAtendida] = useState<number | undefined>(undefined);
-  const mostrarFormulario = formularioAbierto || (peticionNueva !== undefined && peticionNueva !== peticionAtendida);
-  const cerrarFormulario = () => {
-    setFormularioAbierto(false);
-    setPeticionAtendida(peticionNueva);
-    // Borramos el aviso del historial: si vuelves atrás a esta pantalla, el formulario no se abre solo
-    if (peticionNueva !== undefined) navigate({ pathname: location.pathname, search: location.search }, { replace: true, state: null });
+  const pedirFoco = focoLocal ?? peticionNueva;
+
+  // Resaltar unas tarjetas un momento (las recién creadas, o a la que saltas desde el pulso)
+  const resaltar = (ids: number[]) => {
+    clearTimeout(temporizador.current);
+    setResaltadas(ids);
+    temporizador.current = setTimeout(() => setResaltadas([]), 2600);
   };
 
-  // Hoy en TU hora (antes se usaba toISOString, que entre las 00:00 y las 02:00 decía "ayer")
-  const hoy = hoyISO();
-  const dia = (t: Tarea) => (t.fecha_limite ? t.fecha_limite.slice(0, 10) : null);
-  const deHoy = tareas.filter((t) => dia(t) === hoy && t.estado !== 'completada');
-  const proximas = tareas.filter((t) => {
-    const d = dia(t);
-    return d !== null && d > hoy;
-  });
-
-  // Categoría elegida en la barra lateral (solo números: lo que venga raro en la dirección se ignora)
+  // ---------- Filtros ----------
+  // La categoría va en la dirección (/tareas?categoria=3), así funciona el enlace de la barra lateral
   const textoCategoria = parametros.get('categoria');
   const idCategoria = textoCategoria && /^\d+$/.test(textoCategoria) ? Number(textoCategoria) : null;
-  const nombreCategoria =
-    idCategoria === null ? null : tareas.flatMap((t) => t.categorias ?? []).find((c) => c.id === idCategoria)?.nombre ?? 'Categoría';
 
-  const porFiltro: Record<Filtro, Tarea[]> = {
-    todas: tareas,
-    hoy: deHoy,
-    proximas,
-    recientes: [...tareas]
-      .sort((a, b) => new Date(b.fecha_creacion.replace(' ', 'T')).getTime() - new Date(a.fecha_creacion.replace(' ', 'T')).getTime())
-      .slice(0, 5),
+  const dia = (t: Tarea) => (t.fecha_limite ? t.fecha_limite.slice(0, 10) : null);
+  const hecha = (t: Tarea) => t.estado === 'completada';
+  const cumple = (t: Tarea, f: Filtro) => {
+    const d = dia(t);
+    if (f === 'hoy') return d === hoy;
+    if (f === 'proximo') return d !== null && d > hoy && !hecha(t);
+    if (f === 'hechas') return hecha(t);
+    return true;
   };
-  const visibles = porFiltro[filtro].filter((t) => idCategoria === null || t.categorias?.some((c) => c.id === idCategoria));
+  const deCategoria = (t: Tarea, id: number) => (t.categorias ?? []).some((c) => c.id === id);
 
-  const FILTROS: { clave: Filtro; texto: string }[] = [
-    { clave: 'todas', texto: 'Todas' },
-    { clave: 'hoy', texto: 'Hoy' },
-    { clave: 'proximas', texto: 'Próximas' },
-    { clave: 'recientes', texto: 'Recientes' },
-  ];
+  const elegirFiltro = (f: Filtro) => {
+    setFiltro(f);
+    if (idCategoria !== null) setParametros({}, { replace: true });
+  };
+  const elegirCategoria = (id: number) => setParametros({ categoria: String(id) }, { replace: true });
+
+  const q = normalizar(busqueda);
+  const visibles = tareas
+    .filter((t) => (idCategoria !== null ? deCategoria(t, idCategoria) : cumple(t, filtro)))
+    .filter((t) => !q || normalizar(t.titulo).includes(q))
+    // Orden: las hechas al final; después por día y por hora (sin día o sin hora, al final)
+    .sort((a, b) => {
+      const porHecha = Number(hecha(a)) - Number(hecha(b));
+      if (porHecha) return porHecha;
+      const da = dia(a) ?? '9999';
+      const db = dia(b) ?? '9999';
+      if (da !== db) return da < db ? -1 : 1;
+      return (minutosDe(a.hora_limite) ?? 9999) - (minutosDe(b.hora_limite) ?? 9999);
+    });
+
+  const editando = editandoId !== null ? tareas.find((t) => t.id === editandoId) ?? null : null;
+
+  // ---------- Acciones ----------
+  const alGuardarCaja = (r: ResultadoCaja) => {
+    if (r.tipo === 'creada') avisar('Tarea creada', 'Fecha, hora y categoría detectadas en tu frase.');
+    if (r.tipo === 'varias') {
+      avisar('Pegado múltiple', r.ids.length === 1 ? '1 tarea creada.' : `${r.ids.length} tareas creadas, una por línea.`);
+      elegirFiltro('todas');
+    }
+    if (r.tipo === 'editada') {
+      avisar('Tarea actualizada', r.titulo);
+      setEditandoId(null);
+    }
+    setCreandoPrimera(false);
+    resaltar(r.ids);
+    alCambiar();
+  };
+
+  const completar = async (t: Tarea) => {
+    if (ocupadas.current.has(t.id)) return;
+    ocupadas.current.add(t.id);
+    // Se ve tachada al momento; si el servidor dice que no, se vuelve a cargar la lista de verdad
+    cambiarLocal((lista) => lista.map((x) => (x.id === t.id ? { ...x, estado: hecha(x) ? 'pendiente' : 'completada' } : x)));
+    try {
+      const siguiente = await alternarCompletada(t);
+      if (siguiente) avisar('Tarea recurrente completada', `Se ha creado la siguiente para ${textoDia(siguiente, hoy).toLowerCase()}.`);
+    } catch (e) {
+      avisarError(e instanceof Error ? e.message : 'No se pudo completar la tarea');
+    } finally {
+      ocupadas.current.delete(t.id);
+      alCambiar();
+    }
+  };
+
+  const borrar = async (t: Tarea) => {
+    if (ocupadas.current.has(t.id)) return;
+    ocupadas.current.add(t.id);
+    if (editandoId === t.id) setEditandoId(null);
+    cambiarLocal((lista) => lista.filter((x) => x.id !== t.id));
+    try {
+      await borrarTarea(t.id);
+      avisar('Tarea eliminada', `“${t.titulo}”`);
+    } catch (e) {
+      avisarError(e instanceof Error ? e.message : 'No se pudo borrar la tarea');
+    } finally {
+      ocupadas.current.delete(t.id);
+      alCambiar();
+    }
+  };
+
+  const marcarSub = async (t: Tarea, id: number, valor: boolean) => {
+    cambiarLocal((lista) =>
+      lista.map((x) => (x.id !== t.id ? x : { ...x, subtareas: (x.subtareas ?? []).map((s) => (s.id === id ? { ...s, hecha: valor } : s)) }))
+    );
+    try {
+      await marcarSubtarea(id, valor);
+    } catch (e) {
+      avisarError(e instanceof Error ? e.message : 'No se pudo guardar la subtarea');
+    } finally {
+      alCambiar();
+    }
+  };
+
+  const anadirSub = async (t: Tarea, titulo: string) => {
+    try {
+      await crearSubtarea(t.id, titulo);
+      alCambiar();
+      return true;
+    } catch (e) {
+      avisarError(e instanceof Error ? e.message : 'No se pudo añadir la subtarea');
+      return false;
+    }
+  };
+
+  // Desde el pulso: filtro "Hoy", sin búsqueda, abre sus subtareas, la resalta y va hasta ella
+  const irATarea = (id: number) => {
+    const t = tareas.find((x) => x.id === id);
+    if (!t) return;
+    setFiltro(dia(t) === hoy ? 'hoy' : 'todas');
+    setBusqueda('');
+    if (idCategoria !== null) setParametros({}, { replace: true });
+    if (t.subtareas?.length) setAbiertas((a) => ({ ...a, [id]: true }));
+    resaltar([id]);
+    setTimeout(() => {
+      const tarjeta = document.getElementById(`tarea-${id}`);
+      tarjeta?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      tarjeta?.focus({ preventScroll: true });
+    }, 60);
+  };
+
+  const sinTareas = cargadas && tareas.length === 0 && !creandoPrimera;
 
   return (
-    <div className="flex max-w-[1100px] flex-col gap-4">
-      {cargadas && tareas.length === 0 ? (
-        // Sin ninguna tarea (el estado vacío bonito se diseña en la Fase 5)
+    <div className="flex flex-col gap-5">
+      {sinTareas ? (
+        // Sin ninguna tarea (el estado vacío del prototipo se programa en el paso 5.7)
         <div className="mt-12 text-center">
-          <p className="mb-2 text-2xl font-extrabold">¡Hola, {nombre}!</p>
+          <p className="mb-2 text-2xl font-extrabold">¡Hola, {localStorage.getItem('nombre') || 'Tú'}!</p>
           <p className="mb-6 text-[#5b6b7c]">Aún no tienes ninguna tarea añadida.</p>
           <button
             type="button"
-            onClick={() => setFormularioAbierto(true)}
+            onClick={() => {
+              setCreandoPrimera(true);
+              setFocoLocal(Date.now());
+            }}
             className="boton-principal cursor-pointer rounded-xl border-0 bg-tachit-acento px-6 py-3 font-extrabold text-tachit-sobre-acento"
           >
             Crear mi primera tarea
@@ -95,45 +222,83 @@ function Tareas() {
         </div>
       ) : (
         <>
-          <div role="group" aria-label="Filtrar tareas" className="flex flex-wrap gap-2">
-            {FILTROS.map((f) => (
-              <ChipFiltro
-                key={f.clave}
-                texto={f.texto}
-                cantidad={f.clave === 'recientes' ? undefined : porFiltro[f.clave].length}
-                activo={filtro === f.clave}
-                alPulsar={() => setFiltro(f.clave)}
-              />
-            ))}
+          <CabeceraTareas tareas={tareas} alIrATarea={irATarea} />
+
+          <CajaCrear
+            key={editando ? `editar-${editando.id}` : 'nueva'}
+            hoy={hoy}
+            categorias={categorias}
+            editando={editando}
+            pedirFoco={pedirFoco}
+            alGuardar={alGuardarCaja}
+            alError={avisarError}
+            alCancelarEdicion={() => setEditandoId(null)}
+            alBorrar={borrar}
+          />
+
+          {/* Filtros y buscador */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div role="group" aria-label="Filtrar tareas" className="flex flex-wrap items-center gap-2">
+              {FILTROS.map((f) => (
+                <ChipFiltro
+                  key={f.clave}
+                  texto={f.texto}
+                  cantidad={tareas.filter((t) => cumple(t, f.clave)).length}
+                  activo={idCategoria === null && filtro === f.clave}
+                  alPulsar={() => elegirFiltro(f.clave)}
+                />
+              ))}
+              {categorias.map((c) => (
+                <ChipFiltro
+                  key={c.id}
+                  texto={`#${c.nombre}`}
+                  color={c.color}
+                  cantidad={tareas.filter((t) => deCategoria(t, c.id)).length}
+                  activo={idCategoria === c.id}
+                  alPulsar={() => elegirCategoria(c.id)}
+                />
+              ))}
+            </div>
+            <input
+              type="search"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              maxLength={100}
+              aria-label="Buscar tareas"
+              placeholder="Buscar por título…"
+              className="tareas-buscar"
+            />
           </div>
 
-          {nombreCategoria && (
-            <p className="flex items-center gap-2 text-sm text-[#5b6b7c]">
-              Solo la categoría <strong className="text-[#0f1f2e]">{nombreCategoria}</strong>
-              <button
-                type="button"
-                onClick={() => navigate('/tareas')}
-                className="cursor-pointer rounded-full border border-[#dde3ea] bg-white px-2.5 py-0.5 text-xs font-bold text-[#33475b] hover:border-tachit-acento-borde"
-              >
-                Ver todas ✕
-              </button>
-            </p>
-          )}
-
-          <p className="text-sm text-[#5b6b7c]">{SUBTITULOS[filtro]}</p>
           {error && <p className="text-sm text-[#b42318]">{error}</p>}
 
-          {filtro === 'recientes' ? (
-            <Recientes tareas={visibles} onCambio={alCambiar} />
-          ) : visibles.length > 0 ? (
-            <ListaTareas tareas={visibles} onCambio={alCambiar} />
-          ) : (
-            cargadas && <p className="text-sm text-[#5b6b7c]">No hay tareas aquí.</p>
-          )}
+          {/* La lista */}
+          <div className="flex flex-col gap-2.5">
+            {visibles.map((t) => (
+              <TarjetaTarea
+                key={t.id}
+                tarea={t}
+                hoy={hoy}
+                ahora={ahora}
+                abierta={!!abiertas[t.id]}
+                resaltada={resaltadas.includes(t.id)}
+                editandose={editandoId === t.id}
+                alCompletar={() => completar(t)}
+                alAbrir={() => setAbiertas((a) => ({ ...a, [t.id]: !a[t.id] }))}
+                alEditar={() => setEditandoId(t.id)}
+                alBorrar={() => borrar(t)}
+                alMarcarSubtarea={(id, valor) => marcarSub(t, id, valor)}
+                alAnadirSubtarea={(titulo) => anadirSub(t, titulo)}
+              />
+            ))}
+            {cargadas && visibles.length === 0 && (
+              <p className="rounded-xl border border-dashed border-[#cfd8e3] bg-white p-10 text-center text-[#5b6b7c]">No hay tareas en esta vista.</p>
+            )}
+          </div>
         </>
       )}
 
-      {mostrarFormulario && <FormularioTarea onTareaCreada={alCambiar} onCancelar={cerrarFormulario} />}
+      {aviso && <AvisoFlotante aviso={aviso} alCerrar={cerrarAviso} />}
     </div>
   );
 }

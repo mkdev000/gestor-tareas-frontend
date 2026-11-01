@@ -682,10 +682,6 @@ body {
   font-weight: 600;
   color: var(--tachit-tinta);
 }
-.barra-categoria-nombre.vacia {
-  font-weight: 500;
-  color: var(--tachit-barra-tenue);
-}
 .barra-categoria-nombre.completa {
   color: var(--tachit-barra-tenue);
 }
@@ -1304,5 +1300,549 @@ button.menu-opcion:active .menu-flecha {
   }
   .menu-cajon {
     animation: none;
+  }
+}
+
+/* ===== Tareas: "Pulso del día" (Fase 5, paso 5.2) ===== */
+/* El anillo se llena con una pequeña animación al marcar una tarea */
+.pulso-anillo {
+  transition: stroke-dasharray 0.6s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+/* "Ahora: ... / Siguiente: ...": parece un enlace y te lleva a esa tarea */
+.pulso-siguiente {
+  display: block;
+  max-width: 100%;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--tachit-acento-fuerte);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--tachit-acento-borde);
+  text-underline-offset: 3px;
+}
+.pulso-siguiente:focus-visible {
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 2px;
+}
+/* Los 7 cuadraditos de la racha: verde si ese día tachaste algo; el de hoy, punteado si aún no */
+.pulso-dia {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  box-sizing: border-box;
+  background: #cfd8e3;
+}
+.pulso-dia.hecho {
+  background: #17804f;
+}
+.pulso-dia.hoy {
+  background: #ffffff;
+  border: 2px dashed var(--tachit-acento);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pulso-anillo {
+    transition: none;
+  }
+}
+
+/* ===== Tareas (Fase 5, pasos 5.3 a 5.5): caja de crear, paneles de la frase y tarjetas ===== */
+/* Lo que aparece (avisos, paneles): entra con un pequeño fundido, como kmFade en el prototipo */
+@keyframes aparecer-suave {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.aparecer {
+  animation: aparecer-suave 0.22s ease;
+}
+
+/* Caja de crear: blanca; en modo "Editando", con borde ámbar */
+.caja-crear {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid var(--tachit-linea);
+  box-shadow: 0 6px 18px rgba(10, 30, 47, 0.05);
+  transition: box-shadow 0.25s, border-color 0.25s;
+}
+.caja-crear.editando {
+  border: 2px solid #f0c46a;
+  box-shadow: 0 0 0 5px rgba(240, 196, 106, 0.18), 0 6px 18px rgba(10, 30, 47, 0.05);
+}
+.caja-crear-boton {
+  height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--tachit-acento-fuerte);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.caja-crear-boton:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.caja-crear-limpiar,
+.caja-crear-pegar {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid #dde3ea;
+  background: #ffffff;
+  color: #4b5a6c;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.caja-crear-limpiar {
+  margin-left: auto;
+}
+.caja-crear-pegar {
+  height: 32px;
+  color: #0f1f2e;
+  font-size: 13px;
+  font-weight: 600;
+}
+.caja-crear-ejemplo {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px dashed var(--tachit-acento-borde);
+  background: var(--tachit-acento-claro);
+  color: var(--tachit-acento-fuerte);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.editando-borrar,
+.editando-cancelar {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.editando-borrar {
+  border: 1px solid #f3c9c0;
+  background: #fff5f3;
+  color: #b42318;
+}
+.editando-cancelar {
+  border: 1px solid #e5d3a6;
+  background: #ffffff;
+  color: #7a4a00;
+}
+
+/* Las palabras de colores de la frase */
+.frase-ficha {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 3px 2px;
+  margin: 0 1px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+/* Paneles */
+.frase-cerrar {
+  margin-left: auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: #ffffff;
+  border: 1px solid #e3e8ef;
+  color: #33475b;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.frase-campo {
+  height: 34px;
+  padding: 0 8px;
+  border-radius: 9px;
+  border: 1px solid #cfd8e3;
+  background: #ffffff;
+  color: #0f1f2e;
+  font-family: inherit;
+  font-size: 13px;
+}
+.frase-dia {
+  width: 36px;
+  height: 48px;
+  padding: 0;
+  box-sizing: border-box;
+  border-radius: 9px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: #ffffff;
+  color: #0f1f2e;
+  border: 1px solid #dde3ea;
+  font-family: inherit;
+  cursor: pointer;
+}
+.frase-dia-nombre {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #5b6b7c;
+}
+.frase-dia.de-la-frase {
+  border: 2px dashed var(--tachit-acento);
+}
+.frase-dia.elegido {
+  background: var(--tachit-panel);
+  color: var(--tachit-panel-texto);
+  border: 1px solid var(--tachit-panel);
+}
+.frase-dia.elegido .frase-dia-nombre {
+  color: var(--tachit-acento-texto);
+}
+.frase-momento {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  color: #33475b;
+  border: 1px solid #cfd8e3;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.frase-momento.de-la-frase {
+  border: 2px dashed var(--tachit-acento);
+}
+.frase-momento.elegido {
+  background: #f5a524;
+  color: #3d2600;
+  border: 2px solid #e0901a;
+  box-shadow: 0 0 0 5px rgba(245, 165, 36, 0.22);
+}
+.frase-momento.elegido.noche {
+  background: var(--tachit-panel);
+  color: var(--tachit-panel-texto);
+  border: 2px solid var(--tachit-panel);
+  box-shadow: none;
+}
+.frase-bloque {
+  flex-grow: 1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  color: #5b6b7c;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.frase-bloque-barra {
+  width: 100%;
+  border-radius: 5px;
+  background: #e1eaf3;
+}
+.frase-bloque.elegido {
+  color: var(--tachit-tinta);
+}
+.frase-bloque.elegido .frase-bloque-barra {
+  background: var(--tachit-panel);
+}
+.frase-regla {
+  position: relative;
+  height: 44px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #f0cbd8;
+  cursor: pointer;
+}
+.frase-regla-relleno {
+  position: absolute;
+  left: 0;
+  top: 14px;
+  height: 16px;
+  border-radius: 0 8px 8px 0;
+  background: var(--tachit-panel);
+  pointer-events: none;
+}
+.frase-regla-tirador {
+  position: absolute;
+  top: 8px;
+  width: 28px;
+  height: 28px;
+  margin-left: -14px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 3px solid var(--tachit-panel);
+  box-shadow: 0 2px 6px rgba(10, 30, 47, 0.25);
+  pointer-events: none;
+}
+.frase-mas-menos {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid #f0cbd8;
+  background: #ffffff;
+  color: #0f1f2e;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.frase-aviso {
+  width: 52px;
+  height: 66px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.frase-semana {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #33475b;
+  border: 1px solid #cfd8e3;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.frase-semana.elegido {
+  background: #0e6f78;
+  color: #ffffff;
+  border-color: #0e6f78;
+}
+.frase-repite {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid #b9dfe2;
+  background: #ffffff;
+  color: #0e6f78;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.frase-repite.elegido {
+  background: #0e6f78;
+  color: #ffffff;
+  border-color: #0e6f78;
+}
+.frase-icono {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* Buscador de tareas */
+.tareas-buscar {
+  margin-left: auto;
+  width: 240px;
+  max-width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid #dde3ea;
+  background: #ffffff;
+  color: #0f1f2e;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+/* Tarjeta de tarea */
+.tarjeta-tarea {
+  background: #ffffff;
+  border: 1px solid #e3e8ef;
+  border-left: 5px solid #4daeeb;
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.tarjeta-tarea:focus {
+  outline: none;
+}
+.tarjeta-tarea.resaltada {
+  border-top-color: var(--tachit-acento);
+  border-right-color: var(--tachit-acento);
+  border-bottom-color: var(--tachit-acento);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tachit-acento) 20%, transparent);
+}
+.tarjeta-tarea.editandose {
+  outline: 2px dashed #f0c46a;
+  outline-offset: 3px;
+}
+.tarjeta-check {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.tarjeta-pastilla {
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+.tarjeta-subtareas {
+  height: 34px;
+  padding: 0 12px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid #dde3ea;
+  background: #ffffff;
+  color: #0f1f2e;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tarjeta-editar,
+.tarjeta-borrar {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.tarjeta-editar {
+  color: var(--tachit-acento-fuerte);
+  opacity: 0.3;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.tarjeta-tarea:hover .tarjeta-editar,
+.tarjeta-editar:focus-visible {
+  opacity: 1;
+}
+.tarjeta-editar:hover {
+  transform: rotate(-12deg) scale(1.08);
+}
+.tarjeta-borrar {
+  color: #7a8898;
+}
+.tarjeta-borrar:hover {
+  color: #b42318;
+}
+.subtarea-check {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  flex-shrink: 0;
+  border-radius: 6px;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.subtarea-nueva {
+  height: 36px;
+  max-width: 420px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px dashed #cfd8e3;
+  background: #fbfcfd;
+  color: #0f1f2e;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+/* Contorno visible al moverse con el teclado (Tab) */
+.caja-crear button:focus-visible,
+.caja-crear input:focus-visible,
+.frase-regla:focus-visible,
+.tarjeta-tarea button:focus-visible,
+.subtarea-nueva:focus-visible,
+.tareas-buscar:focus-visible {
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 2px;
+}
+.caja-crear input#tachit-nueva-tarea:focus-visible {
+  outline: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .aparecer {
+    animation: none;
+  }
+  .tarjeta-editar:hover {
+    transform: none;
   }
 }
