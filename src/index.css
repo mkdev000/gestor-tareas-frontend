@@ -3,8 +3,8 @@
 @import "tailwindcss";
 
 /* ===== Colores antiguos de KmTask =====
-   Solo quedan los que todavía usan la lista de tareas y el calendario antiguos.
-   Se borran cuando esas pantallas se rehagan como el prototipo (Fases 5, 6 y 8). */
+   Solo quedan los que todavía usan el calendario antiguo y su formulario (Calendario.tsx y FormularioTarea.tsx).
+   Se borran cuando el calendario se rehaga como el prototipo (Fase 8). */
 @theme {
   --color-fondo: #F7F8FB;
   --color-texto: #24243A;
@@ -15,9 +15,7 @@
   --color-rosa: #FF6B8A;
   --color-rosa-suave: #FFE3E9;
   --color-ambar: #FFB648;
-  --color-ambar-suave: #FFF1DC;
   --color-verde: #3FBF8F;
-  --color-verde-suave: #DFF6EC;
   --color-marino: #0a1e2f;
   --color-naranja: #F2711C;
 

@@ -65,9 +65,8 @@ function MarcoApp() {
     if (bienvenidaRecibida) navigate(location.pathname, { replace: true, state: null });
   }, [bienvenidaRecibida, location.pathname, navigate]);
 
-  // "Nueva tarea" (el botón de la cabecera y el rombo del móvil): de momento te lleva a Tareas
-  // y avisa de que quieres crear una (en el paso 4.7 la pantalla de Tareas abre su formulario;
-  // el formulario nuevo llega en la Fase 6)
+  // "Nueva tarea" (el botón de la cabecera y el rombo del móvil): te lleva a Tareas y avisa de que quieres
+  // crear una. Allí, en la web se pone el cursor en la caja de crear y en el móvil se abre la hoja de abajo (Fase 5)
   const nuevaTarea = () => navigate('/tareas', { state: { nuevaTarea: Date.now() } });
   const titulo = TITULOS[location.pathname] ?? '';
 

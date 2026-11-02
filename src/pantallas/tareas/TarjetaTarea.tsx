@@ -65,8 +65,8 @@ function TarjetaTarea({ tarea, hoy, ahora, abierta, resaltada, editandose, alCom
       className={'tarjeta-tarea' + (resaltada ? ' resaltada' : '') + (editandose ? ' editandose' : '')}
       style={{ borderLeftColor: hecha ? '#9fd8bd' : prioridad.color }}
     >
-      {/* En el móvil los botones bajan a una segunda fila (la tarjeta del móvil se rehace en el paso 5.6) */}
-      <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2 lg:flex-nowrap">
+      {/* Esta tarjeta es solo de la web; en el móvil se usa TarjetaMovil (la que se desliza, paso 5.6) */}
+      <div className="flex items-center gap-3.5">
         {/* Completar */}
         <button
           type="button"
@@ -81,7 +81,7 @@ function TarjetaTarea({ tarea, hoy, ahora, abierta, resaltada, editandose, alCom
           </span>
         </button>
 
-        <div className="flex min-w-0 grow basis-[calc(100%-42px)] flex-col gap-[7px] lg:basis-0">
+        <div className="flex min-w-0 grow flex-col gap-[7px]">
           <div className="flex min-w-0 items-center gap-[9px]">
             <PastillaIcono clave={tarea.icono} />
             <span className={'text-base font-bold ' + (hecha ? 'text-[#66788a] line-through' : 'text-[#0f1f2e]')}>{tarea.titulo}</span>
@@ -109,7 +109,7 @@ function TarjetaTarea({ tarea, hoy, ahora, abierta, resaltada, editandose, alCom
           </div>
         </div>
 
-        <div className="ml-[42px] flex items-center gap-3.5 lg:ml-0">
+        <div className="flex items-center gap-3.5">
           {/* Subtareas */}
           <button type="button" onClick={alAbrir} aria-expanded={abierta} className="tarjeta-subtareas">
             {subtareas.length > 0 && (
