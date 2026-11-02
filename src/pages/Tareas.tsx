@@ -76,6 +76,16 @@ function Tareas() {
   const peticionNueva = (location.state as { nuevaTarea?: number } | null)?.nuevaTarea;
   const pedirFoco = focoLocal ?? peticionNueva;
 
+  // "Editar" desde otra pantalla (el lápiz del Calendario, paso 6.4): llega { id, vez }.
+  // Se atiende UNA vez por cada "vez" nueva. Se hace mientras se dibuja (sin useEffect), comparando
+  // con la última que ya atendimos: es la forma que recomienda React para reaccionar a un dato nuevo.
+  const peticionEditar = (location.state as { editarTarea?: { id: number; vez: number } } | null)?.editarTarea;
+  const [edicionAtendida, setEdicionAtendida] = useState<number | undefined>(undefined);
+  if (peticionEditar && peticionEditar.vez !== edicionAtendida) {
+    setEdicionAtendida(peticionEditar.vez);
+    setEditandoId(peticionEditar.id);
+  }
+
   // Resaltar unas tarjetas un momento (las recién creadas, o a la que saltas desde el pulso)
   const resaltar = (ids: number[]) => {
     clearTimeout(temporizador.current);

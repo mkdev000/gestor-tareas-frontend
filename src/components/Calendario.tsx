@@ -1,21 +1,14 @@
 import { useState } from 'react';
-import FormularioTarea from './FormularioTarea';
-import { colorBarraPrioridad } from '../utils/prioridad';
+import { useNavigate } from 'react-router-dom';
 import { colorPorEstado } from '../utils/estado';
-import { pedirConSesion } from '../utils/sesion';
 import { hoyISO } from '../utils/dias';
+import type { Tarea } from '../pantallas/useTareas';
+import { estiloPrioridad } from '../pantallas/tareas/prioridades';
+import { alternarCompletada, borrarTarea } from '../pantallas/tareas/guardar';
 
-interface Tarea {
-  id: number;
-  titulo: string;
-  descripcion: string;
-  estado: string;
-  prioridad: string;
-  proyecto: string;
-  fecha_limite: string | null;
-  hora_limite: string | null;
-  fecha_creacion: string;
-}
+// Calendario antiguo (se rehace como el prototipo en la Fase 8).
+// Fase 6, paso 6.4: ya no tiene su propio formulario. El lápiz abre la tarea en el editor nuevo
+// de Tareas (la caja de crear en la web, la hoja de abajo en el móvil), como hace el prototipo.
 
 interface Props {
   tareas: Tarea[];
@@ -35,7 +28,7 @@ function Calendario({ tareas, onCambio }: Props) {
   const [diaSeleccionado, setDiaSeleccionado] = useState<string | null>(
     `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`
   );
-  const [tareaEditando, setTareaEditando] = useState<Tarea | null>(null);
+  const navigate = useNavigate();
 
   // Hoy en TU hora (antes con toISOString, que entre las 00:00 y las 02:00 decía "ayer") (paso 4.7)
   const hoyTexto = hoyISO();
@@ -72,31 +65,28 @@ function Calendario({ tareas, onCambio }: Props) {
   const construirFecha = (dia: number) =>
     `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
 
-  const borrarTarea = async (id: number) => {
+  // Las mismas funciones que usa Tareas (guardar.ts): así una tarea que se repite crea la siguiente
+  // también al completarla desde aquí, y se envían solo los campos que entiende el servidor
+  const borrar = async (id: number) => {
     try {
-      const respuesta = await pedirConSesion(`/api/tareas/${id}`, { method: 'DELETE' });
-      if (respuesta.ok) onCambio();
+      await borrarTarea(id);
+      onCambio();
     } catch (err) {
       console.error(err);
     }
   };
 
-  const cambiarEstado = async (tarea: Tarea, nuevoEstado: string) => {
+  const completarODesmarcar = async (tarea: Tarea) => {
     try {
-      const respuesta = await pedirConSesion(`/api/tareas/${tarea.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...tarea,
-          estado: nuevoEstado,
-          fecha_limite: tarea.fecha_limite ? tarea.fecha_limite.slice(0, 10) : null,
-        }),
-      });
-      if (respuesta.ok) onCambio();
+      await alternarCompletada(tarea);
+      onCambio();
     } catch (err) {
       console.error(err);
     }
   };
+
+  // Abre el editor nuevo de Tareas con esta tarea (vez: un número nuevo cada vez, por si la abres dos veces)
+  const editar = (id: number) => navigate('/tareas', { state: { editarTarea: { id, vez: Date.now() } } });
 
   const tareasDelDiaSeleccionado = diaSeleccionado ? tareasPorFecha(diaSeleccionado) : [];
 
@@ -161,7 +151,8 @@ function Calendario({ tareas, onCambio }: Props) {
                 {tareasDelDia.slice(0, 4).map((t) => (
                   <span
                     key={t.id}
-                    className={`w-1.5 h-1.5 rounded-full ${colorBarraPrioridad(t.prioridad)}`}
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ background: estiloPrioridad(t.prioridad).color }}
                   ></span>
                 ))}
               </div>
@@ -184,21 +175,26 @@ function Calendario({ tareas, onCambio }: Props) {
                 const completada = tarea.estado === 'completada';
                 return (
                   <div key={tarea.id} className="flex items-center gap-2.5 border border-gray-100 rounded-lg px-3 py-2">
-                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${colorBarraPrioridad(tarea.prioridad)}`}></span>
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: estiloPrioridad(tarea.prioridad).color }}></span>
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-semibold text-texto ${completada ? 'line-through text-muted' : ''}`}>
                         {tarea.titulo}
                       </p>
-                      {tarea.proyecto && <p className="text-xs text-muted">{tarea.proyecto}</p>}
+                      {/* Antes salía el "proyecto"; ahora son categorías (paso 6.3) */}
+                      {(tarea.categorias ?? []).length > 0 && (
+                        <p className="text-xs text-muted">{(tarea.categorias ?? []).map((c) => `#${c.nombre}`).join(' ')}</p>
+                      )}
                     </div>
                     <button
-                      onClick={() => cambiarEstado(tarea, completada ? 'pendiente' : 'completada')}
+                      onClick={() => completarODesmarcar(tarea)}
                       className={`text-xs font-bold rounded-full px-2.5 py-1 cursor-pointer transition ${colorPorEstado(tarea.estado)}`}
                     >
                       {completada ? 'Completada' : 'Pendiente'}
                     </button>
                     <button
-                      onClick={() => setTareaEditando(tarea)}
+                      onClick={() => editar(tarea.id)}
+                      aria-label={`Editar: ${tarea.titulo}`}
+                      title="Editar tarea"
                       className="text-muted hover:text-azul hover:bg-azul-suave p-1.5 rounded-md transition"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -207,7 +203,9 @@ function Calendario({ tareas, onCambio }: Props) {
                       </svg>
                     </button>
                     <button
-                      onClick={() => borrarTarea(tarea.id)}
+                      onClick={() => borrar(tarea.id)}
+                      aria-label={`Borrar: ${tarea.titulo}`}
+                      title="Borrar tarea"
                       className="text-muted hover:text-rosa hover:bg-rosa-suave p-1.5 rounded-md transition"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -220,14 +218,6 @@ function Calendario({ tareas, onCambio }: Props) {
             </div>
           )}
         </div>
-      )}
-
-      {tareaEditando && (
-        <FormularioTarea
-          tareaEditar={tareaEditando}
-          onTareaCreada={onCambio}
-          onCancelar={() => setTareaEditando(null)}
-        />
       )}
     </>
   );
