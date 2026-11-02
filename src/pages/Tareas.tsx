@@ -18,6 +18,7 @@ import CajaCrear, { type ResultadoCaja } from '../pantallas/tareas/CajaCrear';
 import TarjetaTarea from '../pantallas/tareas/TarjetaTarea';
 import TarjetaMovil from '../pantallas/tareas/TarjetaMovil';
 import HojaCrearMovil, { type ResultadoHoja } from '../pantallas/tareas/HojaCrearMovil';
+import EstadoVacio from '../pantallas/tareas/EstadoVacio';
 import { useEsWeb } from '../utils/useEsWeb';
 import { useTareas, type Tarea } from '../pantallas/useTareas';
 import { alternarCompletada, borrarTarea, crearSubtarea, marcarSubtarea } from '../pantallas/tareas/guardar';
@@ -125,6 +126,8 @@ function Tareas() {
   const cerrarHoja = () => {
     if (editando) setEditandoId(null);
     else setCajaCerradaEn(pedirFoco);
+    // Si cierras la hoja sin crear la primera tarea, vuelve el estado vacío
+    if (tareas.length === 0) setCreandoPrimera(false);
   };
   const alGuardarHoja = (r: ResultadoHoja) => {
     if (r.tipo === 'varias') {
@@ -234,21 +237,14 @@ function Tareas() {
   return (
     <div className="flex flex-col gap-5">
       {sinTareas ? (
-        // Sin ninguna tarea (el estado vacío del prototipo se programa en el paso 5.7)
-        <div className="mt-12 text-center">
-          <p className="mb-2 text-2xl font-extrabold">¡Hola, {localStorage.getItem('nombre') || 'Tú'}!</p>
-          <p className="mb-6 text-[#5b6b7c]">Aún no tienes ninguna tarea añadida.</p>
-          <button
-            type="button"
-            onClick={() => {
-              setCreandoPrimera(true);
-              setFocoLocal(Date.now());
-            }}
-            className="boton-principal cursor-pointer rounded-xl border-0 bg-tachit-acento px-6 py-3 font-extrabold text-tachit-sobre-acento"
-          >
-            Crear mi primera tarea
-          </button>
-        </div>
+        // Sin ninguna tarea: "la tarjeta que se escribe sola" (paso 5.7).
+        // "Crear mi primera tarea" abre la caja de crear (web) o la hoja de abajo (móvil)
+        <EstadoVacio
+          alCrear={() => {
+            setCreandoPrimera(true);
+            setFocoLocal(Date.now());
+          }}
+        />
       ) : (
         <>
           <CabeceraTareas tareas={tareas} alIrATarea={irATarea} />

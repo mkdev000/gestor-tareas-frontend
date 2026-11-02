@@ -2569,3 +2569,278 @@ button.menu-opcion:active .menu-flecha {
 .hoja-tramo.otro span {
   color: #5b6b7c;
 }
+
+/* ===== Tareas sin ninguna tarea: "la tarjeta que se escribe sola" (Fase 5, paso 5.7), como en el prototipo ===== */
+.vacio-caja {
+  display: flex;
+  justify-content: center;
+  margin-top: 6px;
+}
+@media (min-width: 1024px) {
+  .vacio-caja {
+    min-height: 640px;
+    align-items: center;
+    margin-top: 0;
+  }
+}
+.vacio-ante {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--tachit-acento-fuerte);
+}
+.vacio-frase {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+  color: #0f1f2e;
+}
+.vacio-frase em {
+  position: relative;
+  font-style: normal;
+  white-space: nowrap;
+}
+/* El trazo de Tachit tacha "mañana estará tachado." */
+.vacio-frase em svg {
+  position: absolute;
+  left: -3px;
+  bottom: -7px;
+  width: calc(100% + 8px);
+  height: 10px;
+  overflow: visible;
+}
+.vacio-frase em path {
+  stroke: var(--tachit-acento);
+  stroke-dasharray: 160;
+  stroke-dashoffset: 160;
+  animation: vacio-trazar 0.8s 0.5s cubic-bezier(0.3, 0.8, 0.3, 1) forwards;
+}
+.vacio-sub {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #5b6b7c;
+}
+.vacio-tarjeta {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 14px 12px 16px;
+  border: 0;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px #e3e8ef, 0 10px 24px rgba(10, 30, 47, 0.07);
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+}
+/* El borde de puntos que "respira" alrededor de la tarjeta */
+.vacio-tarjeta::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 20px;
+  border: 2px dashed var(--tachit-acento-borde);
+  pointer-events: none;
+  animation: vacio-respirar 2.4s ease-in-out infinite;
+}
+.vacio-tarjeta:active {
+  transform: scale(0.99);
+}
+.vacio-tarjeta:focus-visible {
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 8px;
+}
+.vacio-fila {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.vacio-circulo {
+  width: 24px;
+  height: 24px;
+  margin-top: 1px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  border-radius: 99px;
+  border: 2px solid var(--tachit-acento);
+}
+.vacio-texto {
+  min-height: 42px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #0f1f2e;
+}
+/* Las palabras aparecen una a una; los datos se marcan y luego se recogen (saltan a los chips) */
+.vacio-palabra {
+  display: inline-block;
+  opacity: 0;
+  white-space: pre;
+  animation: vacio-palabra 8s linear forwards;
+}
+.vacio-dato {
+  display: inline-block;
+  max-width: 220px;
+  overflow: hidden;
+  opacity: 0;
+  white-space: pre;
+  vertical-align: bottom;
+  border-radius: 5px;
+  animation: vacio-dato 8s linear forwards;
+}
+.vacio-meta {
+  min-height: 20px;
+  padding-left: 36px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #8193a5;
+}
+.vacio-meta > span {
+  opacity: 0;
+  animation: vacio-chip 8s linear forwards;
+}
+.vacio-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 99px;
+  background: var(--tachit-acento-suave);
+  color: var(--tachit-acento-fuerte);
+  font-weight: 700;
+}
+.vacio-chip.neutro {
+  background: #eef1f5;
+  color: #5b6b7c;
+}
+.vacio-crear {
+  width: 100%;
+  height: 40px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--tachit-acento);
+  color: var(--tachit-sobre-acento);
+  box-shadow: 0 5px 12px color-mix(in srgb, var(--tachit-acento) 35%, transparent);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.vacio-rombo {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(45deg);
+  background: var(--tachit-panel);
+  color: var(--tachit-acento-texto);
+}
+.vacio-rombo svg {
+  transform: rotate(-45deg);
+}
+@keyframes vacio-trazar {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes vacio-respirar {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes vacio-palabra {
+  0% {
+    opacity: 0;
+  }
+  1% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  93%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes vacio-dato {
+  0% {
+    opacity: 0;
+  }
+  1% {
+    opacity: 1;
+    background: transparent;
+  }
+  26% {
+    opacity: 1;
+    background: transparent;
+    color: inherit;
+  }
+  30% {
+    background: color-mix(in srgb, var(--tachit-acento) 22%, transparent);
+    color: var(--tachit-acento-fuerte);
+  }
+  42% {
+    opacity: 1;
+    max-width: 220px;
+    background: color-mix(in srgb, var(--tachit-acento) 22%, transparent);
+    color: var(--tachit-acento-fuerte);
+  }
+  50%,
+  100% {
+    opacity: 0;
+    max-width: 0;
+  }
+}
+@keyframes vacio-chip {
+  0%,
+  48% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  53%,
+  89% {
+    opacity: 1;
+    transform: none;
+  }
+  93%,
+  100% {
+    opacity: 0;
+  }
+}
+/* "Reducir movimiento": nada se mueve; se ve el título y los chips, sin los datos */
+@media (prefers-reduced-motion: reduce) {
+  .vacio-palabra,
+  .vacio-meta > span {
+    animation: none;
+    opacity: 1;
+  }
+  .vacio-dato {
+    animation: none;
+    opacity: 0;
+    max-width: 0;
+  }
+  .vacio-tarjeta::after,
+  .vacio-frase em path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
