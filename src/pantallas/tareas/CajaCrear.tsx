@@ -14,6 +14,7 @@ import {
 } from './frase';
 import { ICONOS_TAREA } from './iconosTarea';
 import { DibujoIcono } from './PastillaIcono';
+import { BotonPrioridad } from './AnilloPrioridad';
 import { PanelCuando, PanelHora, PanelDura, PanelAviso, PanelRepite, PanelIcono, type Seccion } from './PanelesFrase';
 import { crearTarea, guardarEdicion } from './guardar';
 
@@ -89,6 +90,7 @@ function CajaCrear({ hoy, categorias, editando, pedirFoco, alGuardar, alError, a
   const horaFin = fin.inicio !== null ? horaConCeros(fin.inicio) : '';
   const duracion = fin.duracion || 30;
   const aviso = avisoActual(op, fin);
+  const prioridadActual = op.prioridad || crudo.prioridad || 'media';
   const hayOpciones = !!(op.fecha || op.hora || op.aviso !== 'nada' || op.dias.length || op.mensual || op.icono);
   const colorCategoria = (nombre: string) => categorias.find((c) => normalizar(c.nombre) === normalizar(nombre))?.color ?? '#4b5a6c';
 
@@ -172,9 +174,8 @@ function CajaCrear({ hoy, categorias, editando, pedirFoco, alGuardar, alError, a
 
       {/* La línea para escribir */}
       <div className="flex items-center gap-2.5">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--tachit-acento-fuerte)" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-          <path d="M12 5v14M5 12h14" />
-        </svg>
+        {/* La prioridad con un toque (paso 6.2): media → alta → baja → media */}
+        <BotonPrioridad prioridad={prioridadActual} alCambiar={(prioridad) => cambiar({ prioridad })} />
         <input
           id="tachit-nueva-tarea"
           ref={campo}

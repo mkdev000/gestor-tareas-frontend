@@ -17,6 +17,7 @@ import {
 } from './frase';
 import { ICONOS_TAREA } from './iconosTarea';
 import { DibujoIcono } from './PastillaIcono';
+import { BotonPrioridad } from './AnilloPrioridad';
 import { PanelCuandoHoja, PanelDuraHoja, PanelAvisoHoja, PanelRepiteHoja, PanelIconoHoja, PanelCategoriaHoja } from './PanelesHoja';
 import { crearTarea, guardarEdicion, sincronizarSubtareas } from './guardar';
 
@@ -78,7 +79,8 @@ function HojaCrearMovil({ hoy, ahora, tareas, categorias, editando, alCerrar, al
   const horaFin = fin.inicio !== null ? horaConCeros(fin.inicio) : '';
   const duracion = fin.duracion || 30;
   const aviso = avisoActual(op, fin);
-  const hayOpciones = !!(op.fecha || op.hora || op.aviso !== 'nada' || op.dias.length || op.mensual || op.duracion || op.icono);
+  const prioridadActual = op.prioridad || crudo.prioridad || 'media';
+  const hayOpciones = !!(op.fecha || op.hora || op.aviso !== 'nada' || op.dias.length || op.mensual || op.duracion || op.icono || op.prioridad);
 
   // ¿Qué herramientas están "puestas"? (salen en su color, con un puntito)
   const puesta: Record<Seccion, boolean> = {
@@ -97,6 +99,7 @@ function HojaCrearMovil({ hoy, ahora, tareas, categorias, editando, alCerrar, al
     horaFin ? `${horaFin}–${textoHora((fin.inicio! + duracion) % 1440)}` : `sin hora · ${textoDuracion(duracion)}`,
     aviso.indice > 0 ? `aviso ${aviso.valor === '0' ? 'a la hora' : textoAviso(Number(aviso.valor)).toLowerCase()}` : 'sin aviso',
     fin.repeticion ? textoRepeticion(fin.repeticion, fin.dias).toLowerCase() : 'una vez',
+    `prioridad ${prioridadActual}`,
   ].join(' · ');
 
   const leyenda: Record<Seccion, string> = {
@@ -218,6 +221,7 @@ function HojaCrearMovil({ hoy, ahora, tareas, categorias, editando, alCerrar, al
       {/* 3. La caja para escribir */}
       <div className="hoja-caja">
         <div className="flex items-center gap-1.5">
+          <BotonPrioridad prioridad={prioridadActual} alCambiar={(prioridad) => cambiar({ prioridad })} />
           <input
             value={borrador}
             onChange={(e) => setBorrador(e.target.value)}

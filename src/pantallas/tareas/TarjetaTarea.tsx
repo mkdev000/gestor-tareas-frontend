@@ -10,13 +10,8 @@ import type { Tarea } from '../useTareas';
 import { minutosDe } from './pulso';
 import { textoDia, textoDuracion, textoAviso, textoRepeticion, textoHora } from './frase';
 import { PastillaIcono, DibujoIcono } from './PastillaIcono';
+import { estiloPrioridad } from './prioridades';
 
-const PRIORIDAD: Record<string, { color: string; texto: string; fondo: string; nombre: string }> = {
-  alta: { color: '#F2711C', texto: '#a84a0a', fondo: '#fdeee3', nombre: 'Alta' },
-  urgente: { color: '#F2711C', texto: '#a84a0a', fondo: '#fdeee3', nombre: 'Urgente' },
-  media: { color: '#4daeeb', texto: '#17699e', fondo: '#e6f3fd', nombre: 'Media' },
-  baja: { color: '#94a3b8', texto: '#4b5a6c', fondo: '#eef1f5', nombre: 'Baja' },
-};
 
 const LAPIZ = 'M12 19l7-7 3 3-7 7-3-3zM18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5zM2 2l7.6 7.6M11 11a2 2 0 1 0 0 .01';
 const PAPELERA = 'M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14';
@@ -40,7 +35,7 @@ interface Props {
 function TarjetaTarea({ tarea, hoy, ahora, abierta, resaltada, editandose, alCompletar, alAbrir, alEditar, alBorrar, alMarcarSubtarea, alAnadirSubtarea }: Props) {
   const [nuevaSubtarea, setNuevaSubtarea] = useState('');
   const hecha = tarea.estado === 'completada';
-  const prioridad = PRIORIDAD[tarea.prioridad] ?? PRIORIDAD.media;
+  const prioridad = estiloPrioridad(tarea.prioridad);
   const fecha = tarea.fecha_limite ? tarea.fecha_limite.slice(0, 10) : null;
   const inicio = minutosDe(tarea.hora_limite);
   const duracion = tarea.duracion_min ?? 30;

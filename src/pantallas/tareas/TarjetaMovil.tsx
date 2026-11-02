@@ -16,8 +16,10 @@ import type { Tarea } from '../useTareas';
 import { minutosDe } from './pulso';
 import { textoDia, textoAviso, textoRepeticion, textoHora } from './frase';
 import { PastillaIcono } from './PastillaIcono';
+import { AnilloPrioridad } from './AnilloPrioridad';
+import { estiloPrioridad } from './prioridades';
+import type { Prioridad } from './frase';
 
-const COLOR_PRIORIDAD: Record<string, string> = { alta: '#F2711C', urgente: '#F2711C', media: '#4daeeb', baja: '#94a3b8' };
 const UMBRAL = 90; // px que hay que deslizar para que cuente
 const TOPE = 150; // px como mucho que se mueve la tarjeta
 const MOVIMIENTO_MINIMO = 12; // menos que esto es un toque, no un deslizamiento
@@ -39,6 +41,8 @@ function TarjetaMovil({ tarea, hoy, ahora, resaltada, alCompletar, alBorrar, alE
   const ultimoDeslizamiento = useRef(0); // para que soltar después de deslizar no cuente como "tocar"
 
   const hecha = tarea.estado === 'completada';
+  const prioridad = estiloPrioridad(tarea.prioridad);
+  const clavePrioridad = prioridad.nombre.toLowerCase() as Prioridad;
   const fecha = tarea.fecha_limite ? tarea.fecha_limite.slice(0, 10) : null;
   const inicioMin = minutosDe(tarea.hora_limite);
   const atrasada = !hecha && fecha === hoy && inicioMin !== null && inicioMin + (tarea.duracion_min ?? 30) <= ahora;
@@ -108,7 +112,7 @@ function TarjetaMovil({ tarea, hoy, ahora, resaltada, alCompletar, alBorrar, alE
         style={{ transform: `translateX(${dx}px)` }}
       >
         <div className="flex items-start gap-3">
-          <span aria-hidden="true" className="w-1 shrink-0 self-stretch rounded" style={{ background: hecha ? '#9fd8bd' : (COLOR_PRIORIDAD[tarea.prioridad] ?? '#4daeeb') }} />
+          <span aria-hidden="true" className="w-1 shrink-0 self-stretch rounded" style={{ background: hecha ? '#9fd8bd' : prioridad.color }} />
           <div className="flex min-w-0 grow flex-col gap-[7px]">
             <span className="flex min-w-0 items-center gap-2">
               <PastillaIcono clave={tarea.icono} />
@@ -127,6 +131,11 @@ function TarjetaMovil({ tarea, hoy, ahora, resaltada, alCompletar, alBorrar, alE
                   #{c.nombre}
                 </span>
               ))}
+              {/* La prioridad con su anillo de tres tramos en pequeño (paso 6.2) */}
+              <span className="movil-pastilla inline-flex items-center gap-1" style={{ background: prioridad.fondo, color: prioridad.texto }}>
+                <AnilloPrioridad prioridad={clavePrioridad} tam={12} apagado="#d5dce5" />
+                {prioridad.nombre}
+              </span>
             </div>
           </div>
           {subtareas.length > 0 && (
