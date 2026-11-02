@@ -3,14 +3,14 @@
 // solo reciben tus tareas y la hora, y devuelven números y textos. Así son fáciles de entender y de probar.
 import { hoyISO } from '../../utils/dias';
 import type { Tarea } from '../useTareas';
+import { estiloPrioridad } from './prioridades';
 
 // La franja del día va de 8:00 a 22:00 (como en el prototipo), en minutos desde medianoche
 export const INICIO_DIA = 8 * 60;
 export const FIN_DIA = 22 * 60;
 const DURACION_DIA = FIN_DIA - INICIO_DIA;
 
-// Colores de la franja (los mismos del prototipo)
-const COLOR_PRIORIDAD: Record<string, string> = { alta: '#F2711C', urgente: '#F2711C', media: '#4daeeb', baja: '#94a3b8' };
+// Colores de la franja (los mismos del prototipo). Los de cada prioridad salen de prioridades.ts
 const COLOR_HECHA = '#17804f';
 const COLOR_ATRASADA = '#c4320a';
 
@@ -84,7 +84,7 @@ export function calcularPulso(tareas: Tarea[], ahora: Date): Pulso {
       izquierda,
       // mínimo 1,8 % para que una tarea corta se vea; y que no se salga por la derecha
       ancho: Math.min(100 - izquierda, Math.max(1.8, (duracion(t) / DURACION_DIA) * 100)),
-      color: hecha(t) ? COLOR_HECHA : atrasada ? COLOR_ATRASADA : (COLOR_PRIORIDAD[t.prioridad] ?? COLOR_PRIORIDAD.media),
+      color: hecha(t) ? COLOR_HECHA : atrasada ? COLOR_ATRASADA : estiloPrioridad(t.prioridad).color,
       apagado: !hecha(t) && !atrasada,
     };
   });

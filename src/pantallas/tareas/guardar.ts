@@ -6,7 +6,7 @@
 import { pedirConSesion } from '../../utils/sesion';
 import { deTextoISO, hoyISO } from '../../utils/dias';
 import type { Tarea } from '../useTareas';
-import { normalizar, siguienteFecha, horaConCeros, type FraseLeida, type Repeticion } from './frase';
+import { normalizar, siguienteFecha, horaConCeros, type FraseLeida, type Prioridad, type Repeticion } from './frase';
 
 export interface Categoria {
   id: number;
@@ -84,7 +84,7 @@ export async function crearTarea(p: FraseLeida, hoy: string, categorias: Categor
 type Cambios = Partial<{
   titulo: string;
   estado: string;
-  prioridad: string;
+  prioridad: Prioridad;
   fecha_limite: string | null;
   hora_limite: string | null;
   duracion_min: number;
@@ -100,7 +100,6 @@ function cuerpoCompleto(t: Tarea, cambios: Cambios) {
     descripcion: t.descripcion || null,
     estado: t.estado,
     prioridad: t.prioridad,
-    proyecto: t.proyecto || null,
     fecha_limite: t.fecha_limite ? t.fecha_limite.slice(0, 10) : null,
     hora_limite: t.hora_limite ? t.hora_limite.slice(0, 5) : null,
     duracion_min: t.duracion_min ?? 30,

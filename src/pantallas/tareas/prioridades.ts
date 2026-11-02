@@ -4,6 +4,7 @@
 import type { Prioridad } from './frase';
 
 export interface EstiloPrioridad {
+  clave: Prioridad; // "alta" (la que entiende el servidor)
   nombre: string; // "Alta"
   color: string; // la barrita / el borde de la tarjeta
   texto: string; // el texto de la pastilla
@@ -12,15 +13,14 @@ export interface EstiloPrioridad {
 }
 
 export const PRIORIDADES: Record<Prioridad, EstiloPrioridad> = {
-  alta: { nombre: 'Alta', color: '#F2711C', texto: '#a84a0a', fondo: '#fdeee3', nivel: 3 },
-  media: { nombre: 'Media', color: '#4daeeb', texto: '#17699e', fondo: '#e6f3fd', nivel: 2 },
-  baja: { nombre: 'Baja', color: '#94a3b8', texto: '#4b5a6c', fondo: '#eef1f5', nivel: 1 },
+  alta: { clave: 'alta', nombre: 'Alta', color: '#F2711C', texto: '#a84a0a', fondo: '#fdeee3', nivel: 3 },
+  media: { clave: 'media', nombre: 'Media', color: '#4daeeb', texto: '#17699e', fondo: '#e6f3fd', nivel: 2 },
+  baja: { clave: 'baja', nombre: 'Baja', color: '#94a3b8', texto: '#4b5a6c', fondo: '#eef1f5', nivel: 1 },
 };
 
-// La del servidor puede ser 'urgente' (de la app antigua): se trata como alta
+// Si llegara algo raro (o nada), se pinta como "media", que es la prioridad por defecto del servidor
 export function estiloPrioridad(valor: string | null | undefined): EstiloPrioridad {
-  if (valor === 'baja' || valor === 'media' || valor === 'alta') return PRIORIDADES[valor];
-  return valor === 'urgente' ? PRIORIDADES.alta : PRIORIDADES.media;
+  return valor === 'baja' || valor === 'media' || valor === 'alta' ? PRIORIDADES[valor] : PRIORIDADES.media;
 }
 
 // Un toque: media → alta → baja → media

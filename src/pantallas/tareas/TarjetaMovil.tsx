@@ -18,7 +18,6 @@ import { textoDia, textoAviso, textoRepeticion, textoHora } from './frase';
 import { PastillaIcono } from './PastillaIcono';
 import { AnilloPrioridad } from './AnilloPrioridad';
 import { estiloPrioridad } from './prioridades';
-import type { Prioridad } from './frase';
 
 const UMBRAL = 90; // px que hay que deslizar para que cuente
 const TOPE = 150; // px como mucho que se mueve la tarjeta
@@ -42,7 +41,6 @@ function TarjetaMovil({ tarea, hoy, ahora, resaltada, alCompletar, alBorrar, alE
 
   const hecha = tarea.estado === 'completada';
   const prioridad = estiloPrioridad(tarea.prioridad);
-  const clavePrioridad = prioridad.nombre.toLowerCase() as Prioridad;
   const fecha = tarea.fecha_limite ? tarea.fecha_limite.slice(0, 10) : null;
   const inicioMin = minutosDe(tarea.hora_limite);
   const atrasada = !hecha && fecha === hoy && inicioMin !== null && inicioMin + (tarea.duracion_min ?? 30) <= ahora;
@@ -133,7 +131,7 @@ function TarjetaMovil({ tarea, hoy, ahora, resaltada, alCompletar, alBorrar, alE
               ))}
               {/* La prioridad con su anillo de tres tramos en pequeño (paso 6.2) */}
               <span className="movil-pastilla inline-flex items-center gap-1" style={{ background: prioridad.fondo, color: prioridad.texto }}>
-                <AnilloPrioridad prioridad={clavePrioridad} tam={12} apagado="#d5dce5" />
+                <AnilloPrioridad prioridad={prioridad.clave} tam={12} apagado="#d5dce5" />
                 {prioridad.nombre}
               </span>
             </div>

@@ -12,14 +12,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { pedirConSesion } from '../utils/sesion';
 import { avisarCambioTareas } from '../utils/avisosTareas';
+import type { Prioridad } from './tareas/frase';
 
 export interface Tarea {
   id: number;
   titulo: string;
   descripcion: string;
   estado: string;
-  prioridad: string;
-  proyecto: string;
+  // Solo baja, media o alta: 'urgente' y 'proyecto' se quitaron en la Fase 6 (migración 016 del backend)
+  prioridad: Prioridad;
   fecha_limite: string | null;
   hora_limite: string | null;
   fecha_creacion: string;

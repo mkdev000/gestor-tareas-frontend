@@ -13,6 +13,7 @@
 // El orden importa: "pasado mañana" se busca antes que "mañana", y "1h30" antes que "1h".
 import { aTextoISO, deTextoISO, sumarDias } from '../../utils/dias';
 import { textoHora } from './pulso';
+import { estiloPrioridad } from './prioridades';
 import type { Tarea } from '../useTareas';
 
 export type Repeticion = 'diaria' | 'semanal' | 'mensual';
@@ -272,8 +273,7 @@ export function desdeTarea(t: Tarea): { borrador: string; op: OpcionesFrase } {
       mensual: t.repeticion === 'mensual',
       duracion: t.duracion_min ?? null,
       icono: t.icono ?? '',
-      // 'urgente' (de la app antigua) se trata como alta
-      prioridad: t.prioridad === 'baja' || t.prioridad === 'media' ? t.prioridad : 'alta',
+      prioridad: estiloPrioridad(t.prioridad).clave,
     },
   };
 }
