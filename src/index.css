@@ -2842,3 +2842,27 @@ button.menu-opcion:active .menu-flecha {
     stroke-dashoffset: 0;
   }
 }
+
+/* El anillo para elegir la prioridad con un toque (Fase 6, paso 6.2) */
+.boton-prioridad {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 2px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+}
+.boton-prioridad:active svg {
+  transform: scale(0.88);
+}
+.boton-prioridad svg {
+  transition: transform 0.15s ease;
+}
+.boton-prioridad:focus-visible {
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 2px;
+}

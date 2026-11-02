@@ -41,9 +41,10 @@ export interface OpcionesFrase {
   mensual: boolean;
   duracion: number | null;
   icono: string; // '' = sin icono
+  prioridad: Prioridad | ''; // '' = lo que diga la frase (o media)
 }
 
-export const OPCIONES_VACIAS: OpcionesFrase = { fecha: '', hora: '', aviso: 'nada', dias: [], mensual: false, duracion: null, icono: '' };
+export const OPCIONES_VACIAS: OpcionesFrase = { fecha: '', hora: '', aviso: 'nada', dias: [], mensual: false, duracion: null, icono: '', prioridad: '' };
 
 const NOMBRES_DIA: Record<string, number> = { domingo: 0, lunes: 1, martes: 2, miercoles: 3, jueves: 4, viernes: 5, sabado: 6 };
 const DIAS_RE = 'lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo';
@@ -134,6 +135,7 @@ export function leerFrase(frase: string, hoy: string): FraseLeida {
 // Junta la frase con lo que has elegido en los paneles (lo elegido gana)
 export function aplicarOpciones(p: FraseLeida, op: OpcionesFrase, hoy: string): FraseLeida {
   const r: FraseLeida = { ...p };
+  if (op.prioridad) r.prioridad = op.prioridad;
   if (op.fecha) r.fecha = op.fecha;
   if (op.duracion) r.duracion = op.duracion;
   if (op.icono) r.icono = op.icono;
@@ -270,6 +272,8 @@ export function desdeTarea(t: Tarea): { borrador: string; op: OpcionesFrase } {
       mensual: t.repeticion === 'mensual',
       duracion: t.duracion_min ?? null,
       icono: t.icono ?? '',
+      // 'urgente' (de la app antigua) se trata como alta
+      prioridad: t.prioridad === 'baja' || t.prioridad === 'media' ? t.prioridad : 'alta',
     },
   };
 }
