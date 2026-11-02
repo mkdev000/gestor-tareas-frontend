@@ -84,7 +84,7 @@ function TarjetaTarea({ tarea, hoy, ahora, abierta, resaltada, editandose, alCom
         <div className="flex min-w-0 grow basis-[calc(100%-42px)] flex-col gap-[7px] lg:basis-0">
           <div className="flex min-w-0 items-center gap-[9px]">
             <PastillaIcono clave={tarea.icono} />
-            <span className={'text-base font-bold ' + (hecha ? 'text-[#7a8898] line-through' : 'text-[#0f1f2e]')}>{tarea.titulo}</span>
+            <span className={'text-base font-bold ' + (hecha ? 'text-[#66788a] line-through' : 'text-[#0f1f2e]')}>{tarea.titulo}</span>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
             <span className={'tarjeta-pastilla font-bold ' + (atrasada ? 'bg-[#fde8e4] text-[#b42318]' : 'bg-[#eef1f5] text-[#33475b]')}>{cuando}</span>
@@ -145,7 +145,7 @@ function TarjetaTarea({ tarea, hoy, ahora, abierta, resaltada, editandose, alCom
                   ✓
                 </span>
               </button>
-              <span className={'text-sm ' + (s.hecha ? 'text-[#7a8898] line-through' : 'text-[#0f1f2e]')}>{s.titulo}</span>
+              <span className={'text-sm ' + (s.hecha ? 'text-[#66788a] line-through' : 'text-[#0f1f2e]')}>{s.titulo}</span>
             </div>
           ))}
           <input

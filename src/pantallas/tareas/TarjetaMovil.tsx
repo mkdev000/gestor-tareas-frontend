@@ -105,14 +105,14 @@ function TarjetaMovil({ tarea, hoy, ahora, resaltada, alCompletar, alBorrar, alE
           }
         }}
         className={'tarjeta-movil' + (resaltada ? ' resaltada' : '') + (arrastrando ? ' arrastrando' : '')}
-        style={{ transform: `translateX(${dx}px)`, opacity: hecha ? 0.75 : 1 }}
+        style={{ transform: `translateX(${dx}px)` }}
       >
         <div className="flex items-start gap-3">
           <span aria-hidden="true" className="w-1 shrink-0 self-stretch rounded" style={{ background: hecha ? '#9fd8bd' : (COLOR_PRIORIDAD[tarea.prioridad] ?? '#4daeeb') }} />
           <div className="flex min-w-0 grow flex-col gap-[7px]">
             <span className="flex min-w-0 items-center gap-2">
               <PastillaIcono clave={tarea.icono} />
-              <span className={'text-[15px] font-bold ' + (hecha ? 'text-[#7a8898] line-through' : 'text-[#0f1f2e]')}>{tarea.titulo}</span>
+              <span className={'text-[15px] font-bold ' + (hecha ? 'text-[#66788a] line-through' : 'text-[#0f1f2e]')}>{tarea.titulo}</span>
             </span>
             <div className="flex flex-wrap gap-1.5">
               <span className={'movil-pastilla ' + (atrasada ? 'bg-[#fde8e4] text-[#b42318]' : 'bg-[#eef1f5] text-[#33475b]')}>{cuando}</span>
@@ -130,7 +130,7 @@ function TarjetaMovil({ tarea, hoy, ahora, resaltada, alCompletar, alBorrar, alE
             </div>
           </div>
           {subtareas.length > 0 && (
-            <span className="shrink-0 rounded-lg bg-[#e7f5ee] px-2 py-1 text-xs font-extrabold text-[#17804f]">
+            <span className="shrink-0 rounded-lg bg-[#e7f5ee] px-2 py-1 text-xs font-extrabold text-[#157546]">
               {subHechas}/{subtareas.length}
             </span>
           )}

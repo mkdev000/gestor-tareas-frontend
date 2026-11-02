@@ -201,7 +201,7 @@ function CajaCrear({ hoy, categorias, editando, pedirFoco, alGuardar, alError, a
 
       {/* La frase de colores: lo que Tachit ha entendido */}
       <div className="flex flex-wrap items-center gap-x-1.5 gap-y-2 px-1 pt-3.5 pb-1 text-base leading-[1.6] text-[#5b6b7c]">
-        <span className="text-base font-extrabold" style={{ color: hayBorrador ? '#0f1f2e' : '#9aa7b5' }}>
+        <span className="text-base font-extrabold" style={{ color: hayBorrador ? '#0f1f2e' : '#66788a' }}>
           {hayBorrador ? `“${fin.titulo || 'Falta el título'}”` : 'Tu tarea'}
         </span>
         {hayBorrador &&
@@ -280,7 +280,7 @@ function CajaCrear({ hoy, categorias, editando, pedirFoco, alGuardar, alError, a
           </button>
         )}
       </div>
-      <p className="px-1 text-xs text-[#8193a5]">Toca cualquier parte coloreada de la frase para cambiarla.</p>
+      <p className="px-1 text-xs text-[#66788a]">Toca cualquier parte coloreada de la frase para cambiarla.</p>
 
       {seccion === 'cuando' && <PanelCuando {...propsPanel} />}
       {seccion === 'hora' && <PanelHora {...propsPanel} horaFin={horaFin} />}
