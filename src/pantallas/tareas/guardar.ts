@@ -6,7 +6,7 @@
 import { pedirConSesion } from '../../utils/sesion';
 import { deTextoISO, hoyISO } from '../../utils/dias';
 import type { Tarea } from '../useTareas';
-import { normalizar, siguienteFecha, horaConCeros, type FraseLeida, type Prioridad, type Repeticion } from './frase';
+import { normalizar, horaConCeros, type FraseLeida, type Prioridad, type Repeticion } from './frase';
 
 export interface Categoria {
   id: number;
@@ -134,24 +134,20 @@ export async function guardarEdicion(t: Tarea, p: FraseLeida, categorias: Catego
 }
 
 // ---------- Completar ----------
-// Si la tarea se repite, al completarla se crea la siguiente (con sus categorías y subtareas sin marcar)
-// y la completada deja de repetirse, igual que en el prototipo. Devuelve la fecha de la siguiente.
+// Una sola petición pequeña (PATCH, paso 6.5): solo dice "completada" o "pendiente".
+// Si la tarea se repite, el SERVIDOR crea la siguiente (con sus categorías y subtareas sin marcar)
+// en la misma transacción: o se guarda todo o nada. Antes eran 3 o más peticiones desde aquí y,
+// si se cortaba internet a mitad, la tarea quedaba completada pero sin la siguiente.
+// "hoy" va por si la tarea que se repite no tiene fecha (el servidor está en otra zona horaria).
+// Devuelve la fecha de la siguiente vez, o null.
 export async function alternarCompletada(t: Tarea): Promise<string | null> {
-  const completar = t.estado !== 'completada';
-  if (!completar || !t.repeticion) {
-    await cambiarTarea(t, { estado: completar ? 'completada' : 'pendiente' });
-    return null;
-  }
-  const fecha = t.fecha_limite ? t.fecha_limite.slice(0, 10) : null;
-  const siguiente = siguienteFecha(fecha ?? hoyISO(), t.repeticion, t.dias_semana ?? null);
-  await cambiarTarea(t, { estado: 'completada', repeticion: null, dias_semana: null });
-  const { id } = await pedir<{ id: number }>('/api/tareas', 'POST', {
-    ...cuerpoCompleto(t, { estado: 'pendiente', fecha_limite: siguiente }),
-  });
-  const ids = (t.categorias ?? []).map((c) => c.id);
-  if (ids.length) await guardarCategorias(id, ids);
-  for (const s of t.subtareas ?? []) await crearSubtarea(id, s.titulo);
-  return siguiente;
+  const estado = t.estado === 'completada' ? 'pendiente' : 'completada';
+  const { siguiente } = await pedir<{ siguiente: { id: number; fecha_limite: string } | null }>(
+    `/api/tareas/${t.id}/estado`,
+    'PATCH',
+    { estado, hoy: hoyISO() },
+  );
+  return siguiente ? siguiente.fecha_limite : null;
 }
 
 // ---------- Borrar ----------

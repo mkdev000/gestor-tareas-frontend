@@ -11,7 +11,7 @@
 //   3. Cada pista que encontramos la apuntamos y la TACHAMOS de la frase (la cambiamos por un espacio).
 //   4. Lo que queda sin tachar es el título.
 // El orden importa: "pasado mañana" se busca antes que "mañana", y "1h30" antes que "1h".
-import { aTextoISO, deTextoISO, sumarDias } from '../../utils/dias';
+import { deTextoISO, sumarDias } from '../../utils/dias';
 import { textoHora } from './pulso';
 import { estiloPrioridad } from './prioridades';
 import type { Tarea } from '../useTareas';
@@ -217,22 +217,6 @@ export function textoRepeticion(repeticion: Repeticion | null, dias: number[] | 
     return 'Cada ' + (nombres.length > 1 ? `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}` : nombres[0]);
   }
   return 'Cada semana';
-}
-
-// La siguiente vez que toca una tarea que se repite (al completarla se crea la siguiente)
-export function siguienteFecha(fecha: string, repeticion: Repeticion, dias: number[] | null) {
-  if (repeticion === 'semanal' && dias && dias.length) {
-    for (let i = 1; i <= 7; i++) {
-      const candidata = sumarDias(fecha, i);
-      if (dias.includes(deTextoISO(candidata).getDay())) return candidata;
-    }
-  }
-  if (repeticion === 'diaria') return sumarDias(fecha, 1);
-  if (repeticion === 'semanal') return sumarDias(fecha, 7);
-  // Cada mes: el mismo día del mes siguiente (el 31 de enero pasa al último día de febrero)
-  const d = deTextoISO(fecha);
-  const ultimo = new Date(d.getFullYear(), d.getMonth() + 2, 0).getDate();
-  return aTextoISO(new Date(d.getFullYear(), d.getMonth() + 1, Math.min(d.getDate(), ultimo)));
 }
 
 // 1110 → "18:30" (con dos cifras, para los <input type="time">)
