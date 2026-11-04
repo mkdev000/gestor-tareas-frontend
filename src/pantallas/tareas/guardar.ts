@@ -14,8 +14,9 @@ export interface Categoria {
   color: string;
 }
 
-async function pedir<T = unknown>(ruta: string, metodo: string, cuerpo?: unknown): Promise<T> {
+async function pedir<T = unknown>(ruta: string, metodo: string, cuerpo?: unknown, extra: RequestInit = {}): Promise<T> {
   const respuesta = await pedirConSesion(ruta, {
+    ...extra,
     method: metodo,
     headers: cuerpo === undefined ? undefined : { 'Content-Type': 'application/json' },
     body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
@@ -151,8 +152,10 @@ export async function alternarCompletada(t: Tarea): Promise<string | null> {
 }
 
 // ---------- Borrar ----------
+// keepalive (paso 6.6): el navegador termina de enviar el borrado aunque cierres la pestaña justo
+// en ese momento (la tarea se borra de verdad a los 5 s de pulsar la papelera, o al salir)
 export function borrarTarea(id: number) {
-  return pedir(`/api/tareas/${id}`, 'DELETE');
+  return pedir(`/api/tareas/${id}`, 'DELETE', undefined, { keepalive: true });
 }
 
 // ---------- Subtareas ----------

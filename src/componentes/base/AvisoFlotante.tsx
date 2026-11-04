@@ -4,21 +4,36 @@
 //  - móvil (paso 4.6): arriba, de lado a lado, con el color del panel del tema (como en el prototipo móvil),
 //    para que no lo tape la barra de abajo
 // Se cierra solo a los 4,2 segundos (como en el prototipo).
-import { useEffect } from 'react';
+// Paso 6.6: si el aviso trae "deshacer", lleva el botón Deshacer con un anillo que se vacía
+// mientras dura el aviso (idea B elegida por ti, igual que en el prototipo v133).
+import { useEffect, useState } from 'react';
 
 export interface DatosAviso {
   titulo: string;
   texto: string;
+  deshacer?: () => void; // si está, sale el botón "Deshacer"
+  duracionMs?: number; // cuánto dura (por defecto 4,2 s)
 }
 
 const DURACION_MS = 4200;
 
 function AvisoFlotante({ aviso, alCerrar }: { aviso: DatosAviso; alCerrar: () => void }) {
+  const duracion = aviso.duracionMs ?? DURACION_MS;
+
   useEffect(() => {
-    const temporizador = setTimeout(alCerrar, DURACION_MS);
+    const temporizador = setTimeout(alCerrar, duracion);
     // Si el aviso cambia o se sale de la pantalla antes de tiempo, paramos el temporizador
     return () => clearTimeout(temporizador);
-  }, [aviso, alCerrar]);
+  }, [aviso, alCerrar, duracion]);
+
+  // Cada aviso nuevo cuenta como "otra vez" (vez + 1): así el anillo vuelve a empezar lleno
+  // aunque llegue un aviso detrás de otro. Se hace mientras se dibuja, sin useEffect.
+  const [ultimo, setUltimo] = useState(aviso);
+  const [vez, setVez] = useState(0);
+  if (aviso !== ultimo) {
+    setUltimo(aviso);
+    setVez((v) => v + 1);
+  }
 
   return (
     // role="status": los lectores de pantalla lo leen en voz alta sin interrumpir lo que estés haciendo
@@ -42,6 +57,15 @@ function AvisoFlotante({ aviso, alCerrar }: { aviso: DatosAviso; alCerrar: () =>
         <p className="text-sm font-extrabold lg:mt-px lg:text-[15px]">{aviso.titulo}</p>
         <p className="text-xs text-tachit-panel-texto-suave lg:mt-0.5 lg:text-sm lg:text-[#33475b]">{aviso.texto}</p>
       </div>
+      {aviso.deshacer && (
+        <button type="button" onClick={aviso.deshacer} className="aviso-deshacer">
+          <svg key={vez} viewBox="0 0 18 18" className="aviso-deshacer-anillo" aria-hidden="true">
+            <circle className="fondo" cx="9" cy="9" r="7" />
+            <circle className="lleno" cx="9" cy="9" r="7" style={{ animationDuration: `${duracion}ms` }} />
+          </svg>
+          Deshacer
+        </button>
+      )}
     </div>
   );
 }

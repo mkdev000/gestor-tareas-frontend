@@ -1823,6 +1823,135 @@ button.menu-opcion:active .menu-flecha {
   font-size: 14px;
 }
 
+/* ---------- Paso 6.6: quitar una subtarea en la web (idea 2, tachón rojo) ----------
+   La papelera aparece al pasar el ratón por la fila o al llegar con el teclado (Tab);
+   en pantallas táctiles (sin ratón) se ve siempre. Al pulsarla: tachón rojo y se desliza fuera. */
+.subtarea-fila {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+.subtarea-fila.tachando .subtarea-texto {
+  color: #0f1f2e;
+  text-decoration: line-through;
+  text-decoration-color: #b42318;
+  text-decoration-thickness: 2px;
+}
+.subtarea-fila.fuera {
+  opacity: 0;
+  transform: translateX(18px);
+}
+.subtarea-quitar {
+  margin-left: auto;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #66788a;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.subtarea-fila:hover .subtarea-quitar,
+.subtarea-quitar:focus-visible {
+  opacity: 1;
+}
+.subtarea-quitar:hover {
+  background: #fff5f3;
+  color: #b42318;
+}
+@media (hover: none) {
+  .subtarea-quitar {
+    opacity: 1;
+  }
+}
+
+/* ---------- Paso 6.6: «Deshacer» en el aviso (idea B, anillo que se vacía) ----------
+   Móvil: aviso oscuro del panel → botón claro. Web (desde 1024 px): aviso blanco → botón del acento. */
+.aviso-deshacer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  align-self: center;
+  padding: 7px 11px;
+  border: 0;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.14);
+  color: var(--tachit-panel-texto);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.aviso-deshacer:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.aviso-deshacer-anillo {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  transform: rotate(-90deg); /* el anillo empieza a vaciarse desde arriba */
+}
+.aviso-deshacer-anillo circle {
+  fill: none;
+  stroke-width: 2.6;
+}
+.aviso-deshacer-anillo .fondo {
+  stroke: rgb(255 255 255 / 0.22);
+}
+.aviso-deshacer-anillo .lleno {
+  stroke: var(--tachit-acento-texto);
+  stroke-linecap: round;
+  stroke-dasharray: 44; /* la vuelta entera del círculo (2 · π · 7 ≈ 44) */
+  animation: aviso-vaciar 5s linear forwards;
+}
+@keyframes aviso-vaciar {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: 44;
+  }
+}
+@media (min-width: 1024px) {
+  .aviso-deshacer {
+    background: var(--tachit-acento-suave);
+    color: var(--tachit-acento-fuerte);
+  }
+  .aviso-deshacer:hover {
+    filter: brightness(0.96);
+  }
+  .aviso-deshacer-anillo .fondo {
+    stroke: var(--tachit-linea);
+  }
+  .aviso-deshacer-anillo .lleno {
+    stroke: var(--tachit-acento-fuerte);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aviso-deshacer-anillo .lleno {
+    animation: none;
+  }
+  .subtarea-fila,
+  .subtarea-quitar {
+    transition: none;
+  }
+}
+
 /* Contorno visible al moverse con el teclado (Tab) */
 .caja-crear button:focus-visible,
 .caja-crear input:focus-visible,
