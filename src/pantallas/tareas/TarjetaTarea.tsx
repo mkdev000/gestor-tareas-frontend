@@ -4,8 +4,9 @@
 //  - círculo para completarla (se rellena de verde con ✓ y el título se tacha)
 //  - icono, título y pastillas: cuándo (en rojo si va atrasada), duración, aviso, repetición, categorías y prioridad
 //  - botón de subtareas (con barrita de progreso "2/4"), lápiz para editar y papelera para borrar
-//  - al abrir las subtareas: marcarlas y añadir nuevas escribiendo + Enter
-import { useState } from 'react';
+//  - al abrir las subtareas: marcarlas, añadir nuevas escribiendo + Enter y quitarlas con la papelera
+//    que aparece al pasar el ratón (paso 6.6: se tachan en rojo y se deslizan fuera)
+import { useEffect, useRef, useState } from 'react';
 import type { Tarea } from '../useTareas';
 import { minutosDe } from './pulso';
 import { textoDia, textoDuracion, textoAviso, textoRepeticion, textoHora } from './frase';
@@ -30,10 +31,46 @@ interface Props {
   alBorrar: () => void;
   alMarcarSubtarea: (id: number, hecha: boolean) => void;
   alAnadirSubtarea: (titulo: string) => Promise<boolean>;
+  alQuitarSubtarea: (id: number) => void;
 }
 
-function TarjetaTarea({ tarea, hoy, ahora, abierta, resaltada, editandose, alCompletar, alAbrir, alEditar, alBorrar, alMarcarSubtarea, alAnadirSubtarea }: Props) {
+// Los dos tiempos del tachón rojo: primero se tacha y después se desliza fuera
+const TACHAR_MS = 380;
+const FUERA_MS = 700;
+
+function TarjetaTarea({ tarea, hoy, ahora, abierta, resaltada, editandose, alCompletar, alAbrir, alEditar, alBorrar, alMarcarSubtarea, alAnadirSubtarea, alQuitarSubtarea }: Props) {
   const [nuevaSubtarea, setNuevaSubtarea] = useState('');
+  // Subtareas que se están quitando: 'tachando' (tachón rojo) → 'fuera' (se desliza) → se quitan
+  const [quitando, setQuitando] = useState<Record<number, 'tachando' | 'fuera'>>({});
+  const relojes = useRef(new Map<number, ReturnType<typeof setTimeout>[]>());
+  const quitarDeVerdad = useRef(alQuitarSubtarea);
+  useEffect(() => {
+    quitarDeVerdad.current = alQuitarSubtarea;
+  });
+  // Si la tarjeta desaparece a mitad del tachón (por ejemplo, cambias de filtro), se quita igualmente
+  useEffect(() => {
+    const pendientes = relojes.current;
+    const quitar = quitarDeVerdad;
+    return () => {
+      pendientes.forEach((lista, id) => {
+        lista.forEach(clearTimeout);
+        quitar.current(id);
+      });
+      pendientes.clear();
+    };
+  }, []);
+
+  const quitarSubtarea = (id: number) => {
+    if (relojes.current.has(id)) return; // ya se está quitando (doble clic)
+    setQuitando((q) => ({ ...q, [id]: 'tachando' }));
+    relojes.current.set(id, [
+      setTimeout(() => setQuitando((q) => ({ ...q, [id]: 'fuera' })), TACHAR_MS),
+      setTimeout(() => {
+        relojes.current.delete(id);
+        quitarDeVerdad.current(id);
+      }, FUERA_MS),
+    ]);
+  };
   const hecha = tarea.estado === 'completada';
   const prioridad = estiloPrioridad(tarea.prioridad);
   const fecha = tarea.fecha_limite ? tarea.fecha_limite.slice(0, 10) : null;
@@ -127,7 +164,7 @@ function TarjetaTarea({ tarea, hoy, ahora, abierta, resaltada, editandose, alCom
       {abierta && (
         <div className="mt-3 ml-[42px] flex flex-col gap-2 border-t border-[#edf1f5] pt-3">
           {subtareas.map((s) => (
-            <div key={s.id} className="flex items-center gap-2.5">
+            <div key={s.id} className={'subtarea-fila' + (quitando[s.id] ? ` ${quitando[s.id]}` : '')}>
               <button
                 type="button"
                 onClick={() => alMarcarSubtarea(s.id, !s.hecha)}
@@ -140,7 +177,16 @@ function TarjetaTarea({ tarea, hoy, ahora, abierta, resaltada, editandose, alCom
                   ✓
                 </span>
               </button>
-              <span className={'text-sm ' + (s.hecha ? 'text-[#66788a] line-through' : 'text-[#0f1f2e]')}>{s.titulo}</span>
+              <span className={'subtarea-texto min-w-0 text-sm ' + (s.hecha ? 'text-[#66788a] line-through' : 'text-[#0f1f2e]')}>{s.titulo}</span>
+              <button
+                type="button"
+                onClick={() => quitarSubtarea(s.id)}
+                aria-label={`Quitar subtarea: ${s.titulo}`}
+                title="Quitar subtarea"
+                className="subtarea-quitar"
+              >
+                <DibujoIcono trazo={PAPELERA} tam={15} grosor={2.2} />
+              </button>
             </div>
           ))}
           <input

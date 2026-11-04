@@ -21,7 +21,7 @@ import HojaCrearMovil, { type ResultadoHoja } from '../pantallas/tareas/HojaCrea
 import EstadoVacio from '../pantallas/tareas/EstadoVacio';
 import { useEsWeb } from '../utils/useEsWeb';
 import { useTareas, type Tarea } from '../pantallas/useTareas';
-import { alternarCompletada, borrarTarea, crearSubtarea, marcarSubtarea } from '../pantallas/tareas/guardar';
+import { alternarCompletada, borrarTarea, borrarSubtarea, crearSubtarea, marcarSubtarea } from '../pantallas/tareas/guardar';
 import { normalizar, textoDia } from '../pantallas/tareas/frase';
 import { minutosDe } from '../pantallas/tareas/pulso';
 import { hoyISO } from '../utils/dias';
@@ -35,13 +35,23 @@ const FILTROS: { clave: Filtro; texto: string }[] = [
   { clave: 'hechas', texto: 'Completadas' },
 ];
 
+// Paso 6.6: cuánto tiempo hay para pulsar "Deshacer" después de borrar una tarea
+const DESHACER_MS = 5000;
+
 const minutosAhora = () => {
   const d = new Date();
   return d.getHours() * 60 + d.getMinutes();
 };
 
 function Tareas() {
-  const { tareas, categorias, cargadas, error, alCambiar, cambiarLocal } = useTareas();
+  const { tareas: todasLasTareas, categorias, cargadas, error, alCambiar, cambiarLocal } = useTareas();
+  // "Papelera" (paso 6.6): al borrar, la tarea se esconde AL MOMENTO, pero el servidor no la borra
+  // hasta pasados 5 s. Si pulsas Deshacer, nunca llega a borrarse: vuelve con todo (id, historial, subtareas).
+  // Se esconde filtrando por id (no quitándola de la lista): así, aunque la lista se recargue
+  // del servidor en esos 5 s, la tarea sigue escondida.
+  const [enPapelera, setEnPapelera] = useState<number[]>([]);
+  const tareas = todasLasTareas.filter((t) => !enPapelera.includes(t.id));
+  const papelera = useRef<{ tarea: Tarea; reloj: ReturnType<typeof setTimeout> } | null>(null);
   const location = useLocation();
   const [parametros, setParametros] = useSearchParams();
   const [filtro, setFiltro] = useState<Filtro>('hoy');
@@ -186,18 +196,66 @@ function Tareas() {
     }
   };
 
-  const borrar = async (t: Tarea) => {
-    if (ocupadas.current.has(t.id)) return;
-    ocupadas.current.add(t.id);
-    if (editandoId === t.id) setEditandoId(null);
-    cambiarLocal((lista) => lista.filter((x) => x.id !== t.id));
+  // ---------- Borrar con "Deshacer" (paso 6.6) ----------
+  // Borra de verdad en el servidor la tarea que hay en la papelera (a los 5 s, si borras otra o si te vas)
+  const vaciarPapelera = useCallback(async () => {
+    const p = papelera.current;
+    if (!p) return;
+    clearTimeout(p.reloj);
+    papelera.current = null;
     try {
-      await borrarTarea(t.id);
-      avisar('Tarea eliminada', `“${t.titulo}”`);
+      await borrarTarea(p.tarea.id);
     } catch (e) {
-      avisarError(e instanceof Error ? e.message : 'No se pudo borrar la tarea');
+      // No se pudo: la tarea vuelve a verse para que no creas que se borró
+      setEnPapelera((ids) => ids.filter((id) => id !== p.tarea.id));
+      setAviso({ titulo: 'No se pudo borrar', texto: e instanceof Error ? e.message : 'No se pudo borrar la tarea' });
     } finally {
-      ocupadas.current.delete(t.id);
+      alCambiar();
+    }
+  }, [alCambiar]);
+
+  // Si sales de Tareas o cierras la pestaña con una tarea en la papelera, se borra en ese momento
+  // (si no, volvería a aparecer la próxima vez). La ref guarda siempre la última versión de la función.
+  const vaciarAlSalir = useRef(vaciarPapelera);
+  useEffect(() => {
+    vaciarAlSalir.current = vaciarPapelera;
+  });
+  useEffect(() => {
+    const alCerrarPestana = () => void vaciarAlSalir.current();
+    window.addEventListener('pagehide', alCerrarPestana);
+    return () => {
+      window.removeEventListener('pagehide', alCerrarPestana);
+      void vaciarAlSalir.current();
+    };
+  }, []);
+
+  const deshacerBorrado = () => {
+    const p = papelera.current;
+    if (!p) return;
+    clearTimeout(p.reloj);
+    papelera.current = null;
+    setEnPapelera((ids) => ids.filter((id) => id !== p.tarea.id));
+    avisar('Tarea recuperada', `“${p.tarea.titulo}” vuelve a estar donde la dejaste, con todo lo que tenía.`);
+  };
+
+  const borrar = (t: Tarea) => {
+    if (ocupadas.current.has(t.id) || enPapelera.includes(t.id)) return;
+    if (editandoId === t.id) setEditandoId(null);
+    // Si ya había otra en la papelera, esa se borra ya (solo se puede deshacer la última)
+    void vaciarPapelera();
+    setEnPapelera((ids) => [...ids, t.id]);
+    papelera.current = { tarea: t, reloj: setTimeout(() => void vaciarAlSalir.current(), DESHACER_MS) };
+    setAviso({ titulo: 'Tarea eliminada', texto: `“${t.titulo}”`, deshacer: deshacerBorrado, duracionMs: DESHACER_MS });
+  };
+
+  // Quitar una subtarea (web, paso 6.6). La tarjeta ya hizo el tachón rojo; aquí se quita de verdad
+  const quitarSub = async (t: Tarea, id: number) => {
+    cambiarLocal((lista) => lista.map((x) => (x.id !== t.id ? x : { ...x, subtareas: (x.subtareas ?? []).filter((s) => s.id !== id) })));
+    try {
+      await borrarSubtarea(id);
+    } catch (e) {
+      avisarError(e instanceof Error ? e.message : 'No se pudo quitar la subtarea');
+    } finally {
       alCambiar();
     }
   };
@@ -369,6 +427,7 @@ function Tareas() {
                   alBorrar={() => borrar(t)}
                   alMarcarSubtarea={(id, valor) => marcarSub(t, id, valor)}
                   alAnadirSubtarea={(titulo) => anadirSub(t, titulo)}
+                  alQuitarSubtarea={(id) => quitarSub(t, id)}
                 />
               ) : (
                 <TarjetaMovil
