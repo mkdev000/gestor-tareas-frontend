@@ -43,6 +43,7 @@
   --color-tachit-panel-texto-tenue: var(--tachit-panel-texto-tenue);
   --color-tachit-panel-enlace: var(--tachit-panel-enlace);
   --color-tachit-sobre-acento: var(--tachit-sobre-acento);
+  --color-tachit-panel-texto-detalle: var(--tachit-panel-texto-detalle);
 }
 
 /* ===== Tachit: los 4 temas (Nube es el de por defecto) ===== */
@@ -71,6 +72,8 @@
   --tachit-icono-t: #141826;
   /* El texto encima del color de acento (por ejemplo, el botón "Nueva tarea") */
   --tachit-sobre-acento: #1b2559;
+  /* Mi día (paso 7.4): el texto de detalle del briefing, sobre el panel */
+  --tachit-panel-texto-detalle: #565e84;
   /* Barra lateral web (paso 4.5): textos, "capa" (para fondos transparentes) y el pase de abajo */
   --tachit-barra-texto: #3d4672;
   --tachit-barra-tenue: #727898;
@@ -105,6 +108,8 @@
   --tachit-icono-t: #141826;
   /* El texto encima del color de acento (por ejemplo, el botón "Nueva tarea") */
   --tachit-sobre-acento: #34192a;
+  /* Mi día (paso 7.4): el texto de detalle del briefing, sobre el panel */
+  --tachit-panel-texto-detalle: #695561;
   /* Barra lateral web (paso 4.5): textos, "capa" (para fondos transparentes) y el pase de abajo */
   --tachit-barra-texto: #523c4a;
   --tachit-barra-tenue: #81707b;
@@ -139,6 +144,8 @@
   --tachit-icono-t: #141826;
   /* El texto encima del color de acento (por ejemplo, el botón "Nueva tarea") */
   --tachit-sobre-acento: #4a1a2c;
+  /* Mi día (paso 7.4): el texto de detalle del briefing, sobre el panel */
+  --tachit-panel-texto-detalle: #795663;
   /* Barra lateral web (paso 4.5): textos, "capa" (para fondos transparentes) y el pase de abajo */
   --tachit-barra-texto: #653c4c;
   --tachit-barra-tenue: #8f717c;
@@ -173,6 +180,8 @@
   --tachit-icono-t: #ffffff;
   /* El texto encima del color de acento (por ejemplo, el botón "Nueva tarea") */
   --tachit-sobre-acento: #45302f;
+  /* Mi día (paso 7.4): el texto de detalle del briefing, sobre el panel */
+  --tachit-panel-texto-detalle: #b8c9d9;
   /* Barra lateral web (paso 4.5): textos, "capa" (para fondos transparentes) y el pase de abajo */
   --tachit-barra-texto: #e8dcd8;
   --tachit-barra-tenue: #cbbab5;
@@ -2994,4 +3003,283 @@ button.menu-opcion:active .menu-flecha {
 .boton-prioridad:focus-visible {
   outline: 2px solid var(--tachit-acento-fuerte);
   outline-offset: 2px;
+}
+
+/* ---------- Mi día · web (Fase 7, paso 7.4), igual que el prototipo ----------
+   El briefing va con el degradado del panel del tema (de --tachit-panel a --tachit-panel-activo). */
+.midia-briefing {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 22px 26px;
+  border-radius: 16px;
+  background: linear-gradient(120deg, var(--tachit-panel) 0%, var(--tachit-panel-activo) 100%);
+  color: var(--tachit-panel-texto);
+}
+/* La nota pegada "Lo importante de hoy": un papel con un trozo de cinta del color del tema */
+.midia-nota {
+  position: relative;
+  flex-shrink: 0;
+  width: 250px;
+  padding: 16px 16px 12px;
+  border-radius: 4px 4px 12px 4px;
+  background: #fffdf3;
+  box-shadow: 0 8px 18px rgba(27, 37, 89, 0.14);
+  color: var(--tachit-sobre-acento);
+  transform: rotate(-1.8deg);
+  transition: transform 0.2s ease;
+}
+.midia-nota:hover {
+  transform: rotate(0deg);
+}
+.midia-nota::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 58px;
+  height: 16px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--tachit-acento) 55%, transparent);
+  transform: translateX(-50%) rotate(2deg);
+}
+.midia-nota-titulo {
+  margin-bottom: 6px;
+  color: var(--tachit-acento-fuerte);
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.midia-nota li {
+  display: flex;
+  min-width: 0;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.midia-nota li + li {
+  border-top: 1px dashed #e7e2c8;
+}
+.midia-nota b {
+  flex-shrink: 0;
+  min-width: 38px;
+  color: #f2711c; /* el naranja de las horas, igual que el prototipo */
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+/* Ya hechas: en gris y tachadas con el trazo de Tachit en rojo */
+.midia-nota-hecha b,
+.midia-nota-tachada {
+  color: #66727f;
+}
+.midia-nota-tachada {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+.midia-nota-tachada svg {
+  position: absolute;
+  top: 50%;
+  left: -2px;
+  width: calc(100% + 8px);
+  height: 10px;
+  overflow: visible;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.midia-nota-fin {
+  margin-top: 8px;
+  color: #17804f;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+/* Sin tareas clave: "Nada urgente por ahora", el atajo y la "?" que explica qué sale aquí */
+.midia-nota-mensaje {
+  font-size: 14.5px;
+  font-weight: 800;
+}
+.midia-nota-atajo {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  margin-top: 10px;
+  padding: 0 12px;
+  border: 1px dashed var(--tachit-acento-fuerte);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--tachit-acento-fuerte);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.midia-nota-atajo:hover {
+  background: color-mix(in srgb, var(--tachit-acento) 14%, transparent);
+}
+.midia-nota-ayuda {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--tachit-acento-fuerte) 40%, transparent);
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--tachit-acento-fuerte);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: help;
+}
+.midia-nota-explica {
+  display: none;
+  position: absolute;
+  top: 36px;
+  right: -6px;
+  z-index: 3;
+  width: 220px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #0f1f2e;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+  pointer-events: none; /* solo se lee: no tapa el botón del atajo */
+}
+.midia-nota-ayuda:hover + .midia-nota-explica,
+.midia-nota-ayuda:focus-visible + .midia-nota-explica {
+  display: block;
+}
+.midia-nota-ayuda:focus-visible,
+.midia-nota-atajo:focus-visible {
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 2px;
+}
+/* El botón "Reorganizar mi día": blanco con borde del tema y tres bloques
+   (naranja, color del tema y gris) que se ponen en fila al pasar el ratón o mientras trabaja */
+.midia-reorganizar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  min-width: 205px;
+  padding: 0 20px;
+  border: 1.5px solid var(--tachit-acento-borde);
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--tachit-sobre-acento);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.midia-reorganizar:hover:not(:disabled) {
+  background: var(--tachit-acento-suave);
+}
+.midia-reorganizar:disabled {
+  cursor: progress;
+}
+.midia-reorganizar[data-estado='listo'] {
+  color: #17804f;
+}
+.midia-bloques {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 16px;
+}
+.midia-bloques i {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  transition:
+    transform 0.3s ease,
+    width 0.3s ease;
+}
+.midia-bloques i:nth-child(1) {
+  width: 10px;
+  background: #f2711c;
+  transform: translateX(7px);
+}
+.midia-bloques i:nth-child(2) {
+  width: 16px;
+  background: var(--tachit-acento);
+}
+.midia-bloques i:nth-child(3) {
+  width: 7px;
+  background: #94a3b8;
+  transform: translateX(4px);
+}
+.midia-reorganizar:hover .midia-bloques i,
+.midia-reorganizar[data-estado='trabajando'] .midia-bloques i,
+.midia-reorganizar[data-estado='listo'] .midia-bloques i {
+  transform: translateX(0);
+}
+.midia-reorganizar:hover .midia-bloques i:nth-child(2),
+.midia-reorganizar[data-estado='trabajando'] .midia-bloques i:nth-child(2),
+.midia-reorganizar[data-estado='listo'] .midia-bloques i:nth-child(2) {
+  width: 12px;
+}
+.midia-reorganizar:hover .midia-bloques i:nth-child(3),
+.midia-reorganizar[data-estado='trabajando'] .midia-bloques i:nth-child(3),
+.midia-reorganizar[data-estado='listo'] .midia-bloques i:nth-child(3) {
+  width: 8px;
+}
+.midia-reorganizar:hover .midia-bloques i:nth-child(1),
+.midia-reorganizar[data-estado='trabajando'] .midia-bloques i:nth-child(1),
+.midia-reorganizar[data-estado='listo'] .midia-bloques i:nth-child(1) {
+  width: 16px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .midia-nota,
+  .midia-nota:hover {
+    transform: none;
+    transition: none;
+  }
+  .midia-bloques i {
+    transition: none;
+  }
+}
+.midia-reorganizar:focus-visible,
+.midia-planificar:focus-visible {
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 2px;
+}
+.midia-carta {
+  padding: 18px;
+  border: 1px solid #e3e8ef;
+  border-radius: 16px;
+  background: #ffffff;
+}
+.midia-sin-hora {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e3e8ef;
+  border-left-width: 5px;
+  border-radius: 10px;
+  background: #ffffff;
+}
+.midia-planificar {
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--tachit-acento-borde);
+  border-radius: 8px;
+  background: var(--tachit-acento-claro);
+  color: var(--tachit-acento-fuerte);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.midia-planificar:disabled {
+  cursor: progress;
+  opacity: 0.6;
 }

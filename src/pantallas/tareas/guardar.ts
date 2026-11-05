@@ -151,6 +151,13 @@ export async function alternarCompletada(t: Tarea): Promise<string | null> {
   return siguiente ? siguiente.fecha_limite : null;
 }
 
+// ---------- Cambiar el día y la hora de varias tareas a la vez (Fase 7, paso 7.2) ----------
+// Lo usan "Reorganizar mi día" y "Planificar" (y, en el paso 7.5, "Separar" y arrastrar en la línea de tiempo).
+// Una sola petición: el servidor las mueve todas o ninguna.
+export function cambiarHorario(cambios: { id: number; fecha_limite: string; hora_limite: string }[]) {
+  return pedir('/api/tareas/horario', 'PATCH', { cambios });
+}
+
 // ---------- Borrar ----------
 // keepalive (paso 6.6): el navegador termina de enviar el borrado aunque cierres la pestaña justo
 // en ese momento (la tarea se borra de verdad a los 5 s de pulsar la papelera, o al salir)
