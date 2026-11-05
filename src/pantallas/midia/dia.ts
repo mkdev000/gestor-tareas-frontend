@@ -7,10 +7,10 @@
 //  - el resumen del día y el texto del briefing
 // Son "funciones puras": reciben las tareas, el día y la hora, y devuelven un resultado.
 // No piden nada al servidor ni tocan la pantalla, por eso se pueden probar solas (dia.test.ts).
-import type { Tarea } from "../useTareas";
-import type { Prioridad } from "../tareas/frase";
-import { horaConCeros, textoDuracion } from "../tareas/frase";
-import { INICIO_DIA, FIN_DIA, minutosDe } from "../tareas/pulso";
+import type { Tarea } from '../useTareas';
+import type { Prioridad } from '../tareas/frase';
+import { horaConCeros, textoDuracion } from '../tareas/frase';
+import { INICIO_DIA, FIN_DIA, minutosDe, textoHora } from '../tareas/pulso';
 
 export { INICIO_DIA, FIN_DIA };
 
@@ -25,25 +25,18 @@ const ORDEN_PRIORIDAD: Record<Prioridad, number> = {
 
 // ---------- Datos básicos de una tarea ----------
 export const duracion = (t: Tarea) => t.duracion_min ?? 30;
-export const hecha = (t: Tarea) => t.estado === "completada";
+export const hecha = (t: Tarea) => t.estado === 'completada';
 export const inicioDe = (t: Tarea) => minutosDe(t.hora_limite);
-export const esDeHoy = (t: Tarea, hoy: string) =>
-  t.fecha_limite?.slice(0, 10) === hoy;
+export const esDeHoy = (t: Tarea, hoy: string) => t.fecha_limite?.slice(0, 10) === hoy;
 
 // Atrasada: es de hoy, no está hecha y su hora de terminar ya ha pasado
 export function estaAtrasada(t: Tarea, hoy: string, ahora: number) {
   const inicio = inicioDe(t);
-  return (
-    !hecha(t) &&
-    esDeHoy(t, hoy) &&
-    inicio !== null &&
-    inicio + duracion(t) <= ahora
-  );
+  return !hecha(t) && esDeHoy(t, hoy) && inicio !== null && inicio + duracion(t) <= ahora;
 }
 
 // 11:40 → 11:45 (la siguiente marca de 15 minutos; si ya es justa, se queda)
-export const redondearArriba = (minutos: number) =>
-  Math.ceil(minutos / PASO) * PASO;
+export const redondearArriba = (minutos: number) => Math.ceil(minutos / PASO) * PASO;
 
 // ---------- Huecos libres ----------
 export interface Tramo {
@@ -58,11 +51,7 @@ export function cabe(inicio: number, dura: number, ocupados: Tramo[]) {
 
 // El primer hueco donde cabe, buscando de 15 en 15 desde "desde" hasta las 22:00. null si no hay
 export function buscarHueco(dura: number, ocupados: Tramo[], desde: number) {
-  for (
-    let inicio = Math.max(desde, INICIO_DIA);
-    inicio + dura <= FIN_DIA;
-    inicio += PASO
-  ) {
+  for (let inicio = Math.max(desde, INICIO_DIA); inicio + dura <= FIN_DIA; inicio += PASO) {
     if (cabe(inicio, dura, ocupados)) return inicio;
   }
   return null;
@@ -71,30 +60,18 @@ export function buscarHueco(dura: number, ocupados: Tramo[], desde: number) {
 // Coloca las tareas "ids" en los huecos libres de hoy a partir de "desde".
 // Respeta las tareas de hoy que ya tienen hora, siguen pendientes y aún no han terminado.
 // Devuelve un Map: id → minuto en el que empieza (las que no caben no aparecen).
-export function colocarTareas(
-  tareas: Tarea[],
-  ids: number[],
-  desde: number,
-  hoy: string,
-  ahora: number,
-) {
+export function colocarTareas(tareas: Tarea[], ids: number[], desde: number, hoy: string, ahora: number) {
   const mover = new Set(ids);
   const ocupados: Tramo[] = tareas
     .filter((t) => esDeHoy(t, hoy) && !hecha(t) && !mover.has(t.id))
     .flatMap((t) => {
       const inicio = inicioDe(t);
-      return inicio !== null && inicio + duracion(t) > ahora
-        ? [{ desde: inicio, hasta: inicio + duracion(t) }]
-        : [];
+      return inicio !== null && inicio + duracion(t) > ahora ? [{ desde: inicio, hasta: inicio + duracion(t) }] : [];
     });
   const colocadas = new Map<number, number>();
   tareas
     .filter((t) => mover.has(t.id))
-    .sort(
-      (a, b) =>
-        ORDEN_PRIORIDAD[a.prioridad] - ORDEN_PRIORIDAD[b.prioridad] ||
-        duracion(a) - duracion(b),
-    )
+    .sort((a, b) => ORDEN_PRIORIDAD[a.prioridad] - ORDEN_PRIORIDAD[b.prioridad] || duracion(a) - duracion(b))
     .forEach((t) => {
       const inicio = buscarHueco(duracion(t), ocupados, desde);
       if (inicio === null) return;
@@ -106,14 +83,14 @@ export function colocarTareas(
 
 // ---------- Reorganizar · Planificar · Separar ----------
 export type Plan =
-  | { tipo: "en-orden" } // no había nada que mover
-  | { tipo: "sin-hueco" } // había que mover, pero no queda hueco hoy
-  | { tipo: "colocadas"; colocadas: Map<number, number>; sinHueco: number[] };
+  | { tipo: 'en-orden' } // no había nada que mover
+  | { tipo: 'sin-hueco' } // había que mover, pero no queda hueco hoy
+  | { tipo: 'colocadas'; colocadas: Map<number, number>; sinHueco: number[] };
 
 function plan(colocadas: Map<number, number>, ids: number[]): Plan {
-  if (colocadas.size === 0) return { tipo: "sin-hueco" };
+  if (colocadas.size === 0) return { tipo: 'sin-hueco' };
   return {
-    tipo: "colocadas",
+    tipo: 'colocadas',
     colocadas,
     sinHueco: ids.filter((id) => !colocadas.has(id)),
   };
@@ -121,48 +98,23 @@ function plan(colocadas: Map<number, number>, ids: number[]): Plan {
 
 // "Reorganizar mi día": las de hoy pendientes que no tienen hora o van atrasadas → a los huecos libres
 export function reorganizar(tareas: Tarea[], hoy: string, ahora: number): Plan {
-  const ids = tareas
-    .filter(
-      (t) =>
-        esDeHoy(t, hoy) &&
-        !hecha(t) &&
-        (inicioDe(t) === null || estaAtrasada(t, hoy, ahora)),
-    )
-    .map((t) => t.id);
-  if (ids.length === 0) return { tipo: "en-orden" };
-  return plan(
-    colocarTareas(tareas, ids, redondearArriba(ahora), hoy, ahora),
-    ids,
-  );
+  const ids = tareas.filter((t) => esDeHoy(t, hoy) && !hecha(t) && (inicioDe(t) === null || estaAtrasada(t, hoy, ahora))).map((t) => t.id);
+  if (ids.length === 0) return { tipo: 'en-orden' };
+  return plan(colocarTareas(tareas, ids, redondearArriba(ahora), hoy, ahora), ids);
 }
 
 // "Planificar" (una tarea sin hora): al primer hueco libre desde ahora
-export function planificar(
-  tareas: Tarea[],
-  id: number,
-  hoy: string,
-  ahora: number,
-): Plan {
-  return plan(colocarTareas(tareas, [id], redondearArriba(ahora), hoy, ahora), [
-    id,
-  ]);
+export function planificar(tareas: Tarea[], id: number, hoy: string, ahora: number): Plan {
+  return plan(colocarTareas(tareas, [id], redondearArriba(ahora), hoy, ahora), [id]);
 }
 
 // "Separar" dos tareas que se pisan: la segunda va al siguiente hueco libre después de la primera
-export function separar(
-  tareas: Tarea[],
-  primeraId: number,
-  segundaId: number,
-  hoy: string,
-  ahora: number,
-): Plan {
+export function separar(tareas: Tarea[], primeraId: number, segundaId: number, hoy: string, ahora: number): Plan {
   const primera = tareas.find((t) => t.id === primeraId);
   const inicio = primera ? inicioDe(primera) : null;
-  if (!primera || inicio === null) return { tipo: "sin-hueco" };
+  if (!primera || inicio === null) return { tipo: 'sin-hueco' };
   const desde = Math.max(redondearArriba(ahora), inicio + duracion(primera));
-  return plan(colocarTareas(tareas, [segundaId], desde, hoy, ahora), [
-    segundaId,
-  ]);
+  return plan(colocarTareas(tareas, [segundaId], desde, hoy, ahora), [segundaId]);
 }
 
 // Lo que se envía a PATCH /api/tareas/horario (paso 7.2): todas quedan para hoy, a su hora nueva
@@ -184,19 +136,14 @@ export interface Choque {
 
 // Pares de tareas de hoy, con hora y sin hacer, que coinciden en el tiempo
 export function choques(tareas: Tarea[], hoy: string): Choque[] {
-  const conHora = tareas
-    .filter((t) => esDeHoy(t, hoy) && !hecha(t) && inicioDe(t) !== null)
-    .sort((a, b) => inicioDe(a)! - inicioDe(b)!);
+  const conHora = tareas.filter((t) => esDeHoy(t, hoy) && !hecha(t) && inicioDe(t) !== null).sort((a, b) => inicioDe(a)! - inicioDe(b)!);
   const lista: Choque[] = [];
   for (let i = 0; i < conHora.length; i++) {
     for (let j = i + 1; j < conHora.length; j++) {
       const a = conHora[i];
       const b = conHora[j];
       const desde = Math.max(inicioDe(a)!, inicioDe(b)!);
-      const hasta = Math.min(
-        inicioDe(a)! + duracion(a),
-        inicioDe(b)! + duracion(b),
-      );
+      const hasta = Math.min(inicioDe(a)! + duracion(a), inicioDe(b)! + duracion(b));
       if (desde < hasta) lista.push({ primera: a, segunda: b, desde, hasta });
     }
   }
@@ -206,9 +153,7 @@ export function choques(tareas: Tarea[], hoy: string): Choque[] {
 // Carriles: si dos bloques coinciden, en la línea de tiempo se ponen lado a lado.
 // Devuelve, para cada tarea que comparte hueco, en qué carril va (i) y cuántos carriles hay (n).
 export function carriles(tareas: Tarea[], hoy: string) {
-  const conHora = tareas
-    .filter((t) => esDeHoy(t, hoy) && inicioDe(t) !== null)
-    .sort((a, b) => inicioDe(a)! - inicioDe(b)!);
+  const conHora = tareas.filter((t) => esDeHoy(t, hoy) && inicioDe(t) !== null).sort((a, b) => inicioDe(a)! - inicioDe(b)!);
   const resultado = new Map<number, { i: number; n: number }>();
   // 1) Grupos de tareas que se solapan entre sí (una detrás de otra, sin hueco en medio)
   const grupos: Tarea[][] = [];
@@ -240,14 +185,11 @@ export interface Resumen {
   atrasadas: Tarea[];
   completadas: number;
   clave: Tarea[]; // las de prioridad alta que quedan por hacer
+  claveHechas: Tarea[]; // las de prioridad alta que ya has terminado hoy
   sinHora: Tarea[]; // las de hoy pendientes sin hora (para "Sin hora asignada")
 }
 
-export function resumenDelDia(
-  tareas: Tarea[],
-  hoy: string,
-  ahora: number,
-): Resumen {
+export function resumenDelDia(tareas: Tarea[], hoy: string, ahora: number): Resumen {
   const deHoy = tareas.filter((t) => esDeHoy(t, hoy));
   const pendientes = deHoy.filter((t) => !hecha(t));
   const desde = Math.min(Math.max(ahora, INICIO_DIA), FIN_DIA); // antes de las 8 cuenta desde las 8
@@ -260,50 +202,52 @@ export function resumenDelDia(
     return suma + Math.max(0, termina - empieza);
   }, 0);
   return {
-    planificado: deHoy
-      .filter((t) => inicioDe(t) !== null)
-      .reduce((suma, t) => suma + duracion(t), 0),
+    planificado: deHoy.filter((t) => inicioDe(t) !== null).reduce((suma, t) => suma + duracion(t), 0),
     libre: Math.max(0, FIN_DIA - desde - ocupado),
     atrasadas: deHoy.filter((t) => estaAtrasada(t, hoy, ahora)),
     completadas: deHoy.filter(hecha).length,
-    clave: pendientes.filter((t) => t.prioridad === "alta"),
+    clave: pendientes.filter((t) => t.prioridad === 'alta'),
+    claveHechas: deHoy.filter((t) => hecha(t) && t.prioridad === 'alta'),
     sinHora: pendientes.filter((t) => inicioDe(t) === null),
   };
 }
 
 // "Buenos días" hasta las 14:00, "Buenas tardes" hasta las 21:00 y "Buenas noches" después
 export function saludoSegunHora(ahora: number) {
-  if (ahora >= 6 * 60 && ahora < 14 * 60) return "Buenos días";
-  if (ahora >= 14 * 60 && ahora < 21 * 60) return "Buenas tardes";
-  return "Buenas noches";
+  if (ahora >= 6 * 60 && ahora < 14 * 60) return 'Buenos días';
+  if (ahora >= 14 * 60 && ahora < 21 * 60) return 'Buenas tardes';
+  return 'Buenas noches';
 }
 
-// Los textos del briefing, como en el prototipo:
-// "Buenos días, Ana. Hoy tienes 2 tareas clave." + "Tarea 1 · Tarea 2. Te quedan unas 5 h libres y 1 tarea atrasada."
+// Los textos de "Así va tu día" (antes "Briefing de hoy"), como en el prototipo:
+// "Buenos días, Ana. Hoy tienes 2 tareas clave." + "Te quedan unas 5 h libres y 1 tarea atrasada."
+// (Las tareas clave ya no van en la frase: salen en la nota pegada, ver loImportante)
 export function textoBriefing(r: Resumen, nombre: string, ahora: number) {
   const n = r.clave.length;
-  const titular = `${saludoSegunHora(ahora)}${nombre ? `, ${nombre}` : ""}. ${
-    n === 0
-      ? "Hoy no tienes tareas urgentes."
-      : n === 1
-        ? "Hoy tienes 1 tarea clave."
-        : `Hoy tienes ${n} tareas clave.`
+  const titular = `${saludoSegunHora(ahora)}${nombre ? `, ${nombre}` : ''}. ${
+    n === 0 ? 'Hoy no tienes tareas urgentes.' : n === 1 ? 'Hoy tienes 1 tarea clave.' : `Hoy tienes ${n} tareas clave.`
   }`;
-  const claves = n
-    ? `${r.clave
-        .slice(0, 3)
-        .map((t) => t.titulo)
-        .join(" · ")}. `
-    : "";
-  const libre =
-    r.libre > 0
-      ? `Te quedan unas ${textoDuracion(r.libre)} libres`
-      : "No te queda tiempo libre hoy";
-  const atrasadas =
-    r.atrasadas.length === 0
-      ? "."
-      : r.atrasadas.length === 1
-        ? " y 1 tarea atrasada."
-        : ` y ${r.atrasadas.length} tareas atrasadas.`;
-  return { titular, detalle: claves + libre + atrasadas };
+  const libre = r.libre > 0 ? `Te quedan unas ${textoDuracion(r.libre)} libres` : 'No te queda tiempo libre hoy';
+  const atrasadas = r.atrasadas.length === 0 ? '.' : r.atrasadas.length === 1 ? ' y 1 tarea atrasada.' : ` y ${r.atrasadas.length} tareas atrasadas.`;
+  return { titular, detalle: libre + atrasadas };
+}
+
+// La nota pegada "Lo importante de hoy" (paso 7.4). Tiene tres formas:
+//  - 'pendientes': las tareas clave que te quedan por hacer
+//  - 'hechas': ya no te queda ninguna, pero hoy sí tenías (salen tachadas)
+//  - 'vacia': hoy no tienes ninguna tarea clave ("Nada urgente por ahora" y el atajo)
+// Van en orden de hora (las que no tienen hora, al final) y como mucho 3, para que la nota no crezca demasiado.
+export type EstadoNota = 'pendientes' | 'hechas' | 'vacia';
+
+export function loImportante(r: Resumen): { estado: EstadoNota; tareas: { id: number; titulo: string; hora: string }[] } {
+  const estado: EstadoNota = r.clave.length ? 'pendientes' : r.claveHechas.length ? 'hechas' : 'vacia';
+  const lista = estado === 'pendientes' ? r.clave : r.claveHechas;
+  const tareas = [...lista]
+    .sort((a, b) => (inicioDe(a) ?? 9999) - (inicioDe(b) ?? 9999))
+    .slice(0, 3)
+    .map((t) => {
+      const inicio = inicioDe(t);
+      return { id: t.id, titulo: t.titulo, hora: inicio === null ? 'sin hora' : textoHora(inicio) };
+    });
+  return { estado, tareas };
 }
