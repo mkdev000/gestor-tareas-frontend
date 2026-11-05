@@ -22,7 +22,7 @@ import EstadoVacio from '../pantallas/tareas/EstadoVacio';
 import { useEsWeb } from '../utils/useEsWeb';
 import { useTareas, type Tarea } from '../pantallas/useTareas';
 import { alternarCompletada, borrarTarea, borrarSubtarea, crearSubtarea, marcarSubtarea } from '../pantallas/tareas/guardar';
-import { normalizar, textoDia } from '../pantallas/tareas/frase';
+import { normalizar, textoDia, type Prioridad } from '../pantallas/tareas/frase';
 import { minutosDe } from '../pantallas/tareas/pulso';
 import { hoyISO } from '../utils/dias';
 
@@ -86,16 +86,24 @@ function Tareas() {
   // Peticiones que llegan de otras pantallas en location.state:
   //  - "Nueva tarea" del marco (botón de la barra o rombo +): { nuevaTarea: número nuevo cada vez }
   //  - el lápiz del Calendario (paso 6.4): { editarTarea: { id, vez } }
+  //  - el atajo de la nota de Mi día (paso 7.4): { nuevaTarea, prioridad: 'alta' } (la caja empieza con esa prioridad)
   // Se atiende cada petición UNA vez, mientras se dibuja (sin useEffect), comparando con la última
   // atendida: es la forma que recomienda React para reaccionar a un dato nuevo. Se copia a estado
   // propio (focoLocal / editandoId) y después se borra de la dirección (efecto de abajo).
   // Arreglos del paso 6.7: (1) antes, tras crear la primera tarea desde el estado vacío, el + del
   // móvil ya no abría la hoja; (2) al recargar la página (F5), la hoja o el editor se volvían a abrir solos.
-  const pedido = location.state as { nuevaTarea?: number; editarTarea?: { id: number; vez: number } } | null;
+  const pedido = location.state as { nuevaTarea?: number; prioridad?: Prioridad; editarTarea?: { id: number; vez: number } } | null;
   const [ultimoPedido, setUltimoPedido] = useState<typeof pedido>(null);
+  const [prioridadPedida, setPrioridadPedida] = useState<Prioridad | ''>('');
   if (pedido && pedido !== ultimoPedido) {
     setUltimoPedido(pedido);
-    if (pedido.nuevaTarea) setFocoLocal(pedido.nuevaTarea);
+    if (pedido.nuevaTarea) {
+      setFocoLocal(pedido.nuevaTarea);
+      setPrioridadPedida(pedido.prioridad ?? '');
+      // En la web, si aún no tienes ninguna tarea, se enseña la caja de crear en vez del estado vacío
+      // (igual que "Crear mi primera tarea"); si no, "Nueva tarea" no abría nada
+      if (esWeb) setCreandoPrimera(true);
+    }
     if (pedido.editarTarea) setEditandoId(pedido.editarTarea.id);
   }
   // Ya atendida: se borra de la dirección (sin añadir otra entrada al historial).
@@ -334,6 +342,7 @@ function Tareas() {
               categorias={categorias}
               editando={editando}
               pedirFoco={pedirFoco}
+              prioridadPedida={prioridadPedida}
               alGuardar={alGuardarCaja}
               alError={avisarError}
               alCancelarEdicion={() => setEditandoId(null)}

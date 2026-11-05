@@ -10,7 +10,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { Tarea, CategoriaDeLista } from '../useTareas';
 import {
   leerFrase, aplicarOpciones, avisoActual, desdeTarea, normalizar, textoDia, textoDuracion, textoAviso, textoRepeticion, horaConCeros,
-  OPCIONES_VACIAS, type OpcionesFrase,
+  OPCIONES_VACIAS, type OpcionesFrase, type Prioridad,
 } from './frase';
 import { ICONOS_TAREA } from './iconosTarea';
 import { DibujoIcono } from './PastillaIcono';
@@ -37,6 +37,7 @@ interface Props {
   categorias: CategoriaDeLista[];
   editando: Tarea | null; // la tarea que se está editando (o null para crear)
   pedirFoco?: number; // cambia cada vez que pulsas "Nueva tarea" en el marco
+  prioridadPedida?: Prioridad | ''; // con qué prioridad empieza (el atajo de Mi día pide 'alta'; '' = la de siempre)
   alGuardar: (resultado: ResultadoCaja) => void;
   alError: (mensaje: string) => void;
   alCancelarEdicion: () => void;
@@ -60,12 +61,19 @@ function Ficha({ etiqueta, puesta, abierta, color, fondo, linea, alPulsar, icono
   );
 }
 
-function CajaCrear({ hoy, categorias, editando, pedirFoco, alGuardar, alError, alCancelarEdicion, alBorrar }: Props) {
+function CajaCrear({ hoy, categorias, editando, pedirFoco, prioridadPedida = '', alGuardar, alError, alCancelarEdicion, alBorrar }: Props) {
   // Si llega una tarea para editar, la caja empieza con sus datos (la pantalla cambia la "key" al editar,
   // así React crea la caja de nuevo y no hace falta copiar datos con un useEffect)
-  const [inicial] = useState(() => (editando ? desdeTarea(editando) : { borrador: '', op: OPCIONES_VACIAS }));
+  const [inicial] = useState(() => (editando ? desdeTarea(editando) : { borrador: '', op: { ...OPCIONES_VACIAS, prioridad: prioridadPedida } }));
   const [borrador, setBorrador] = useState(inicial.borrador);
   const [op, setOp] = useState<OpcionesFrase>(inicial.op);
+  // Si la caja ya estaba abierta y llega otro "Nueva tarea" que pide una prioridad, se pone esa
+  // (se ajusta mientras se dibuja, comparando con el último pedido, sin useEffect)
+  const [ultimoFoco, setUltimoFoco] = useState(pedirFoco);
+  if (pedirFoco !== ultimoFoco) {
+    setUltimoFoco(pedirFoco);
+    if (!editando && prioridadPedida) setOp((o) => ({ ...o, prioridad: prioridadPedida }));
+  }
   const [seccion, setSeccion] = useState<Seccion | null>(null);
   const [guardando, setGuardando] = useState(false);
   const campo = useRef<HTMLInputElement>(null);
