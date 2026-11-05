@@ -10,7 +10,7 @@
 // La pantalla guarda "qué se ve" (filtro, búsqueda, qué tarjeta está abierta...);
 // lo que se habla con el servidor está en pantallas/tareas/guardar.ts.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import ChipFiltro from '../componentes/base/ChipFiltro';
 import AvisoFlotante, { type DatosAviso } from '../componentes/base/AvisoFlotante';
 import CabeceraTareas from '../pantallas/tareas/CabeceraTareas';
@@ -53,6 +53,7 @@ function Tareas() {
   const tareas = todasLasTareas.filter((t) => !enPapelera.includes(t.id));
   const papelera = useRef<{ tarea: Tarea; reloj: ReturnType<typeof setTimeout> } | null>(null);
   const location = useLocation();
+  const navigate = useNavigate();
   const [parametros, setParametros] = useSearchParams();
   const [filtro, setFiltro] = useState<Filtro>('hoy');
   const [busqueda, setBusqueda] = useState('');
@@ -82,19 +83,27 @@ function Tareas() {
   const avisar = (titulo: string, texto: string) => setAviso({ titulo, texto });
   const avisarError = (texto: string) => setAviso({ titulo: 'No se pudo guardar', texto });
 
-  // "Nueva tarea" desde el marco (botón de la barra o rombo +): llega un número nuevo cada vez
-  const peticionNueva = (location.state as { nuevaTarea?: number } | null)?.nuevaTarea;
-  const pedirFoco = focoLocal ?? peticionNueva;
-
-  // "Editar" desde otra pantalla (el lápiz del Calendario, paso 6.4): llega { id, vez }.
-  // Se atiende UNA vez por cada "vez" nueva. Se hace mientras se dibuja (sin useEffect), comparando
-  // con la última que ya atendimos: es la forma que recomienda React para reaccionar a un dato nuevo.
-  const peticionEditar = (location.state as { editarTarea?: { id: number; vez: number } } | null)?.editarTarea;
-  const [edicionAtendida, setEdicionAtendida] = useState<number | undefined>(undefined);
-  if (peticionEditar && peticionEditar.vez !== edicionAtendida) {
-    setEdicionAtendida(peticionEditar.vez);
-    setEditandoId(peticionEditar.id);
+  // Peticiones que llegan de otras pantallas en location.state:
+  //  - "Nueva tarea" del marco (botón de la barra o rombo +): { nuevaTarea: número nuevo cada vez }
+  //  - el lápiz del Calendario (paso 6.4): { editarTarea: { id, vez } }
+  // Se atiende cada petición UNA vez, mientras se dibuja (sin useEffect), comparando con la última
+  // atendida: es la forma que recomienda React para reaccionar a un dato nuevo. Se copia a estado
+  // propio (focoLocal / editandoId) y después se borra de la dirección (efecto de abajo).
+  // Arreglos del paso 6.7: (1) antes, tras crear la primera tarea desde el estado vacío, el + del
+  // móvil ya no abría la hoja; (2) al recargar la página (F5), la hoja o el editor se volvían a abrir solos.
+  const pedido = location.state as { nuevaTarea?: number; editarTarea?: { id: number; vez: number } } | null;
+  const [ultimoPedido, setUltimoPedido] = useState<typeof pedido>(null);
+  if (pedido && pedido !== ultimoPedido) {
+    setUltimoPedido(pedido);
+    if (pedido.nuevaTarea) setFocoLocal(pedido.nuevaTarea);
+    if (pedido.editarTarea) setEditandoId(pedido.editarTarea.id);
   }
+  // Ya atendida: se borra de la dirección (sin añadir otra entrada al historial).
+  // El navegador guarda location.state al recargar; así no se vuelve a pedir lo mismo.
+  useEffect(() => {
+    if (pedido) navigate(location.pathname + location.search, { replace: true, state: null });
+  }, [pedido, navigate, location.pathname, location.search]);
+  const pedirFoco = focoLocal;
 
   // Resaltar unas tarjetas un momento (las recién creadas, o a la que saltas desde el pulso)
   const resaltar = (ids: number[]) => {
