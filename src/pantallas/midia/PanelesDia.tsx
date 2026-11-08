@@ -2,7 +2,7 @@
 // Las dos tarjetas de la columna derecha de Mi día (Fase 7, paso 7.4), igual que en el prototipo web:
 //  - "Notas sueltas": las tareas de hoy sin hora, como notitas pegadas. Su botón dice a qué hora se
 //    pondrá la tarea (el primer hueco libre desde ahora), así se sabe qué hace antes de pulsarlo.
-//    (Arrastrarlas a la línea de tiempo llega con la línea de tiempo, en el paso 7.5)
+//    También se pueden arrastrar a la línea de tiempo (paso 7.5).
 //  - "Resumen del día": el hilo con las tareas de hoy (las hechas tachadas), la frase de cómo vas
 //    (con "Recolocar" si se te pasó algo) y qué toca ahora y después
 // Las dos llevan una "?" que explica para qué sirven.
@@ -11,6 +11,7 @@ import type { Tarea } from '../useTareas';
 import type { Resumen, hiloDelDia } from './dia';
 import { duracion, fraseDelDia, inicioDe } from './dia';
 import Ayuda from './Ayuda';
+import { empezarArrastre } from './arrastre';
 import { textoDuracion } from '../tareas/frase';
 import { estiloPrioridad } from '../tareas/prioridades';
 import { INICIO_DIA, textoHora } from '../tareas/pulso';
@@ -28,7 +29,7 @@ const GIROS = [-1.5, 1.2, 1, -1.2];
 export function SinHoraAsignada({ tareas, huecos, planificando, alPlanificar }: PropsSinHora) {
   return (
     <section aria-labelledby="midia-sin-hora" className="midia-carta relative">
-      <Ayuda texto="Aquí salen las tareas de hoy que aún no tienen hora. El botón dice a qué hora se pondrá (el primer hueco libre desde ahora)." />
+      <Ayuda texto="Aquí salen las tareas de hoy que aún no tienen hora. El botón dice a qué hora se pondrá (el primer hueco libre desde ahora); también puedes arrastrarlas a la línea de tiempo." />
       <div className="mb-1 flex items-center gap-2">
         <h2 id="midia-sin-hora" className="text-base font-extrabold">
           Notas sueltas
@@ -43,7 +44,7 @@ export function SinHoraAsignada({ tareas, huecos, planificando, alPlanificar }: 
             const hueco = huecos.get(t.id) ?? null;
             const estilo = { '--cinta': prioridad.color, '--giro': `${GIROS[i % GIROS.length]}deg` } as CSSProperties;
             return (
-              <li key={t.id} className="midia-suelta" style={estilo}>
+              <li key={t.id} className="midia-suelta" style={estilo} draggable onDragStart={(e) => empezarArrastre(e, t.id, duracion(t))}>
                 <p className="midia-suelta-titulo">{t.titulo}</p>
                 <p className="midia-suelta-dato">
                   {textoDuracion(duracion(t))} · {prioridad.nombre.toLowerCase()}

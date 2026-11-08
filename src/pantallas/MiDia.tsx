@@ -2,7 +2,7 @@
 // Mi día: la pantalla a la que llegas al entrar (Fase 7).
 // Web (paso 7.4), igual que el prototipo: arriba "Así va tu día" (con la nota pegada y "Reorganizar mi día");
 // a la derecha las "Notas sueltas" (tareas de hoy sin hora, con su botón "A las 12:30") y el "Resumen del día" (el hilo, la frase y ahora / después).
-// La línea de tiempo de la izquierda llega en el paso 7.5 y el móvil ("Hoy") en el 7.6.
+// A la izquierda, la línea de tiempo "la libreta" (paso 7.5). El móvil ("Hoy") llega en el 7.6.
 // Los cálculos están en midia/dia.ts (con sus pruebas); aquí se guarda y se dibuja.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -10,8 +10,21 @@ import AvisoFlotante, { type DatosAviso } from '../componentes/base/AvisoFlotant
 import PantallaProvisional from './PantallaProvisional';
 import BriefingDia, { type EstadoReorganizar } from './midia/BriefingDia';
 import { ResumenDia, SinHoraAsignada } from './midia/PanelesDia';
+import LineaTiempo from './midia/LineaTiempo';
 import { useTareas, type Tarea } from './useTareas';
-import { aCambiosHorario, hiloDelDia, loImportante, planificar, reorganizar, resumenDelDia, textoBriefing, type Plan } from './midia/dia';
+import {
+  aCambiosHorario,
+  choques,
+  hiloDelDia,
+  inicioDe,
+  loImportante,
+  planificar,
+  separar,
+  reorganizar,
+  resumenDelDia,
+  textoBriefing,
+  type Plan,
+} from './midia/dia';
 import { cambiarHorario } from './tareas/guardar';
 import { horaConCeros } from './tareas/frase';
 import { textoHora } from './tareas/pulso';
@@ -142,6 +155,34 @@ function MiDia() {
     setPlanificando(null);
   };
 
+  // ---------- La línea de tiempo (paso 7.5) ----------
+  // Abrir una tarea: el editor de Tareas (como el lápiz del Calendario)
+  const alAbrir = (id: number) => navigate('/tareas', { state: { editarTarea: { id, vez: Date.now() } } });
+  // Un renglón libre: Nueva tarea con hoy y esa hora ya puestas
+  const alCrear = (minuto: number) => navigate('/tareas', { state: { nuevaTarea: Date.now(), hora: horaConCeros(minuto) } });
+
+  // Mover una tarea (arrastrándola o con Alt + flechas) o poner una nota suelta en la línea
+  const alMover = async (id: number, minuto: number) => {
+    const t = tareas.find((x) => x.id === id);
+    if (!t || (inicioDe(t) === minuto && t.fecha_limite?.slice(0, 10) === hoy)) return; // no ha cambiado
+    const despues = tareas.map((x) => (x.id === id ? { ...x, fecha_limite: hoy, hora_limite: `${horaConCeros(minuto)}:00` } : x));
+    if (!(await guardarPlan({ tipo: 'colocadas', colocadas: new Map([[id, minuto]]), sinHueco: [] }))) return;
+    const pisa = choques(despues, hoy).find((c) => c.primera.id === id || c.segunda.id === id);
+    if (pisa) {
+      const otra = pisa.primera.id === id ? pisa.segunda : pisa.primera;
+      setAviso({ titulo: 'Ojo: se pisan', texto: `«${t.titulo}» coincide con «${otra.titulo}». Pulsa Separar si no era a propósito.` });
+    } else setAviso({ titulo: 'Tarea movida', texto: `«${t.titulo}» ahora es a las ${textoHora(minuto)}.` });
+  };
+
+  // "Separar" (notita de se pisan): la segunda va justo después de la primera, al siguiente hueco libre
+  const alSeparar = async (primeraId: number, segundaId: number) => {
+    const plan = separar(tareas, primeraId, segundaId, hoy, ahora);
+    if (plan.tipo !== 'colocadas') return setAviso({ titulo: 'No queda hueco hoy', texto: 'Prueba a mover una de las dos a mañana.' });
+    const segunda = tareas.find((t) => t.id === segundaId);
+    if (await guardarPlan(plan))
+      setAviso({ titulo: 'Tareas separadas', texto: `«${segunda?.titulo ?? 'La tarea'}» ahora es a las ${textoHora(plan.colocadas.get(segundaId)!)}.` });
+  };
+
   // "Recolocar" del Resumen del día: si solo se te pasó una, va a su primer hueco libre;
   // si se te pasaron varias, es lo mismo que "Reorganizar mi día"
   const alRecolocar = async () => {
@@ -171,8 +212,9 @@ function MiDia() {
       {error && <p className="text-sm text-[#b42318]">{error}</p>}
       <BriefingDia titular={titular} detalle={detalle} nota={nota} alAnadirImportante={alAnadirImportante} estado={estadoReorg} alReorganizar={alReorganizar} />
       <div className="flex items-start gap-5">
-        {/* Aquí irá la línea de tiempo (paso 7.5) */}
-        <div className="min-w-0 grow" />
+        <div className="min-w-0 grow">
+          <LineaTiempo tareas={tareas} hoy={hoy} ahora={ahora} alAbrir={alAbrir} alMover={alMover} alCrear={alCrear} alSeparar={alSeparar} />
+        </div>
         <div className="flex w-[340px] shrink-0 flex-col gap-4">
           <SinHoraAsignada tareas={resumen.sinHora} huecos={huecos} planificando={planificando} alPlanificar={alPlanificar} />
           <ResumenDia resumen={resumen} hilo={hilo} recolocando={planificando !== null || estadoReorg !== ''} alRecolocar={alRecolocar} />
