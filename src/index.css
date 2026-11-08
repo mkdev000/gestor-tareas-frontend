@@ -3848,3 +3848,488 @@ button.menu-opcion:active .menu-flecha {
     transition: none;
   }
 }
+/* ===== Paso 7.6: «Hoy» en el móvil (midia/HoyMovil.tsx), igual que el prototipo móvil ===== */
+.hoy {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+/* Sin esto, la columna aplasta la fila de notas sueltas (que se desliza de lado) */
+.hoy > * {
+  flex-shrink: 0;
+}
+.hoy-avatar {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: #7c5cd6;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  cursor: pointer;
+}
+/* Así va tu día: la tarjeta con los colores del tema (como en la web) */
+.hoy-asi {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 18px 16px;
+  border-radius: 22px;
+  background: linear-gradient(150deg, var(--tachit-panel) 0%, var(--tachit-panel-activo) 100%);
+  color: var(--tachit-panel-texto);
+}
+.hoy-et {
+  color: var(--tachit-panel-enlace);
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.hoy-mal {
+  color: #b42318;
+  font-weight: 800;
+}
+.hoy-ok {
+  color: #17804f;
+  font-weight: 800;
+}
+[data-tema='cacao'] .hoy-mal {
+  color: #ffc2b8;
+}
+[data-tema='cacao'] .hoy-ok {
+  color: #a9ecc6;
+}
+/* El hilo: tocarlo elige el puntito más cercano al dedo */
+.hoy-hilo {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.hoy-hilo-linea {
+  position: absolute;
+  top: 16px;
+  right: 0;
+  left: 0;
+  border-top: 2px dotted color-mix(in srgb, currentColor 40%, transparent);
+}
+.hoy-punto {
+  position: absolute;
+  top: 11px;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border: 2.5px solid var(--tachit-acento);
+  border-radius: 50%;
+  background: #ffffff;
+}
+.hoy-punto-hecha {
+  border-color: #3fbf85;
+  background: #3fbf85;
+}
+.hoy-punto-atrasada {
+  border-color: #ff7a59;
+  background: #ff7a59;
+}
+.hoy-punto-encurso {
+  top: 10px;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-width: 3.5px;
+}
+.hoy-punto-sinhora {
+  border-color: #94a3b8;
+  border-style: dashed;
+}
+.hoy-punto-elegido {
+  box-shadow:
+    0 0 0 4px rgba(255, 255, 255, 0.9),
+    0 0 0 6px var(--tachit-acento-fuerte);
+}
+.hoy-hilo-ahora {
+  position: absolute;
+  top: 4px;
+  width: 2px;
+  height: 26px;
+  margin-left: -1px;
+  border-radius: 2px;
+  background: currentColor;
+}
+/* El bocadillo del puntito que has tocado: su pico apunta al puntito (--px) */
+.hoy-bocata {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: -4px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--tachit-acento-borde);
+  border-radius: 14px;
+  background: var(--tachit-acento-suave);
+  color: #0f1f2e;
+  box-shadow: 0 8px 18px rgba(27, 37, 89, 0.12);
+}
+.hoy-bocata::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: clamp(14px, calc(var(--px) - 6px), calc(100% - 26px));
+  width: 12px;
+  height: 12px;
+  border-top: 1.5px solid var(--tachit-acento-borde);
+  border-left: 1.5px solid var(--tachit-acento-borde);
+  background: var(--tachit-acento-suave);
+  transform: rotate(45deg);
+}
+.hoy-bocata-texto {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.hoy-bocata-texto b {
+  color: #f2711c;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.hoy-bocata-estado {
+  color: #5b6b7c;
+}
+.hoy-bocata button {
+  flex-shrink: 0;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--tachit-acento-borde);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--tachit-acento-fuerte);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+/* La tira «Lo importante»: la nota pegada de la web, recogida en una línea */
+.hoy-tira {
+  position: relative;
+  border-radius: 4px 4px 12px 4px;
+  background: #fffdf3;
+  color: #0f1f2e;
+  box-shadow: 0 6px 14px rgba(27, 37, 89, 0.12);
+}
+.hoy-tira::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 22px;
+  width: 44px;
+  height: 13px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--tachit-acento) 55%, transparent);
+  transform: rotate(-3deg);
+}
+.hoy-tira-cab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.hoy-tira-et {
+  flex-shrink: 0;
+  color: var(--tachit-acento-fuerte);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.hoy-tira-res {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hoy-tira-flecha {
+  flex-shrink: 0;
+  color: var(--tachit-acento-fuerte);
+  transition: transform 0.2s ease;
+}
+.hoy-tira-abierta .hoy-tira-flecha {
+  transform: rotate(180deg);
+}
+.hoy-tira-cuerpo {
+  padding: 0 14px 12px;
+}
+.hoy-tira-fila {
+  display: flex;
+  gap: 8px;
+  padding: 6px 0;
+  border-top: 1px dashed #e7e2c8;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.hoy-tira-fila b {
+  min-width: 40px;
+  color: #f2711c;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.hoy-tira-hecha,
+.hoy-tira-hecha b {
+  color: #6b7785;
+}
+.hoy-tira-hecha .hoy-tachon {
+  color: #b42318;
+}
+/* El trazo de Tachit que tacha lo hecho */
+.hoy-tachon {
+  position: absolute;
+  top: 50%;
+  left: -2px;
+  width: calc(100% + 10px);
+  height: 10px;
+  overflow: visible;
+  color: var(--tachit-acento-fuerte);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+/* Reorganizar, en pequeño (los mismos bloques que en la web) */
+.midia-reorganizar.hoy-reorg {
+  gap: 8px;
+  height: 36px;
+  min-width: 0;
+  padding: 0 12px;
+  border-radius: 11px;
+  font-size: 13px;
+}
+/* La agenda libreta: margen rojo, la hora a la izquierda y cada tarea pintada del color de su prioridad */
+.hoy-agenda {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 62px;
+}
+.hoy-agenda::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  left: 52px;
+  border-left: 2px solid #f4b4b0;
+}
+.hoy-fila {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 10px;
+  border-radius: 3px 12px 3px 12px;
+  background: color-mix(in srgb, var(--c) 24%, #ffffff);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--c) 60%, transparent);
+  color: #0f1f2e;
+}
+.hoy-hora {
+  position: absolute;
+  left: -62px;
+  width: 46px;
+  color: #0f1f2e;
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.hoy-hora small {
+  display: block;
+  color: #5b6b7c;
+  font-size: 11px;
+  font-weight: 600;
+}
+.hoy-check {
+  display: grid;
+  flex: 0 0 28px;
+  place-items: center;
+  height: 28px;
+  padding: 0;
+  border: 2px solid color-mix(in srgb, var(--c) 70%, #6b7299);
+  border-radius: 50%;
+  background: #ffffff;
+  color: transparent;
+  cursor: pointer;
+}
+.hoy-texto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.hoy-titulo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  font-size: 14.5px;
+  font-weight: 700;
+}
+.hoy-nombre {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hoy-dato {
+  color: #475569; /* algo más oscuro que el gris de siempre: va sobre el color de la prioridad */
+  font-size: 12px;
+}
+.hoy-dato:empty {
+  display: none;
+}
+.hoy-fila-hecha {
+  background: #e7f3ec;
+  box-shadow: inset 3px 0 0 rgba(23, 128, 79, 0.55);
+}
+.hoy-fila-hecha .hoy-check {
+  border-color: #17804f;
+  background: #17804f;
+  color: #ffffff;
+}
+.hoy-fila-hecha .hoy-nombre {
+  overflow: visible;
+  color: #6b7785;
+}
+.hoy-fila-atrasada {
+  border: 1.5px dashed #b42318;
+  background: #ffffff;
+  box-shadow: none;
+}
+.hoy-fila-atrasada .hoy-dato {
+  color: #b42318;
+  font-weight: 700;
+}
+.hoy-fila-atrasada .hoy-check {
+  border-color: #b42318;
+}
+.hoy-fila-encurso {
+  box-shadow:
+    inset 3px 0 0 color-mix(in srgb, var(--c) 60%, transparent),
+    0 0 0 1.5px var(--c);
+}
+/* "Ver en la agenda" del bocadillo: la tarea brilla un momento */
+.hoy-fila-brillo {
+  animation: hoy-brillo 1.2s ease;
+}
+@keyframes hoy-brillo {
+  30% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--tachit-acento) 70%, transparent);
+  }
+}
+/* La raya de "ahora" entre dos tareas (la hora en la columna de las horas) */
+.hoy-ahora {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 16px;
+  margin: -4px 0 -4px -62px;
+}
+.hoy-ahora > span {
+  flex: 0 0 46px;
+  color: #c4320a;
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.hoy-ahora::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: #c4320a;
+}
+/* La notita de "se pisan", encima de la tarea que coincide */
+.hoy-pisa {
+  position: absolute;
+  top: -24px;
+  right: 6px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 8px;
+  border-radius: 3px 3px 9px 3px;
+  background: #fffdf3;
+  color: #9a4a00;
+  box-shadow: 0 5px 12px rgba(27, 37, 89, 0.15);
+  font-size: 11px;
+  font-weight: 800;
+  transform: rotate(-2deg);
+}
+.hoy-pisa button {
+  height: 22px;
+  padding: 0 7px;
+  border: 1px solid #f0c97a;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #9a4a00;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+/* Las notas sueltas: en una fila que se desliza de lado */
+.hoy-sueltas {
+  display: flex;
+  gap: 12px;
+  padding: 10px 2px 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.hoy-sueltas .midia-suelta {
+  flex: 0 0 150px;
+}
+.hoy-avatar:focus-visible,
+.hoy-hilo:focus-visible,
+.hoy-bocata button:focus-visible,
+.hoy-tira-cab:focus-visible,
+.hoy-check:focus-visible,
+.hoy-texto:focus-visible,
+.hoy-pisa button:focus-visible {
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hoy-tira-flecha {
+    transition: none;
+  }
+  .hoy-fila-brillo {
+    animation: none;
+  }
+  .hoy-pisa {
+    transform: none;
+  }
+}
