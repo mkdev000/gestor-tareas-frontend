@@ -1,7 +1,7 @@
 // pantallas/MiDia.tsx
 // Mi día: la pantalla a la que llegas al entrar (Fase 7).
 // Web (paso 7.4), igual que el prototipo: arriba "Así va tu día" (con la nota pegada y "Reorganizar mi día");
-// a la derecha "Sin hora asignada" (con Planificar) y el "Resumen del día".
+// a la derecha las "Notas sueltas" (tareas de hoy sin hora, con su botón "A las 12:30") y el "Resumen del día".
 // La línea de tiempo de la izquierda llega en el paso 7.5 y el móvil ("Hoy") en el 7.6.
 // Los cálculos están en midia/dia.ts (con sus pruebas); aquí se guarda y se dibuja.
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -57,6 +57,13 @@ function MiDia() {
   const nombre = localStorage.getItem('nombre') || '';
   const { titular, detalle } = textoBriefing(resumen, nombre, ahora);
   const nota = loImportante(resumen);
+  // Para cada nota suelta, la hora a la que la pondría su botón (lo mismo que hará al pulsarlo)
+  const huecos = new Map(
+    resumen.sinHora.map((t) => {
+      const plan = planificar(tareas, t.id, hoy, ahora);
+      return [t.id, plan.tipo === 'colocadas' ? (plan.colocadas.get(t.id) ?? null) : null] as const;
+    }),
+  );
   // El atajo de la nota vacía: abre "Nueva tarea" (en Tareas) ya con prioridad alta; la fecha, hoy, es la de siempre
   const alAnadirImportante = () => navigate('/tareas', { state: { nuevaTarea: Date.now(), prioridad: 'alta' } });
 
@@ -119,7 +126,7 @@ function MiDia() {
 
   const alPlanificar = async (t: Tarea) => {
     if (planificando !== null) return;
-    const plan = planificar(tareas, t.id, hoy, minutosAhora());
+    const plan = planificar(tareas, t.id, hoy, ahora); // la misma hora que dice el botón
     if (plan.tipo !== 'colocadas')
       return setAviso({
         titulo: 'No queda hueco hoy',
@@ -145,7 +152,7 @@ function MiDia() {
         {/* Aquí irá la línea de tiempo (paso 7.5) */}
         <div className="min-w-0 grow" />
         <div className="flex w-[340px] shrink-0 flex-col gap-4">
-          <SinHoraAsignada tareas={resumen.sinHora} planificando={planificando} alPlanificar={alPlanificar} />
+          <SinHoraAsignada tareas={resumen.sinHora} huecos={huecos} planificando={planificando} alPlanificar={alPlanificar} />
           <ResumenDia resumen={resumen} />
         </div>
       </div>

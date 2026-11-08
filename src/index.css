@@ -3256,30 +3256,143 @@ button.menu-opcion:active .menu-flecha {
   border-radius: 16px;
   background: #ffffff;
 }
-.midia-sin-hora {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border: 1px solid #e3e8ef;
-  border-left-width: 5px;
-  border-radius: 10px;
-  background: #ffffff;
+.midia-sueltas-n {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--tachit-acento-suave);
+  color: var(--tachit-acento-fuerte);
+  font-size: 12px;
+  font-weight: 800;
 }
+/* "Notas sueltas": las tareas de hoy sin hora, como notitas pegadas (a juego con la de arriba),
+   con la cinta del color de su prioridad y un poco torcidas; se enderezan al pasar el ratón */
+.midia-sueltas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 12px;
+  padding-top: 6px;
+}
+.midia-suelta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  min-height: 112px;
+  padding: 14px 11px 10px;
+  border-radius: 3px 3px 10px 3px;
+  background: #fffdf3;
+  color: #0f1f2e;
+  box-shadow: 0 5px 12px rgba(27, 37, 89, 0.12);
+  transform: rotate(var(--giro));
+  transition: transform 0.2s ease;
+}
+.midia-suelta:hover,
+.midia-suelta:focus-within {
+  transform: rotate(0deg);
+}
+.midia-suelta::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  width: 40px;
+  height: 13px;
+  margin-left: -20px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--cinta) 60%, transparent);
+}
+.midia-suelta-titulo {
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.midia-suelta-dato {
+  color: #5b6b7c;
+  font-size: 12px;
+}
+/* El botón dice la hora a la que se pondrá (el primer hueco libre desde ahora) */
 .midia-planificar {
-  flex-shrink: 0;
-  height: 32px;
-  padding: 0 12px;
-  border: 1px solid var(--tachit-acento-borde);
-  border-radius: 8px;
-  background: var(--tachit-acento-claro);
+  height: 28px;
+  margin-top: auto;
+  border: 1px dashed var(--tachit-acento-fuerte);
+  border-radius: 7px;
+  background: transparent;
   color: var(--tachit-acento-fuerte);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   cursor: pointer;
+}
+.midia-planificar:hover:not(:disabled) {
+  background: var(--tachit-acento-suave);
 }
 .midia-planificar:disabled {
   cursor: progress;
   opacity: 0.6;
+}
+/* Sin notas sueltas: una nota con el sello verde en la esquina */
+.midia-sueltas-ok {
+  position: relative;
+  width: 190px;
+  margin: 8px auto 2px;
+  padding: 16px 20px 12px 12px;
+  border-radius: 3px 3px 10px 3px;
+  background: #fffdf3;
+  color: #0f1f2e;
+  box-shadow: 0 5px 12px rgba(27, 37, 89, 0.12);
+  font-size: 13px;
+  text-align: center;
+  transform: rotate(-1.5deg);
+}
+.midia-sueltas-ok::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  width: 40px;
+  height: 13px;
+  margin-left: -20px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--tachit-acento) 55%, transparent);
+}
+.midia-sueltas-ok strong {
+  display: block;
+  font-weight: 700;
+}
+.midia-sueltas-ok .midia-sueltas-ok-hora {
+  display: block;
+  margin-top: 3px;
+  color: #17804f;
+  font-size: 12px;
+  font-weight: 700;
+}
+.midia-sello {
+  position: absolute;
+  top: -10px;
+  right: -12px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #17804f;
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(23, 128, 79, 0.35);
+  transform: rotate(8deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .midia-suelta,
+  .midia-suelta:hover,
+  .midia-suelta:focus-within,
+  .midia-sueltas-ok {
+    transform: none;
+    transition: none;
+  }
 }
