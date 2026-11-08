@@ -38,6 +38,7 @@ interface Props {
   editando: Tarea | null; // la tarea que se está editando (o null para crear)
   pedirFoco?: number; // cambia cada vez que pulsas "Nueva tarea" en el marco
   prioridadPedida?: Prioridad | ''; // con qué prioridad empieza (el atajo de Mi día pide 'alta'; '' = la de siempre)
+  horaPedida?: string; // a qué hora empieza ('15:00', desde un renglón libre de Mi día; '' = sin hora)
   alGuardar: (resultado: ResultadoCaja) => void;
   alError: (mensaje: string) => void;
   alCancelarEdicion: () => void;
@@ -61,10 +62,10 @@ function Ficha({ etiqueta, puesta, abierta, color, fondo, linea, alPulsar, icono
   );
 }
 
-function CajaCrear({ hoy, categorias, editando, pedirFoco, prioridadPedida = '', alGuardar, alError, alCancelarEdicion, alBorrar }: Props) {
+function CajaCrear({ hoy, categorias, editando, pedirFoco, prioridadPedida = '', horaPedida = '', alGuardar, alError, alCancelarEdicion, alBorrar }: Props) {
   // Si llega una tarea para editar, la caja empieza con sus datos (la pantalla cambia la "key" al editar,
   // así React crea la caja de nuevo y no hace falta copiar datos con un useEffect)
-  const [inicial] = useState(() => (editando ? desdeTarea(editando) : { borrador: '', op: { ...OPCIONES_VACIAS, prioridad: prioridadPedida } }));
+  const [inicial] = useState(() => (editando ? desdeTarea(editando) : { borrador: '', op: { ...OPCIONES_VACIAS, prioridad: prioridadPedida, hora: horaPedida } }));
   const [borrador, setBorrador] = useState(inicial.borrador);
   const [op, setOp] = useState<OpcionesFrase>(inicial.op);
   // Si la caja ya estaba abierta y llega otro "Nueva tarea" que pide una prioridad, se pone esa
@@ -72,7 +73,8 @@ function CajaCrear({ hoy, categorias, editando, pedirFoco, prioridadPedida = '',
   const [ultimoFoco, setUltimoFoco] = useState(pedirFoco);
   if (pedirFoco !== ultimoFoco) {
     setUltimoFoco(pedirFoco);
-    if (!editando && prioridadPedida) setOp((o) => ({ ...o, prioridad: prioridadPedida }));
+    if (!editando && (prioridadPedida || horaPedida))
+      setOp((o) => ({ ...o, ...(prioridadPedida ? { prioridad: prioridadPedida } : {}), ...(horaPedida ? { hora: horaPedida } : {}) }));
   }
   const [seccion, setSeccion] = useState<Seccion | null>(null);
   const [guardando, setGuardando] = useState(false);
