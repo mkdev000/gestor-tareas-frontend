@@ -3,14 +3,17 @@
 //  - "Notas sueltas": las tareas de hoy sin hora, como notitas pegadas. Su botón dice a qué hora se
 //    pondrá la tarea (el primer hueco libre desde ahora), así se sabe qué hace antes de pulsarlo.
 //    (Arrastrarlas a la línea de tiempo llega con la línea de tiempo, en el paso 7.5)
-//  - "Resumen del día": tiempo planificado, tiempo libre restante, atrasadas y completadas
+//  - "Resumen del día": el hilo con las tareas de hoy (las hechas tachadas), la frase de cómo vas
+//    (con "Recolocar" si se te pasó algo) y qué toca ahora y después
+// Las dos llevan una "?" que explica para qué sirven.
 import type { CSSProperties } from 'react';
 import type { Tarea } from '../useTareas';
-import type { Resumen } from './dia';
-import { duracion } from './dia';
+import type { Resumen, hiloDelDia } from './dia';
+import { duracion, fraseDelDia, inicioDe } from './dia';
+import Ayuda from './Ayuda';
 import { textoDuracion } from '../tareas/frase';
 import { estiloPrioridad } from '../tareas/prioridades';
-import { textoHora } from '../tareas/pulso';
+import { INICIO_DIA, textoHora } from '../tareas/pulso';
 
 interface PropsSinHora {
   tareas: Tarea[];
@@ -24,7 +27,8 @@ const GIROS = [-1.5, 1.2, 1, -1.2];
 
 export function SinHoraAsignada({ tareas, huecos, planificando, alPlanificar }: PropsSinHora) {
   return (
-    <section aria-labelledby="midia-sin-hora" className="midia-carta">
+    <section aria-labelledby="midia-sin-hora" className="midia-carta relative">
+      <Ayuda texto="Aquí salen las tareas de hoy que aún no tienen hora. El botón dice a qué hora se pondrá (el primer hueco libre desde ahora)." />
       <div className="mb-1 flex items-center gap-2">
         <h2 id="midia-sin-hora" className="text-base font-extrabold">
           Notas sueltas
@@ -72,29 +76,85 @@ export function SinHoraAsignada({ tareas, huecos, planificando, alPlanificar }: 
   );
 }
 
-export function ResumenDia({ resumen }: { resumen: Resumen }) {
-  const fila = 'flex justify-between text-sm';
+interface PropsResumen {
+  resumen: Resumen;
+  hilo: ReturnType<typeof hiloDelDia>;
+  recolocando: boolean; // se está guardando (evita dobles clics)
+  alRecolocar: () => void; // una atrasada → a su primer hueco; varias → Reorganizar
+}
+
+// El trazo de Tachit (raya que acaba en check) que tacha los puntitos de las tareas hechas
+function Tachon() {
   return (
-    <section aria-labelledby="midia-resumen" className="midia-carta flex flex-col gap-2.5">
-      <h2 id="midia-resumen" className="text-base font-extrabold">
+    <svg className="midia-punto-tachon" viewBox="0 0 30 12" aria-hidden="true">
+      <path d="M1 7 H20 L23 10 L29 2" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function ResumenDia({ resumen, hilo, recolocando, alRecolocar }: PropsResumen) {
+  const atrasadas = resumen.atrasadas;
+  const vasAlDia = atrasadas.length === 0 && hilo.total > 0 && hilo.hechas < hilo.total;
+  return (
+    <section aria-labelledby="midia-resumen" className="midia-carta relative">
+      <Ayuda texto="Cómo va tu día de un vistazo: cada puntito es una tarea de hoy en su hora. Las hechas se tachan, las rojas se te pasaron y la raya es «ahora». Abajo, qué toca ahora y qué viene después." />
+      <h2 id="midia-resumen" className="mb-4 text-base font-extrabold">
         Resumen del día
       </h2>
-      <p className={fila}>
-        <span className="text-[#5b6b7c]">Tiempo planificado</span>
-        <strong>{textoDuracion(resumen.planificado)}</strong>
+      {/* El hilo es un dibujo: lo importante se dice también con palabras en la frase de debajo */}
+      <div className="midia-hilo" aria-hidden="true">
+        <span className="midia-hilo-linea" />
+        <span className="midia-hilo-separa" />
+        {hilo.puntos.map((p) => (
+          <span
+            key={p.id}
+            className={`midia-punto midia-punto-${p.estado}`}
+            style={{ left: `${p.x}%` }}
+            title={`${p.inicio === null ? 'sin hora' : textoHora(p.inicio)} · ${p.titulo}`}
+          >
+            {p.estado === 'hecha' && <Tachon />}
+          </span>
+        ))}
+        <span className="midia-hilo-ahora" style={{ left: `${hilo.ahora}%` }}>
+          <span>ahora</span>
+        </span>
+        <span className="midia-hilo-etiqueta left-0">{textoHora(INICIO_DIA)}</span>
+        <span className="midia-hilo-etiqueta right-0">sin hora</span>
+      </div>
+      <p className="midia-frase">
+        {fraseDelDia(resumen.libre, hilo.hechas, hilo.total)}
+        {atrasadas.length > 0 && (
+          <>
+            {' '}
+            <strong className="text-[#b42318]">
+              {atrasadas.length === 1
+                ? `A las ${textoHora(inicioDe(atrasadas[0]) ?? 0)} se te pasó «${atrasadas[0].titulo}».`
+                : `Se te pasaron ${atrasadas.length} tareas.`}
+            </strong>
+            <button type="button" onClick={alRecolocar} disabled={recolocando} className="midia-recolocar">
+              {atrasadas.length === 1 ? 'Recolocar' : 'Recolocarlas'}
+            </button>
+          </>
+        )}
+        {vasAlDia && (
+          <>
+            {' '}
+            <strong className="text-[#17804f]">Vas al día.</strong>
+          </>
+        )}
       </p>
-      <p className={fila}>
-        <span className="text-[#5b6b7c]">Tiempo libre restante</span>
-        <strong>{textoDuracion(resumen.libre)}</strong>
-      </p>
-      <p className={fila}>
-        <span className="text-[#5b6b7c]">Atrasadas</span>
-        <strong style={{ color: resumen.atrasadas.length ? '#b42318' : '#17804f' }}>{resumen.atrasadas.length}</strong>
-      </p>
-      <p className={fila}>
-        <span className="text-[#5b6b7c]">Completadas</span>
-        <strong className="text-[#17804f]">{resumen.completadas}</strong>
-      </p>
+      <div className="midia-siguiente">
+        <p>
+          <span className="midia-siguiente-que">AHORA</span>
+          <span className={hilo.enCurso ? 'midia-siguiente-tarea' : 'midia-siguiente-nada'}>{hilo.enCurso?.titulo ?? 'Nada en curso'}</span>
+          {hilo.enCurso && <span className="midia-siguiente-hora">hasta {hilo.enCurso.hasta}</span>}
+        </p>
+        <p>
+          <span className="midia-siguiente-que">DESPUÉS</span>
+          <span className={hilo.despues ? 'midia-siguiente-tarea' : 'midia-siguiente-nada'}>{hilo.despues?.titulo ?? 'Nada más con hora hoy'}</span>
+          {hilo.despues && <span className="midia-siguiente-hora">{hilo.despues.hora}</span>}
+        </p>
+      </div>
     </section>
   );
 }

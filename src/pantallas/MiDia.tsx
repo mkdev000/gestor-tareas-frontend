@@ -1,7 +1,7 @@
 // pantallas/MiDia.tsx
 // Mi día: la pantalla a la que llegas al entrar (Fase 7).
 // Web (paso 7.4), igual que el prototipo: arriba "Así va tu día" (con la nota pegada y "Reorganizar mi día");
-// a la derecha las "Notas sueltas" (tareas de hoy sin hora, con su botón "A las 12:30") y el "Resumen del día".
+// a la derecha las "Notas sueltas" (tareas de hoy sin hora, con su botón "A las 12:30") y el "Resumen del día" (el hilo, la frase y ahora / después).
 // La línea de tiempo de la izquierda llega en el paso 7.5 y el móvil ("Hoy") en el 7.6.
 // Los cálculos están en midia/dia.ts (con sus pruebas); aquí se guarda y se dibuja.
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -11,7 +11,7 @@ import PantallaProvisional from './PantallaProvisional';
 import BriefingDia, { type EstadoReorganizar } from './midia/BriefingDia';
 import { ResumenDia, SinHoraAsignada } from './midia/PanelesDia';
 import { useTareas, type Tarea } from './useTareas';
-import { aCambiosHorario, loImportante, planificar, reorganizar, resumenDelDia, textoBriefing, type Plan } from './midia/dia';
+import { aCambiosHorario, hiloDelDia, loImportante, planificar, reorganizar, resumenDelDia, textoBriefing, type Plan } from './midia/dia';
 import { cambiarHorario } from './tareas/guardar';
 import { horaConCeros } from './tareas/frase';
 import { textoHora } from './tareas/pulso';
@@ -57,6 +57,7 @@ function MiDia() {
   const nombre = localStorage.getItem('nombre') || '';
   const { titular, detalle } = textoBriefing(resumen, nombre, ahora);
   const nota = loImportante(resumen);
+  const hilo = hiloDelDia(tareas, hoy, ahora);
   // Para cada nota suelta, la hora a la que la pondría su botón (lo mismo que hará al pulsarlo)
   const huecos = new Map(
     resumen.sinHora.map((t) => {
@@ -141,6 +142,27 @@ function MiDia() {
     setPlanificando(null);
   };
 
+  // "Recolocar" del Resumen del día: si solo se te pasó una, va a su primer hueco libre;
+  // si se te pasaron varias, es lo mismo que "Reorganizar mi día"
+  const alRecolocar = async () => {
+    if (resumen.atrasadas.length !== 1) return alReorganizar();
+    const t = resumen.atrasadas[0];
+    if (planificando !== null) return;
+    const plan = planificar(tareas, t.id, hoy, ahora);
+    if (plan.tipo !== 'colocadas')
+      return setAviso({
+        titulo: 'No queda hueco hoy',
+        texto: 'Prueba a moverla a mañana.',
+      });
+    setPlanificando(t.id);
+    if (await guardarPlan(plan))
+      setAviso({
+        titulo: 'Tarea recolocada',
+        texto: `«${t.titulo}» ahora es a las ${textoHora(plan.colocadas.get(t.id)!)}.`,
+      });
+    setPlanificando(null);
+  };
+
   // El móvil ("Hoy", con la agenda vertical) se construye en el paso 7.6
   if (!esWeb) return <PantallaProvisional fase={7} />;
 
@@ -153,7 +175,7 @@ function MiDia() {
         <div className="min-w-0 grow" />
         <div className="flex w-[340px] shrink-0 flex-col gap-4">
           <SinHoraAsignada tareas={resumen.sinHora} huecos={huecos} planificando={planificando} alPlanificar={alPlanificar} />
-          <ResumenDia resumen={resumen} />
+          <ResumenDia resumen={resumen} hilo={hilo} recolocando={planificando !== null || estadoReorg !== ''} alRecolocar={alRecolocar} />
         </div>
       </div>
       {aviso && <AvisoFlotante aviso={aviso} alCerrar={cerrarAviso} />}

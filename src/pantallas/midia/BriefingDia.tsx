@@ -43,6 +43,7 @@ function BriefingDia({ titular, detalle, nota, alAnadirImportante, estado, alReo
               ?
             </button>
             <p id={idAyuda} role="tooltip" className="midia-nota-explica">
+              <b>¿Para qué sirve?</b>
               Aquí salen las tareas de hoy con prioridad alta que aún no has terminado.
             </p>
             <p className="midia-nota-mensaje">Nada urgente por ahora.</p>
