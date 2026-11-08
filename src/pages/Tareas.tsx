@@ -490,6 +490,8 @@ function Tareas() {
           alGuardar={alGuardarHoja}
           alError={avisarError}
           alBorrar={borrar}
+          prioridadPedida={prioridadPedida}
+          horaPedida={horaPedida}
         />
       )}
 

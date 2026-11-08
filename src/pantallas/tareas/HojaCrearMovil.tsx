@@ -13,7 +13,7 @@ import LogoTachit from '../../components/LogoTachit';
 import type { Tarea, CategoriaDeLista } from '../useTareas';
 import {
   leerFrase, aplicarOpciones, avisoActual, desdeTarea, normalizar, textoDia, textoDuracion, textoAviso, textoRepeticion, textoHora,
-  horaConCeros, OPCIONES_VACIAS, type OpcionesFrase,
+  horaConCeros, OPCIONES_VACIAS, type OpcionesFrase, type Prioridad,
 } from './frase';
 import { ICONOS_TAREA } from './iconosTarea';
 import { DibujoIcono } from './PastillaIcono';
@@ -56,11 +56,14 @@ interface Props {
   alGuardar: (resultado: ResultadoHoja) => void;
   alError: (mensaje: string) => void;
   alBorrar: (tarea: Tarea) => void;
+  prioridadPedida?: Prioridad | ''; // con qué prioridad empieza (el atajo de Hoy pide 'alta'; '' = la de siempre)
+  horaPedida?: string; // a qué hora empieza ('15:00'; '' = sin hora)
 }
 
-function HojaCrearMovil({ hoy, ahora, tareas, categorias, editando, alCerrar, alGuardar, alError, alBorrar }: Props) {
+function HojaCrearMovil({ hoy, ahora, tareas, categorias, editando, alCerrar, alGuardar, alError, alBorrar, prioridadPedida = '', horaPedida = '' }: Props) {
   // La hoja se crea de nuevo cada vez que se abre (la pantalla le cambia la "key"), así empieza limpia
-  const [inicial] = useState(() => (editando ? desdeTarea(editando) : { borrador: '', op: OPCIONES_VACIAS }));
+  // (y con la prioridad u hora que pida Mi día, si pide alguna)
+  const [inicial] = useState(() => (editando ? desdeTarea(editando) : { borrador: '', op: { ...OPCIONES_VACIAS, prioridad: prioridadPedida, hora: horaPedida } }));
   const [borrador, setBorrador] = useState(inicial.borrador);
   const [op, setOp] = useState<OpcionesFrase>(inicial.op);
   const [seccion, setSeccion] = useState<Seccion | null>(null);
