@@ -2,15 +2,16 @@
 // Mi día: la pantalla a la que llegas al entrar (Fase 7).
 // Web (paso 7.4), igual que el prototipo: arriba "Así va tu día" (con la nota pegada y "Reorganizar mi día");
 // a la derecha las "Notas sueltas" (tareas de hoy sin hora, con su botón "A las 12:30") y el "Resumen del día" (el hilo, la frase y ahora / después).
-// A la izquierda, la línea de tiempo "la libreta" (paso 7.5). El móvil ("Hoy") llega en el 7.6.
+// A la izquierda, la línea de tiempo "la libreta" (paso 7.5).
+// Móvil (paso 7.6): "Hoy", con lo mismo adaptado al dedo (midia/HoyMovil.tsx).
 // Los cálculos están en midia/dia.ts (con sus pruebas); aquí se guarda y se dibuja.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AvisoFlotante, { type DatosAviso } from '../componentes/base/AvisoFlotante';
-import PantallaProvisional from './PantallaProvisional';
 import BriefingDia, { type EstadoReorganizar } from './midia/BriefingDia';
 import { ResumenDia, SinHoraAsignada } from './midia/PanelesDia';
 import LineaTiempo from './midia/LineaTiempo';
+import HoyMovil from './midia/HoyMovil';
 import { useTareas, type Tarea } from './useTareas';
 import {
   aCambiosHorario,
@@ -25,10 +26,12 @@ import {
   textoBriefing,
   type Plan,
 } from './midia/dia';
-import { cambiarHorario } from './tareas/guardar';
+import { alternarCompletada, cambiarHorario } from './tareas/guardar';
 import { horaConCeros } from './tareas/frase';
 import { textoHora } from './tareas/pulso';
+import { textoDia } from './tareas/frase';
 import { hoyISO } from '../utils/dias';
+import { useCuenta } from '../marco/useCuenta';
 import { useEsWeb } from '../utils/useEsWeb';
 
 // El botón se queda en "Reorganizando…" al menos este rato (para que se vean los bloques ordenarse)
@@ -51,6 +54,8 @@ function MiDia() {
   const [estadoReorg, setEstadoReorg] = useState<EstadoReorganizar>(''); // mientras no es '', el botón no se puede pulsar
   const vivo = useRef(true); // si sales de Mi día a mitad, no se toca el estado de una pantalla que ya no está
   const [planificando, setPlanificando] = useState<number | null>(null);
+  const tachando = useRef(new Set<number>()); // tareas que se están tachando (evita el doble toque)
+  const { inicial } = useCuenta();
 
   // La hora avanza cada minuto: así las atrasadas y el tiempo libre se recalculan solos
   useEffect(() => {
@@ -204,8 +209,51 @@ function MiDia() {
     setPlanificando(null);
   };
 
-  // El móvil ("Hoy", con la agenda vertical) se construye en el paso 7.6
-  if (!esWeb) return <PantallaProvisional fase={7} />;
+  // ---------- Solo en el móvil (paso 7.6) ----------
+  // Tachar desde la agenda: se ve al momento y después se guarda (igual que en Tareas)
+  const alTachar = async (t: Tarea) => {
+    if (tachando.current.has(t.id)) return;
+    tachando.current.add(t.id);
+    cambiarLocal((lista) => lista.map((x) => (x.id === t.id ? { ...x, estado: x.estado === 'completada' ? 'pendiente' : 'completada' } : x)));
+    try {
+      const siguiente = await alternarCompletada(t);
+      if (siguiente) setAviso({ titulo: 'Tarea recurrente completada', texto: `Se ha creado la siguiente para ${textoDia(siguiente, hoy).toLowerCase()}.` });
+    } catch (e) {
+      setAviso({ titulo: 'No se pudo guardar', texto: e instanceof Error ? e.message : 'No se pudo completar la tarea' });
+    } finally {
+      tachando.current.delete(t.id);
+      alCambiar();
+    }
+  };
+
+  if (!esWeb)
+    return (
+      <>
+        {error && <p className="mb-3 text-sm text-[#b42318]">{error}</p>}
+        <HoyMovil
+          tareas={tareas}
+          hoy={hoy}
+          ahora={ahora}
+          inicial={inicial}
+          titular={titular}
+          resumen={resumen}
+          hilo={hilo}
+          nota={nota}
+          huecos={huecos}
+          estadoReorg={estadoReorg}
+          ocupado={planificando !== null || estadoReorg !== ''}
+          alTachar={alTachar}
+          alAbrir={alAbrir}
+          alRecolocar={alRecolocar}
+          alReorganizar={alReorganizar}
+          alSeparar={alSeparar}
+          alPlanificar={alPlanificar}
+          alAnadirImportante={alAnadirImportante}
+          alIrACuenta={() => navigate('/ajustes')}
+        />
+        {aviso && <AvisoFlotante aviso={aviso} alCerrar={cerrarAviso} />}
+      </>
+    );
 
   return (
     <div className="flex flex-col gap-5">

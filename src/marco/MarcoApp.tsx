@@ -82,8 +82,9 @@ function MarcoApp() {
         <Cabecera titulo={titulo} alNuevaTarea={nuevaTarea} />
         {/* Móvil: abajo se deja sitio (pb-[120px]) para que la barra flotante no tape nada */}
         <main className="grow px-5 pt-8 pb-[120px] lg:px-8 lg:pt-7 lg:pb-10">
-          {/* Móvil: el título grande de la pantalla, como en el prototipo móvil */}
-          <h1 className="mb-4 text-[30px] font-extrabold tracking-[-1px] lg:hidden">{titulo}</h1>
+          {/* Móvil: el título grande de la pantalla, como en el prototipo móvil
+              (menos en Mi día: allí "Hoy" tiene su propia cabecera con el día, paso 7.6) */}
+          {location.pathname !== '/hoy' && <h1 className="mb-4 text-[30px] font-extrabold tracking-[-1px] lg:hidden">{titulo}</h1>}
           <Outlet />
         </main>
       </div>
