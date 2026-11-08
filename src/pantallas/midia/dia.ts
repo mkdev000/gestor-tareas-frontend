@@ -251,3 +251,64 @@ export function loImportante(r: Resumen): { estado: EstadoNota; tareas: { id: nu
     });
   return { estado, tareas };
 }
+
+// ---------- Resumen del día: el hilo (paso 7.4) ----------
+// Cada tarea de hoy es un puntito en un hilo de 8:00 a 22:00, en su hora; las que no tienen hora van
+// al final, en su zona. Cada puntito dice cómo está: hecha (se tacha), atrasada (roja), en curso
+// (borde gordo), pendiente o sin hora. "x" es la posición en % del ancho del hilo.
+export type EstadoPunto = 'hecha' | 'atrasada' | 'encurso' | 'pendiente' | 'sinhora';
+
+export interface PuntoHilo {
+  id: number;
+  titulo: string;
+  inicio: number | null;
+  estado: EstadoPunto;
+  x: number;
+}
+
+// Las tareas con hora ocupan del 2 % al 84 % del hilo; del 88 % en adelante, las que no tienen hora
+export const posicionEnHilo = (minutos: number) => 2 + ((Math.min(Math.max(minutos, INICIO_DIA), FIN_DIA) - INICIO_DIA) / (FIN_DIA - INICIO_DIA)) * 82;
+
+export function hiloDelDia(tareas: Tarea[], hoy: string, ahora: number) {
+  const deHoy = tareas.filter((t) => esDeHoy(t, hoy)).sort((a, b) => (inicioDe(a) ?? 9999) - (inicioDe(b) ?? 9999));
+  const enCurso = (t: Tarea) => {
+    const inicio = inicioDe(t);
+    return !hecha(t) && inicio !== null && inicio <= ahora && ahora < inicio + duracion(t);
+  };
+  let sinHora = 0;
+  const puntos: PuntoHilo[] = deHoy.map((t) => {
+    const inicio = inicioDe(t);
+    const estado: EstadoPunto = hecha(t)
+      ? 'hecha'
+      : inicio === null
+        ? 'sinhora'
+        : estaAtrasada(t, hoy, ahora)
+          ? 'atrasada'
+          : enCurso(t)
+            ? 'encurso'
+            : 'pendiente';
+    // Las sin hora se colocan desde la derecha, un poco separadas (como mucho hasta el 89 %)
+    const x = inicio === null ? Math.max(89, 95 - sinHora++ * 3) : posicionEnHilo(inicio);
+    return { id: t.id, titulo: t.titulo, inicio, estado, x };
+  });
+  const ahoraT = deHoy.find(enCurso) ?? null;
+  const despues = deHoy.filter((t) => !hecha(t) && (inicioDe(t) ?? -1) > ahora).sort((a, b) => (inicioDe(a) ?? 0) - (inicioDe(b) ?? 0))[0] ?? null;
+  return {
+    puntos,
+    ahora: posicionEnHilo(ahora),
+    total: deHoy.length,
+    hechas: deHoy.filter(hecha).length,
+    // Lo que estás haciendo (y hasta qué hora) y lo siguiente con hora
+    enCurso: ahoraT ? { titulo: ahoraT.titulo, hasta: textoHora((inicioDe(ahoraT) ?? 0) + duracion(ahoraT)) } : null,
+    despues: despues ? { titulo: despues.titulo, hora: textoHora(inicioDe(despues) ?? 0) } : null,
+  };
+}
+
+// La frase del resumen: "Te quedan unas 7 h libres y llevas 1 de 6 tachadas." (la parte de lo
+// atrasado, con su botón, la dibuja la pantalla)
+export function fraseDelDia(libre: number, hechas: number, total: number) {
+  const libres = libre > 0 ? `Te quedan unas ${textoDuracion(libre)} libres` : 'No te queda tiempo libre hoy';
+  if (total === 0) return `Hoy aún no tienes tareas. ${libres}.`;
+  if (hechas === total) return `¡Has tachado todo lo de hoy! ${libres}.`;
+  return `${libres} y llevas ${hechas} de ${total} tachadas.`;
+}

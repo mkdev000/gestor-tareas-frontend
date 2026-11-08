@@ -10,6 +10,8 @@ import {
   choques,
   colocarTareas,
   estaAtrasada,
+  fraseDelDia,
+  hiloDelDia,
   loImportante,
   planificar,
   redondearArriba,
@@ -303,6 +305,47 @@ describe('resumen del día y briefing', () => {
       resumenDelDia([tarea({ titulo: 'Ayer', fecha_limite: '2026-11-04', prioridad: 'alta', estado: 'completada' })], HOY, h('18:00')),
     );
     expect(vacia).toEqual({ estado: 'vacia', tareas: [] });
+  });
+});
+
+describe('resumen del día: el hilo y la frase', () => {
+  const dia = () => [
+    tarea({ titulo: 'Revisar el correo', hora_limite: '09:00:00', duracion_min: 60, estado: 'completada' }),
+    tarea({ titulo: 'Llamar al banco', hora_limite: '10:30:00', duracion_min: 30 }), // atrasada a las 11:40
+    tarea({ titulo: 'Preparar la presentación', hora_limite: '11:00:00', duracion_min: 90 }), // en curso
+    tarea({ titulo: 'Revisión en el dentista', hora_limite: '17:00:00', duracion_min: 90 }),
+    tarea({ titulo: 'Comprar el regalo', duracion_min: 45 }), // sin hora
+    tarea({ titulo: 'Mañana', fecha_limite: '2026-11-06', hora_limite: '10:00:00' }), // no es de hoy
+  ];
+
+  it('pone cada tarea de hoy en su hora y con su estado; las sin hora, al final', () => {
+    const hilo = hiloDelDia(dia(), HOY, h('11:40'));
+    expect(hilo.puntos.map((p) => `${p.titulo}:${p.estado}`)).toEqual([
+      'Revisar el correo:hecha',
+      'Llamar al banco:atrasada',
+      'Preparar la presentación:encurso',
+      'Revisión en el dentista:pendiente',
+      'Comprar el regalo:sinhora',
+    ]);
+    expect(hilo.puntos[0].x).toBeCloseTo(2 + (60 / 840) * 82); // las 9:00 en el hilo de 8 a 22
+    expect(hilo.puntos[4].x).toBe(95);
+    expect(hilo.total).toBe(5);
+    expect(hilo.hechas).toBe(1);
+  });
+
+  it('dice qué toca ahora (y hasta cuándo) y qué viene después', () => {
+    const hilo = hiloDelDia(dia(), HOY, h('11:40'));
+    expect(hilo.enCurso).toEqual({ titulo: 'Preparar la presentación', hasta: '12:30' });
+    expect(hilo.despues).toEqual({ titulo: 'Revisión en el dentista', hora: '17:00' });
+    const tarde = hiloDelDia(dia(), HOY, h('19:00'));
+    expect(tarde.enCurso).toBeNull();
+    expect(tarde.despues).toBeNull();
+  });
+
+  it('la frase cuenta lo libre y lo tachado (y los casos de ninguna tarea o todo hecho)', () => {
+    expect(fraseDelDia(420, 1, 6)).toBe('Te quedan unas 7 h libres y llevas 1 de 6 tachadas.');
+    expect(fraseDelDia(0, 6, 6)).toBe('¡Has tachado todo lo de hoy! No te queda tiempo libre hoy.');
+    expect(fraseDelDia(600, 0, 0)).toBe('Hoy aún no tienes tareas. Te quedan unas 10 h libres.');
   });
 });
 
