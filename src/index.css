@@ -3628,11 +3628,222 @@ button.menu-opcion:active .menu-flecha {
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
+/* ---------- Mi día · la línea de tiempo «la libreta» (Fase 7, paso 7.5) ----------
+   Hoja de libreta de 8:00 a 22:00 (52 px por hora): margen rojo, un renglón cada media hora,
+   tareas pintadas con subrayador del color de su prioridad y la raya de "ahora" por detrás. */
+.linea-libreta {
+  position: relative;
+  margin-left: 56px;
+  border-left: 2px solid #f4b4b0;
+}
+.linea-renglon {
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 26px;
+  border-top: 1px solid #eef2fa;
+  cursor: copy;
+}
+.linea-renglon-hora {
+  border-top-color: #dfe6f5;
+}
+.linea-renglon:hover {
+  background: var(--tachit-acento-suave);
+}
+.linea-renglon:hover::after {
+  content: attr(data-mas);
+  position: absolute;
+  top: 5px;
+  left: 12px;
+  color: var(--tachit-acento-fuerte);
+  font-size: 12px;
+  font-weight: 700;
+  pointer-events: none;
+}
+.linea-hora {
+  position: absolute;
+  left: -56px;
+  margin-top: -8px;
+  color: #5b6b7c;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.linea-ahora {
+  position: absolute;
+  right: 0;
+  left: -6px;
+  z-index: 0;
+  height: 2px;
+  background: #c4320a;
+  pointer-events: none;
+}
+.linea-ahora span {
+  position: absolute;
+  top: -9px;
+  left: -54px;
+  padding: 0 2px;
+  background: #ffffff;
+  color: #c4320a;
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.linea-bloque {
+  position: absolute;
+  right: 10px;
+  left: 12px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  overflow: hidden;
+  border-radius: 3px 10px 3px 10px;
+  background: color-mix(in srgb, var(--c) 26%, #ffffff);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--c) 60%, transparent);
+  color: #0f1f2e;
+  cursor: grab;
+}
+.linea-bloque:focus-visible {
+  z-index: 3;
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 2px;
+}
+.linea-bloque-corto {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+}
+.linea-bloque-hecha {
+  background: #e7f3ec;
+  box-shadow: inset 3px 0 0 rgba(23, 128, 79, 0.55);
+}
+.linea-bloque-atrasada {
+  border: 1.5px dashed #b42318;
+  background: #ffffff;
+  box-shadow: none;
+}
+.linea-bloque-encurso {
+  box-shadow:
+    inset 3px 0 0 color-mix(in srgb, var(--c) 60%, transparent),
+    0 0 0 1.5px var(--c);
+}
+.linea-bloque-titulo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.linea-bloque-nombre {
+  position: relative;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.linea-bloque-corto .linea-bloque-nombre {
+  font-size: 12px;
+}
+.linea-bloque-hecha .linea-bloque-nombre {
+  overflow: visible;
+  color: #5b6b7c;
+}
+.linea-tachon {
+  position: absolute;
+  top: 50%;
+  left: -2px;
+  width: calc(100% + 12px);
+  height: 10px;
+  overflow: visible;
+  color: var(--tachit-acento-fuerte);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.linea-bloque-dato {
+  color: #4b5a6c;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.linea-bloque-atrasada .linea-bloque-dato {
+  color: #b42318;
+}
+/* Mientras arrastras: el sitio donde caerá, con su hora */
+.linea-destino {
+  position: absolute;
+  right: 10px;
+  left: 12px;
+  z-index: 2;
+  border-radius: 3px 10px 3px 10px;
+  background: color-mix(in srgb, var(--tachit-acento-suave) 85%, transparent);
+  box-shadow: inset 0 0 0 1.5px var(--tachit-acento-fuerte);
+  pointer-events: none;
+}
+.linea-destino span {
+  display: block;
+  padding: 5px 10px;
+  color: var(--tachit-acento-fuerte);
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+/* La notita de «se pisan», pegada justo encima de donde coinciden */
+.linea-pisa {
+  position: absolute;
+  right: 12px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 10px;
+  border-radius: 3px 3px 10px 3px;
+  background: #fffdf3;
+  box-shadow: 0 6px 14px rgba(27, 37, 89, 0.15);
+  color: #9a4a00;
+  font-size: 12px;
+  font-weight: 700;
+  transform: rotate(-2deg);
+}
+.linea-pisa::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 34px;
+  height: 11px;
+  margin-left: -17px;
+  border-radius: 2px;
+  background: rgba(245, 165, 36, 0.55);
+}
+.linea-pisa button {
+  height: 24px;
+  padding: 0 9px;
+  border: 1px solid #f0c97a;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #9a4a00;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.linea-pisa button:hover {
+  background: #fff4dc;
+}
+.linea-pisa button:focus-visible {
+  outline: 2px solid #9a4a00;
+  outline-offset: 2px;
+}
+.midia-suelta[draggable='true'] {
+  cursor: grab;
+}
 @media (prefers-reduced-motion: reduce) {
   .midia-suelta,
   .midia-suelta:hover,
   .midia-suelta:focus-within,
-  .midia-sueltas-ok {
+  .midia-sueltas-ok,
+  .linea-pisa {
     transform: none;
     transition: none;
   }
