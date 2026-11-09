@@ -9,11 +9,13 @@ import {
   carriles,
   choques,
   colocarTareas,
+  esDiaLibre,
   estaAtrasada,
   fraseDelDia,
   hiloDelDia,
   loImportante,
   planificar,
+  proximasTareas,
   redondearArriba,
   reorganizar,
   resumenDelDia,
@@ -363,5 +365,45 @@ describe('lo que se envía al servidor', () => {
       { id: 4, fecha_limite: HOY, hora_limite: '09:15' },
       { id: 7, fecha_limite: HOY, hora_limite: '14:00' },
     ]);
+  });
+});
+
+describe('día libre (paso 7.8)', () => {
+  it('es día libre si hoy no hay ninguna tarea (una hecha o una sin hora ya cuentan)', () => {
+    expect(esDiaLibre([], HOY)).toBe(true);
+    expect(esDiaLibre([tarea({ fecha_limite: '2026-11-06' })], HOY)).toBe(true);
+    expect(esDiaLibre([tarea()], HOY)).toBe(false);
+    expect(esDiaLibre([tarea({ estado: 'completada', hora_limite: '09:00:00' })], HOY)).toBe(false);
+  });
+
+  it('el titular lo dice', () => {
+    expect(textoBriefing(resumenDelDia([], HOY, h('11:40')), 'Ana', h('11:40'), true).titular).toBe('Buenos días, Ana. Hoy tienes el día libre.');
+  });
+
+  it('¿Adelantas algo?: las 3 pendientes más cercanas de los próximos días, por día y hora', () => {
+    // HOY es jueves 5 de noviembre de 2026
+    const lista = proximasTareas(
+      [
+        tarea({ titulo: 'Ordenar el trastero', fecha_limite: '2026-11-07', hora_limite: '18:00:00' }),
+        tarea({ titulo: 'Comprar el regalo', fecha_limite: '2026-11-07' }),
+        tarea({ titulo: 'Revisión en el dentista', fecha_limite: '2026-11-06', hora_limite: '10:00:00' }),
+        tarea({ titulo: 'Ya hecha', fecha_limite: '2026-11-06', estado: 'completada' }),
+        tarea({ titulo: 'Era de ayer', fecha_limite: '2026-11-04' }),
+        tarea({ titulo: 'Sin fecha', fecha_limite: null }),
+        tarea({ titulo: 'La cuarta', fecha_limite: '2026-11-20' }),
+      ],
+      HOY,
+    );
+    expect(lista.map((p) => [p.dia, p.hora, p.titulo])).toEqual([
+      ['Mañana', '10:00', 'Revisión en el dentista'],
+      ['Sáb 7', '18:00', 'Ordenar el trastero'],
+      ['Sáb 7', 'sin hora', 'Comprar el regalo'],
+    ]);
+  });
+
+  it('«Traer a hoy» usa Planificar: una tarea de otro día va al primer hueco libre de hoy', () => {
+    const regalo = tarea({ titulo: 'Comprar el regalo', fecha_limite: '2026-11-07', duracion_min: 45 });
+    const plan = planificar([regalo], regalo.id, HOY, h('11:40'));
+    expect(plan.tipo === 'colocadas' && plan.colocadas.get(regalo.id)).toBe(h('11:45'));
   });
 });

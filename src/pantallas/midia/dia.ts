@@ -5,12 +5,14 @@
 //  - "Reorganizar mi día", "Planificar" y "Separar": dónde colocar cada tarea
 //  - qué tareas se pisan y cómo ponerlas lado a lado en la línea de tiempo (carriles)
 //  - el resumen del día y el texto del briefing
+//  - el día libre (paso 7.8): si hoy no tienes nada y qué tareas de los próximos días puedes adelantar
 // Son "funciones puras": reciben las tareas, el día y la hora, y devuelven un resultado.
 // No piden nada al servidor ni tocan la pantalla, por eso se pueden probar solas (dia.test.ts).
 import type { Tarea } from '../useTareas';
 import type { Prioridad } from '../tareas/frase';
 import { horaConCeros, textoDuracion } from '../tareas/frase';
 import { INICIO_DIA, FIN_DIA, minutosDe, textoHora } from '../tareas/pulso';
+import { deTextoISO, sumarDias } from '../../utils/dias';
 
 export { INICIO_DIA, FIN_DIA };
 
@@ -222,10 +224,10 @@ export function saludoSegunHora(ahora: number) {
 // Los textos de "Así va tu día" (antes "Briefing de hoy"), como en el prototipo:
 // "Buenos días, Ana. Hoy tienes 2 tareas clave." + "Te quedan unas 5 h libres y 1 tarea atrasada."
 // (Las tareas clave ya no van en la frase: salen en la nota pegada, ver loImportante)
-export function textoBriefing(r: Resumen, nombre: string, ahora: number) {
+export function textoBriefing(r: Resumen, nombre: string, ahora: number, diaLibre = false) {
   const n = r.clave.length;
   const titular = `${saludoSegunHora(ahora)}${nombre ? `, ${nombre}` : ''}. ${
-    n === 0 ? 'Hoy no tienes tareas urgentes.' : n === 1 ? 'Hoy tienes 1 tarea clave.' : `Hoy tienes ${n} tareas clave.`
+    diaLibre ? 'Hoy tienes el día libre.' : n === 0 ? 'Hoy no tienes tareas urgentes.' : n === 1 ? 'Hoy tienes 1 tarea clave.' : `Hoy tienes ${n} tareas clave.`
   }`;
   const libre = r.libre > 0 ? `Te quedan unas ${textoDuracion(r.libre)} libres` : 'No te queda tiempo libre hoy';
   const atrasadas = r.atrasadas.length === 0 ? '.' : r.atrasadas.length === 1 ? ' y 1 tarea atrasada.' : ` y ${r.atrasadas.length} tareas atrasadas.`;
@@ -311,4 +313,38 @@ export function fraseDelDia(libre: number, hechas: number, total: number) {
   if (total === 0) return `Hoy aún no tienes tareas. ${libres}.`;
   if (hechas === total) return `¡Has tachado todo lo de hoy! ${libres}.`;
   return `${libres} y llevas ${hechas} de ${total} tachadas.`;
+}
+
+// ---------- Día libre (paso 7.8) ----------
+// Hoy no tienes ninguna tarea: ni con hora, ni sin hora, ni ya hecha
+export const esDiaLibre = (tareas: Tarea[], hoy: string) => !tareas.some((t) => esDeHoy(t, hoy));
+
+export interface Proxima {
+  id: number;
+  titulo: string;
+  dia: string; // "Mañana" o "Jue 12"
+  hora: string; // "10:00" o "sin hora"
+}
+
+const DIAS_CORTOS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+// «¿Adelantas algo?»: las tareas pendientes más cercanas de los próximos días (como mucho 3),
+// por día y, dentro del mismo día, por hora (las que no tienen hora, al final de su día)
+export function proximasTareas(tareas: Tarea[], hoy: string, cuantas = 3): Proxima[] {
+  const manana = sumarDias(hoy, 1);
+  const fecha = (t: Tarea) => t.fecha_limite?.slice(0, 10) ?? '';
+  return tareas
+    .filter((t) => !hecha(t) && fecha(t) > hoy)
+    .sort((a, b) => fecha(a).localeCompare(fecha(b)) || (inicioDe(a) ?? 9999) - (inicioDe(b) ?? 9999))
+    .slice(0, cuantas)
+    .map((t) => {
+      const inicio = inicioDe(t);
+      const dia = deTextoISO(fecha(t));
+      return {
+        id: t.id,
+        titulo: t.titulo,
+        dia: fecha(t) === manana ? 'Mañana' : `${DIAS_CORTOS[dia.getDay()]} ${dia.getDate()}`,
+        hora: inicio === null ? 'sin hora' : textoHora(inicio),
+      };
+    });
 }
