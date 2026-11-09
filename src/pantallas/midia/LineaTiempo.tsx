@@ -9,6 +9,7 @@
 //  - Arrastrar un bloque (o una nota suelta) a otra hora: mientras arrastras, el sitio donde caerá se
 //    marca con "→ 17:30". Con el teclado: Tab hasta el bloque y Alt + flecha arriba/abajo (15 min).
 //  - Si dos tareas se pisan, una notita amarilla lo dice con el botón "Separar".
+//  - Día libre (paso 7.8): si hoy no tienes nada, el sello «Día libre» con su bocadillo para crear una tarea.
 // Los cálculos (choques, carriles) están en dia.ts; aquí se dibuja y se avisa a la pantalla.
 import { useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent } from 'react';
 import type { Tarea } from '../useTareas';
@@ -17,6 +18,7 @@ import { estiloPrioridad } from '../tareas/prioridades';
 import { textoHora } from '../tareas/pulso';
 import { PastillaIcono } from '../tareas/PastillaIcono';
 import { duraArrastrada, empezarArrastre } from './arrastre';
+import { SelloDiaLibre } from './DiaLibre';
 
 // 52 px por hora (como el prototipo): el día de 8:00 a 22:00 mide 728 px
 const PX_HORA = 52;
@@ -33,6 +35,8 @@ interface Props {
   alMover: (id: number, minuto: number) => void; // la tarea (o nota suelta) pasa a empezar en "minuto"
   alCrear: (minuto: number) => void; // Nueva tarea a esa hora
   alSeparar: (primeraId: number, segundaId: number) => void;
+  diaLibre?: boolean; // hoy no tienes ninguna tarea (paso 7.8)
+  alCrearTarea?: () => void; // «+ Crear una tarea» del bocadillo del sello
 }
 
 // El trazo de Tachit que tacha el título de las tareas hechas
@@ -44,7 +48,7 @@ function Tachon() {
   );
 }
 
-function LineaTiempo({ tareas, hoy, ahora, alAbrir, alMover, alCrear, alSeparar }: Props) {
+function LineaTiempo({ tareas, hoy, ahora, alAbrir, alMover, alCrear, alSeparar, diaLibre = false, alCrearTarea }: Props) {
   const lienzo = useRef<HTMLDivElement>(null);
   // Mientras arrastras: a qué minuto caería y cuánto dura lo que arrastras (para dibujar el hueco)
   const [destino, setDestino] = useState<{ minuto: number; dura: number } | null>(null);
@@ -141,6 +145,8 @@ function LineaTiempo({ tareas, hoy, ahora, alAbrir, alMover, alCrear, alSeparar 
             <span>{textoHora(ahora)}</span>
           </div>
         )}
+
+        {diaLibre && alCrearTarea && <SelloDiaLibre alCrear={alCrearTarea} />}
 
         {conHora.map((t) => {
           const inicio = inicioDe(t)!;

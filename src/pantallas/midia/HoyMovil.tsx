@@ -3,16 +3,19 @@
 // De arriba abajo: la fecha grande; «Así va tu día» con el hilo (tocar un puntito dice qué tarea es)
 // y la frase; la tira «Lo importante» que se abre; la agenda con estilo libreta (en el móvil se toca,
 // no se arrastra: el círculo tacha la tarea y el nombre la abre); y las notas sueltas en una fila.
+// Día libre (paso 7.8): si hoy no tienes nada, en la agenda sale el sello «Día libre» (se toca para crear
+// una tarea) y, en lugar de las notas sueltas, «¿Adelantas algo?».
 // Los cálculos están en dia.ts y lo que se guarda lo hace MiDia.tsx; aquí solo se dibuja.
 import { Fragment, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
 import type { Tarea } from '../useTareas';
-import { choques, duracion, estaAtrasada, esDeHoy, fraseDelDia, hecha, inicioDe, type EstadoNota, type Resumen, type hiloDelDia } from './dia';
+import { choques, duracion, estaAtrasada, esDeHoy, fraseDelDia, hecha, inicioDe, type EstadoNota, type Proxima, type Resumen, type hiloDelDia } from './dia';
 import type { EstadoReorganizar } from './BriefingDia';
 import { estiloPrioridad } from '../tareas/prioridades';
 import { textoDuracion } from '../tareas/frase';
 import { textoHora } from '../tareas/pulso';
 import { PastillaIcono } from '../tareas/PastillaIcono';
 import { deTextoISO } from '../../utils/dias';
+import { AdelantarAlgo, SelloDiaLibre } from './DiaLibre';
 
 const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -38,6 +41,11 @@ interface Props {
   alPlanificar: (t: Tarea) => void;
   alAnadirImportante: () => void;
   alIrACuenta: () => void;
+  diaLibre: boolean; // hoy no tienes ninguna tarea (paso 7.8)
+  proximas: Proxima[];
+  sinTareas: boolean;
+  alTraer: (id: number) => void;
+  alCrearTarea: () => void;
 }
 
 // El trazo de Tachit (raya que acaba en check)
@@ -249,114 +257,126 @@ function HoyMovil(p: Props) {
           <span aria-live="polite">{p.estadoReorg === 'trabajando' ? 'Reorganizando…' : p.estadoReorg === 'listo' ? '✓ Listo' : 'Reorganizar'}</span>
         </button>
       </div>
-      <div className="hoy-agenda">
-        {conHora.length === 0 && <p className="py-3 text-sm text-[#5b6b7c]">Hoy no tienes tareas con hora.</p>}
-        {conHora.map((t, i) => {
-          const inicio = inicioDe(t)!;
-          const dura = duracion(t);
-          const atrasada = estaAtrasada(t, hoy, ahora);
-          const enCurso = !hecha(t) && inicio <= ahora && ahora < inicio + dura;
-          const pz = pisan.find((c) => c.segunda.id === t.id);
-          const categoria = t.categorias?.[0]?.nombre;
-          const estado = hecha(t) ? 'hecha' : atrasada ? 'se te pasó' : enCurso ? 'en curso' : '';
-          const clase = [
-            'hoy-fila',
-            hecha(t) && 'hoy-fila-hecha',
-            atrasada && 'hoy-fila-atrasada',
-            enCurso && 'hoy-fila-encurso',
-            resaltada === t.id && 'hoy-fila-brillo',
-          ]
-            .filter(Boolean)
-            .join(' ');
-          return (
-            <Fragment key={t.id}>
-              {i === indiceAhora && raya}
-              <div id={`hoy-fila-${t.id}`} className={clase} style={{ '--c': estiloPrioridad(t.prioridad).color } as CSSProperties}>
-                {/* La duración, corta para que quepa en la columna: "1 h 30" (como el prototipo) */}
-                <span className="hoy-hora">
-                  {textoHora(inicio)}
-                  <small>{dura >= 60 ? textoDuracion(dura).replace(' min', '') : textoDuracion(dura)}</small>
-                </span>
-                <button
-                  type="button"
-                  className="hoy-check"
-                  onClick={() => p.alTachar(t)}
-                  aria-label={hecha(t) ? `Destachar «${t.titulo}»` : `Tachar «${t.titulo}»`}
-                >
-                  <Check />
-                </button>
-                <button type="button" className="hoy-texto" onClick={() => p.alAbrir(t.id)} aria-label={`Abrir «${t.titulo}»`}>
-                  <span className="hoy-titulo">
-                    <PastillaIcono clave={t.icono} tam={18} radio={6} dibujo={11} />
-                    <span className="hoy-nombre">
-                      {t.titulo}
-                      {hecha(t) && <Tachon />}
-                    </span>
-                  </span>
-                  <span className="hoy-dato">
-                    {categoria ? `#${categoria}` : ''}
-                    {estado && `${categoria ? ' · ' : ''}${estado}`}
-                  </span>
-                </button>
-                {pz && (
-                  <span className="hoy-pisa" role="status">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                      <path d="M13 2L4 14h7l-1 8 9-12h-7z" />
-                    </svg>
-                    Se pisan {textoHora(pz.desde)}–{textoHora(pz.hasta)}
-                    <button type="button" onClick={() => p.alSeparar(pz.primera.id, pz.segunda.id)}>
-                      Separar
-                    </button>
-                  </span>
-                )}
-              </div>
-            </Fragment>
-          );
-        })}
-        {conHora.length > 0 && indiceAhora === -1 && raya}
-      </div>
-
-      {/* Las notas sueltas: en una fila que se desliza de lado */}
-      <div className="flex items-center gap-2">
-        <h2 className="text-lg font-extrabold">Notas sueltas</h2>
-        {sueltas.length > 0 && <span className="midia-sueltas-n">{sueltas.length}</span>}
-      </div>
-      {sueltas.length > 0 ? (
-        <ul id="hoy-sueltas" className="hoy-sueltas">
-          {sueltas.map((t, i) => {
-            const prioridad = estiloPrioridad(t.prioridad);
-            const hueco = p.huecos.get(t.id) ?? null;
+      {/* Día libre (paso 7.8): el sello en lugar de la agenda */}
+      {p.diaLibre ? (
+        <SelloDiaLibre movil alCrear={p.alCrearTarea} />
+      ) : (
+        <div className="hoy-agenda">
+          {conHora.length === 0 && <p className="py-3 text-sm text-[#5b6b7c]">Hoy no tienes tareas con hora.</p>}
+          {conHora.map((t, i) => {
+            const inicio = inicioDe(t)!;
+            const dura = duracion(t);
+            const atrasada = estaAtrasada(t, hoy, ahora);
+            const enCurso = !hecha(t) && inicio <= ahora && ahora < inicio + dura;
+            const pz = pisan.find((c) => c.segunda.id === t.id);
+            const categoria = t.categorias?.[0]?.nombre;
+            const estado = hecha(t) ? 'hecha' : atrasada ? 'se te pasó' : enCurso ? 'en curso' : '';
+            const clase = [
+              'hoy-fila',
+              hecha(t) && 'hoy-fila-hecha',
+              atrasada && 'hoy-fila-atrasada',
+              enCurso && 'hoy-fila-encurso',
+              resaltada === t.id && 'hoy-fila-brillo',
+            ]
+              .filter(Boolean)
+              .join(' ');
             return (
-              <li
-                key={t.id}
-                className={resaltada === t.id ? 'midia-suelta hoy-fila-brillo' : 'midia-suelta'}
-                style={{ '--cinta': prioridad.color, '--giro': `${GIROS[i % GIROS.length]}deg` } as CSSProperties}
-              >
-                <p className="midia-suelta-titulo">{t.titulo}</p>
-                <p className="midia-suelta-dato">
-                  {textoDuracion(duracion(t))} · {prioridad.nombre.toLowerCase()}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => p.alPlanificar(t)}
-                  disabled={p.ocupado}
-                  aria-label={hueco === null ? `No queda hueco hoy para «${t.titulo}»` : `Poner «${t.titulo}» a las ${textoHora(hueco)}`}
-                  className="midia-planificar"
-                >
-                  {hueco === null ? 'Sin hueco hoy' : `A las ${textoHora(hueco)}`}
-                </button>
-              </li>
+              <Fragment key={t.id}>
+                {i === indiceAhora && raya}
+                <div id={`hoy-fila-${t.id}`} className={clase} style={{ '--c': estiloPrioridad(t.prioridad).color } as CSSProperties}>
+                  {/* La duración, corta para que quepa en la columna: "1 h 30" (como el prototipo) */}
+                  <span className="hoy-hora">
+                    {textoHora(inicio)}
+                    <small>{dura >= 60 ? textoDuracion(dura).replace(' min', '') : textoDuracion(dura)}</small>
+                  </span>
+                  <button
+                    type="button"
+                    className="hoy-check"
+                    onClick={() => p.alTachar(t)}
+                    aria-label={hecha(t) ? `Destachar «${t.titulo}»` : `Tachar «${t.titulo}»`}
+                  >
+                    <Check />
+                  </button>
+                  <button type="button" className="hoy-texto" onClick={() => p.alAbrir(t.id)} aria-label={`Abrir «${t.titulo}»`}>
+                    <span className="hoy-titulo">
+                      <PastillaIcono clave={t.icono} tam={18} radio={6} dibujo={11} />
+                      <span className="hoy-nombre">
+                        {t.titulo}
+                        {hecha(t) && <Tachon />}
+                      </span>
+                    </span>
+                    <span className="hoy-dato">
+                      {categoria ? `#${categoria}` : ''}
+                      {estado && `${categoria ? ' · ' : ''}${estado}`}
+                    </span>
+                  </button>
+                  {pz && (
+                    <span className="hoy-pisa" role="status">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M13 2L4 14h7l-1 8 9-12h-7z" />
+                      </svg>
+                      Se pisan {textoHora(pz.desde)}–{textoHora(pz.hasta)}
+                      <button type="button" onClick={() => p.alSeparar(pz.primera.id, pz.segunda.id)}>
+                        Separar
+                      </button>
+                    </span>
+                  )}
+                </div>
+              </Fragment>
             );
           })}
-        </ul>
-      ) : (
-        <div id="hoy-sueltas" className="midia-sueltas-ok">
-          <span className="midia-sello" aria-hidden="true">
-            <Check tam={18} />
-          </span>
-          <strong>No hay notas sueltas.</strong>
-          <span className="midia-sueltas-ok-hora">Todo tiene su hora.</span>
+          {conHora.length > 0 && indiceAhora === -1 && raya}
         </div>
+      )}
+
+      {/* Día libre: «¿Adelantas algo?» en lugar de las notas sueltas */}
+      {p.diaLibre ? (
+        <AdelantarAlgo movil proximas={p.proximas} sinTareas={p.sinTareas} ocupado={p.ocupado} alTraer={p.alTraer} alCrear={p.alCrearTarea} />
+      ) : (
+        <>
+          {/* Las notas sueltas: en una fila que se desliza de lado */}
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-extrabold">Notas sueltas</h2>
+            {sueltas.length > 0 && <span className="midia-sueltas-n">{sueltas.length}</span>}
+          </div>
+          {sueltas.length > 0 ? (
+            <ul id="hoy-sueltas" className="hoy-sueltas">
+              {sueltas.map((t, i) => {
+                const prioridad = estiloPrioridad(t.prioridad);
+                const hueco = p.huecos.get(t.id) ?? null;
+                return (
+                  <li
+                    key={t.id}
+                    className={resaltada === t.id ? 'midia-suelta hoy-fila-brillo' : 'midia-suelta'}
+                    style={{ '--cinta': prioridad.color, '--giro': `${GIROS[i % GIROS.length]}deg` } as CSSProperties}
+                  >
+                    <p className="midia-suelta-titulo">{t.titulo}</p>
+                    <p className="midia-suelta-dato">
+                      {textoDuracion(duracion(t))} · {prioridad.nombre.toLowerCase()}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => p.alPlanificar(t)}
+                      disabled={p.ocupado}
+                      aria-label={hueco === null ? `No queda hueco hoy para «${t.titulo}»` : `Poner «${t.titulo}» a las ${textoHora(hueco)}`}
+                      className="midia-planificar"
+                    >
+                      {hueco === null ? 'Sin hueco hoy' : `A las ${textoHora(hueco)}`}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <div id="hoy-sueltas" className="midia-sueltas-ok">
+              <span className="midia-sello" aria-hidden="true">
+                <Check tam={18} />
+              </span>
+              <strong>No hay notas sueltas.</strong>
+              <span className="midia-sueltas-ok-hora">Todo tiene su hora.</span>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -4,6 +4,7 @@
 // a la derecha las "Notas sueltas" (tareas de hoy sin hora, con su botón "A las 12:30") y el "Resumen del día" (el hilo, la frase y ahora / después).
 // A la izquierda, la línea de tiempo "la libreta" (paso 7.5).
 // Móvil (paso 7.6): "Hoy", con lo mismo adaptado al dedo (midia/HoyMovil.tsx).
+// Día libre (paso 7.8): si hoy no tienes ninguna tarea, el sello «Día libre» y «¿Adelantas algo?» (midia/DiaLibre.tsx).
 // Los cálculos están en midia/dia.ts (con sus pruebas); aquí se guarda y se dibuja.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -12,14 +13,17 @@ import BriefingDia, { type EstadoReorganizar } from './midia/BriefingDia';
 import { ResumenDia, SinHoraAsignada } from './midia/PanelesDia';
 import LineaTiempo from './midia/LineaTiempo';
 import HoyMovil from './midia/HoyMovil';
+import { AdelantarAlgo } from './midia/DiaLibre';
 import { useTareas, type Tarea } from './useTareas';
 import {
   aCambiosHorario,
   choques,
+  esDiaLibre,
   hiloDelDia,
   inicioDe,
   loImportante,
   planificar,
+  proximasTareas,
   separar,
   reorganizar,
   resumenDelDia,
@@ -48,7 +52,7 @@ const minutosAhora = () => {
 function MiDia() {
   const esWeb = useEsWeb();
   const navigate = useNavigate();
-  const { tareas, error, alCambiar, cambiarLocal } = useTareas();
+  const { tareas, cargadas, error, alCambiar, cambiarLocal } = useTareas();
   const [ahora, setAhora] = useState(minutosAhora);
   const [aviso, setAviso] = useState<DatosAviso | null>(null);
   const [estadoReorg, setEstadoReorg] = useState<EstadoReorganizar>(''); // mientras no es '', el botón no se puede pulsar
@@ -73,7 +77,11 @@ function MiDia() {
   const hoy = hoyISO();
   const resumen = resumenDelDia(tareas, hoy, ahora);
   const nombre = localStorage.getItem('nombre') || '';
-  const { titular, detalle } = textoBriefing(resumen, nombre, ahora);
+  // Día libre: hoy no tienes ninguna tarea. Solo cuando ya han llegado las tareas (si no, mientras
+  // cargan se vería el sello un momento aunque tengas tareas)
+  const diaLibre = cargadas && esDiaLibre(tareas, hoy);
+  const proximas = diaLibre ? proximasTareas(tareas, hoy) : [];
+  const { titular, detalle } = textoBriefing(resumen, nombre, ahora, diaLibre);
   const nota = loImportante(resumen);
   const hilo = hiloDelDia(tareas, hoy, ahora);
   // Para cada nota suelta, la hora a la que la pondría su botón (lo mismo que hará al pulsarlo)
@@ -209,6 +217,20 @@ function MiDia() {
     setPlanificando(null);
   };
 
+  // ---------- Día libre (paso 7.8) ----------
+  // «+ Crear una tarea» del bocadillo del sello: Nueva tarea para hoy, sin hora
+  const alCrearTarea = () => navigate('/tareas', { state: { nuevaTarea: Date.now() } });
+  // «Traer a hoy»: la tarea de otro día pasa a hoy, en el primer hueco libre (lo mismo que Planificar)
+  const alTraer = async (id: number) => {
+    if (planificando !== null) return;
+    const t = tareas.find((x) => x.id === id);
+    const plan = planificar(tareas, id, hoy, ahora);
+    if (!t || plan.tipo !== 'colocadas') return setAviso({ titulo: 'No queda hueco hoy', texto: 'Prueba con otra más corta.' });
+    setPlanificando(id);
+    if (await guardarPlan(plan)) setAviso({ titulo: 'Tarea traída a hoy', texto: `«${t.titulo}» ahora es hoy a las ${textoHora(plan.colocadas.get(id)!)}.` });
+    setPlanificando(null);
+  };
+
   // ---------- Solo en el móvil (paso 7.6) ----------
   // Tachar desde la agenda: se ve al momento y después se guarda (igual que en Tareas)
   const alTachar = async (t: Tarea) => {
@@ -250,6 +272,11 @@ function MiDia() {
           alPlanificar={alPlanificar}
           alAnadirImportante={alAnadirImportante}
           alIrACuenta={() => navigate('/ajustes')}
+          diaLibre={diaLibre}
+          proximas={proximas}
+          sinTareas={tareas.length === 0}
+          alTraer={alTraer}
+          alCrearTarea={alCrearTarea}
         />
         {aviso && <AvisoFlotante aviso={aviso} alCerrar={cerrarAviso} />}
       </>
@@ -261,11 +288,27 @@ function MiDia() {
       <BriefingDia titular={titular} detalle={detalle} nota={nota} alAnadirImportante={alAnadirImportante} estado={estadoReorg} alReorganizar={alReorganizar} />
       <div className="flex items-start gap-5">
         <div className="min-w-0 grow">
-          <LineaTiempo tareas={tareas} hoy={hoy} ahora={ahora} alAbrir={alAbrir} alMover={alMover} alCrear={alCrear} alSeparar={alSeparar} />
+          <LineaTiempo
+            tareas={tareas}
+            hoy={hoy}
+            ahora={ahora}
+            alAbrir={alAbrir}
+            alMover={alMover}
+            alCrear={alCrear}
+            alSeparar={alSeparar}
+            diaLibre={diaLibre}
+            alCrearTarea={alCrearTarea}
+          />
         </div>
         <div className="flex w-[340px] shrink-0 flex-col gap-4">
-          <SinHoraAsignada tareas={resumen.sinHora} huecos={huecos} planificando={planificando} alPlanificar={alPlanificar} />
-          <ResumenDia resumen={resumen} hilo={hilo} recolocando={planificando !== null || estadoReorg !== ''} alRecolocar={alRecolocar} />
+          {diaLibre ? (
+            <AdelantarAlgo proximas={proximas} sinTareas={tareas.length === 0} ocupado={planificando !== null} alTraer={alTraer} alCrear={alCrearTarea} />
+          ) : (
+            <>
+              <SinHoraAsignada tareas={resumen.sinHora} huecos={huecos} planificando={planificando} alPlanificar={alPlanificar} />
+              <ResumenDia resumen={resumen} hilo={hilo} recolocando={planificando !== null || estadoReorg !== ''} alRecolocar={alRecolocar} />
+            </>
+          )}
         </div>
       </div>
       {aviso && <AvisoFlotante aviso={aviso} alCerrar={cerrarAviso} />}
