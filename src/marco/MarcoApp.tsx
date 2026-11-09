@@ -9,6 +9,7 @@
 //  - traer el tema que elegiste en tu cuenta
 //  - pedir los datos de las barras (anillo, categorías, racha) y pasárselos a cada una
 //  - enseñar el aviso de bienvenida al entrar ("Sesión iniciada", "Cuenta creada con Google"...)
+//  - «Hoy es un día especial» (paso 7.7): si hoy hay una tarea con tarta, el confeti y su tarjeta
 import { useCallback, useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import AvisoFlotante, { type DatosAviso } from '../componentes/base/AvisoFlotante';
@@ -17,6 +18,7 @@ import BarraLateral from './BarraLateral';
 import Cabecera from './Cabecera';
 import BarraInferior from './BarraInferior';
 import MenuMovil from './MenuMovil';
+import DiaEspecial from './DiaEspecial';
 import { useResumenBarra } from './useResumenBarra';
 
 // El nombre de cada pantalla, para la cabecera (web) y el título grande (móvil)
@@ -102,6 +104,8 @@ function MarcoApp() {
       <MenuMovil abierto={menuAbierto} alCerrar={cerrarMenu} racha={resumen.racha} ultimos7={resumen.ultimos7} />
 
       {bienvenida && <AvisoFlotante aviso={bienvenida} alCerrar={cerrarBienvenida} />}
+      {/* "Ver en el calendario" lleva a ese día (el Calendario lo usará cuando se rehaga en la Fase 8) */}
+      <DiaEspecial especial={resumen.especial} alVerCalendario={(dia) => navigate('/calendario', { state: { dia } })} />
     </div>
   );
 }

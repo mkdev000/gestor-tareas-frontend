@@ -4333,3 +4333,179 @@ button.menu-opcion:active .menu-flecha {
     transform: none;
   }
 }
+/* ===== Paso 7.7: «Hoy es un día especial» (marco/DiaEspecial.tsx), igual que el prototipo ===== */
+.especial {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 170px 30px 24px;
+  overflow: hidden;
+}
+@media (min-width: 1024px) {
+  .especial {
+    padding-top: 190px;
+  }
+}
+.especial-fondo {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 30, 47, 0.42);
+  animation: aparecer-fondo 0.3s ease;
+}
+/* El confeti cae desde arriba girando y se desvanece al final */
+.especial-confeti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.especial-confeti span {
+  position: absolute;
+  top: -24px;
+  opacity: 0;
+  animation-name: especial-caer;
+  animation-timing-function: cubic-bezier(0.2, 0.6, 0.4, 1);
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+}
+@keyframes especial-caer {
+  0% {
+    opacity: 1;
+    transform: translateY(0) rotate(0);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(110vh) rotate(620deg);
+  }
+}
+.especial-tarjeta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 420px;
+  padding: 26px 24px 20px;
+  border-radius: 28px;
+  background: #ffffff;
+  color: #0f1f2e;
+  box-shadow: 0 24px 60px rgba(10, 30, 47, 0.35);
+  text-align: center;
+  outline: none;
+  animation: especial-entrar 0.35s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+@keyframes especial-entrar {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* La tarta salta al aparecer */
+.especial-icono {
+  display: flex;
+  animation: especial-saltar 0.9s cubic-bezier(0.3, 1.6, 0.5, 1) 0.15s both;
+}
+.especial-icono > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 22px;
+  background: #fde6ee;
+  color: #c2416b;
+}
+@keyframes especial-saltar {
+  0% {
+    transform: scale(0.3) rotate(-12deg);
+  }
+  60% {
+    transform: scale(1.12) rotate(4deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+.especial-etiqueta {
+  margin-top: 4px;
+  padding: 5px 10px;
+  border-radius: 7px;
+  background: #fde6ee;
+  color: #b0365f;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.6px;
+}
+.especial-titulo {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.especial-hora {
+  color: #5b6b7c;
+  font-size: 14px;
+  font-weight: 700;
+}
+.especial-texto {
+  color: #33475b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.especial-botones {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+}
+.especial-botones button {
+  height: 46px;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.especial-cerrar {
+  flex: 1;
+  border: 1px solid #dde3ea;
+  background: #ffffff;
+  color: #0f1f2e;
+  font-weight: 700;
+}
+.especial-cerrar:hover {
+  background: #f4f6f9;
+}
+/* El botón principal, con el color de acento del tema (como los demás principales de la app) */
+.especial-ir {
+  flex: 1.4;
+  border: 0;
+  background: var(--tachit-acento);
+  color: var(--tachit-sobre-acento);
+  font-weight: 800;
+  box-shadow: 0 6px 14px color-mix(in srgb, var(--tachit-acento) 35%, transparent);
+}
+.especial-botones button:focus-visible {
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .especial-confeti {
+    display: none;
+  }
+  .especial-fondo,
+  .especial-tarjeta,
+  .especial-icono {
+    animation: none;
+  }
+}
