@@ -6,6 +6,7 @@
 //    tachadas el resto de ese día; al día siguiente se ocultan (la categoría NO se borra: vuelve
 //    a salir sola cuando tenga tareas otra semana). Borrarla de verdad será en Ajustes (Fase 10).
 //  - la racha (menú del móvil): cuántos días seguidos has tachado algo y los últimos 7 días
+//  - el "día especial" (paso 7.7): la tarea de hoy con el icono de tarta que aún no has tachado
 // Se pide UNA vez en el marco (MarcoApp) y se pasa a las tres piezas, así no se repiten peticiones.
 // Es un "hook" propio: una función que empieza por "use" y que puede usar otros hooks de React
 // (useState, useEffect). Así la barra solo se preocupa de dibujar, y aquí se piden y se cuentan los datos.
@@ -17,6 +18,10 @@ import { calcularRacha } from '../utils/racha';
 
 // Solo lo que la barra necesita de cada tarea y de cada categoría (la API manda más campos)
 interface TareaApi {
+  id: number;
+  titulo: string;
+  icono?: string | null;
+  hora_limite?: string | null; // "21:00:00" o null
   estado: string;
   fecha_limite: string | null;
   actualizada_en?: string | null; // "2026-11-01 18:30:00" (hora del servidor, UTC): cuándo se tocó por última vez
@@ -42,6 +47,13 @@ export interface ResumenBarra {
   categorias: ResumenCategoria[];
   racha: number; // días seguidos (hasta hoy o hasta ayer) con alguna tarea tachada
   ultimos7: boolean[]; // de hace 6 días a hoy: ¿tachaste algo ese día?
+  especial: DiaEspecialHoy | null; // hoy hay una tarea con tarta sin tachar (paso 7.7)
+}
+
+export interface DiaEspecialHoy {
+  id: number;
+  titulo: string;
+  hora: string | null; // "21:00" o null si no tiene hora
 }
 
 // El día (en TU hora) en que se tocó la tarea por última vez. Para una tarea completada,
@@ -54,7 +66,17 @@ function diaDeUltimoCambio(tarea: TareaApi) {
   return tarea.fecha_limite ? tarea.fecha_limite.slice(0, 10) : '';
 }
 
-const VACIO: ResumenBarra = { pendientes: 0, hechasHoy: 0, categorias: [], racha: 0, ultimos7: Array(7).fill(false) };
+const VACIO: ResumenBarra = { pendientes: 0, hechasHoy: 0, categorias: [], racha: 0, ultimos7: Array(7).fill(false), especial: null };
+
+// El día especial: entre las tareas de hoy con el icono de tarta y sin tachar, la primera por hora
+// (las que no tienen hora, al final). Solo la tarta, como el prototipo: el aviso dice "hoy toca felicitar".
+function diaEspecial(tareas: TareaApi[], hoy: string): DiaEspecialHoy | null {
+  const conTarta = tareas
+    .filter((t) => t.icono === 'tarta' && t.estado !== 'completada' && t.fecha_limite?.slice(0, 10) === hoy)
+    .sort((a, b) => (a.hora_limite ?? '99').localeCompare(b.hora_limite ?? '99'));
+  const t = conTarta[0];
+  return t ? { id: t.id, titulo: t.titulo, hora: t.hora_limite ? t.hora_limite.slice(0, 5) : null } : null;
+}
 
 // Cuenta todo a partir de las tareas y categorías que manda el servidor
 function calcularResumen(tareas: TareaApi[], categorias: CategoriaApi[]): ResumenBarra {
@@ -90,7 +112,7 @@ function calcularResumen(tareas: TareaApi[], categorias: CategoriaApi[]): Resume
   // La racha (cálculo compartido con el "Pulso del día", en utils/racha.ts)
   const { dias: racha, ultimos7 } = calcularRacha(tareas);
 
-  return { pendientes, hechasHoy, categorias: resumenCategorias, racha, ultimos7 };
+  return { pendientes, hechasHoy, categorias: resumenCategorias, racha, ultimos7, especial: diaEspecial(tareas, hoy) };
 }
 
 export function useResumenBarra(): ResumenBarra {
