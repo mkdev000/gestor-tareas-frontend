@@ -4509,3 +4509,270 @@ button.menu-opcion:active .menu-flecha {
     animation: none;
   }
 }
+/* ===== Paso 7.8: día libre (midia/DiaLibre.tsx), igual que el prototipo ===== */
+/* El sello «DÍA LIBRE»: en la web, encima de la línea de tiempo; en el móvil, en la agenda */
+.libre-zona {
+  position: absolute;
+  top: 232px;
+  left: 50%;
+  z-index: 4;
+  transform: translateX(-38%);
+}
+.libre-zona-movil {
+  position: relative;
+  top: auto;
+  left: auto;
+  align-self: center;
+  margin: 4px 0 2px;
+  transform: none;
+}
+.libre-sello {
+  position: relative;
+  display: block;
+  padding: 6px 16px 5px;
+  border: 3px solid #c2416b;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #c2416b;
+  box-shadow:
+    inset 0 0 0 2px #ffffff,
+    inset 0 0 0 4px rgba(194, 65, 107, 0.4);
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 2px;
+  text-align: center;
+  cursor: pointer;
+  transform: rotate(-8deg);
+  transition: transform 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.libre-sello small {
+  display: block;
+  font-size: 10.5px;
+  letter-spacing: 1.2px;
+}
+.libre-sello:hover {
+  transform: rotate(-6deg) scale(1.03);
+}
+.libre-zona-movil .libre-sello {
+  padding: 5px 14px 4px;
+  font-size: 19px;
+  transform: rotate(-6deg);
+}
+.libre-zona-movil .libre-sello small {
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+/* El «+» fino de la esquina: avisa de que el sello se puede pulsar, sin quitarle protagonismo */
+.libre-mas {
+  position: absolute;
+  top: -9px;
+  right: -9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #c2416b;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #c2416b;
+  transform: rotate(8deg);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+.libre-sello:hover .libre-mas,
+.libre-sello[aria-expanded='true'] .libre-mas {
+  background: #c2416b;
+  color: #ffffff;
+}
+/* El bocadillo, con el color suave del tema y el piquito hacia el sello (como el de la «?») */
+.libre-pop {
+  position: absolute;
+  top: calc(100% + 16px);
+  left: 50%;
+  z-index: 4;
+  width: 280px;
+  margin-left: -140px;
+  padding: 16px 16px 14px;
+  border: 1.5px solid var(--tachit-acento-borde);
+  border-radius: 14px;
+  background: var(--tachit-acento-suave);
+  box-shadow: 0 10px 24px rgba(27, 37, 89, 0.14);
+  text-align: left;
+  animation: aparecer-fondo 0.2s ease;
+}
+.libre-zona-movil .libre-pop {
+  width: 260px;
+  margin-left: -130px;
+}
+.libre-pop::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-top: 1.5px solid var(--tachit-acento-borde);
+  border-left: 1.5px solid var(--tachit-acento-borde);
+  background: var(--tachit-acento-suave);
+  transform: rotate(45deg);
+}
+.libre-pop-titulo {
+  padding-right: 22px;
+  color: #0f1f2e;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+.libre-pop-texto {
+  margin-top: 6px;
+  color: #5b6b7c;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.libre-x {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #5b6b7c;
+  font-family: inherit;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+.libre-x:hover {
+  background: rgba(27, 37, 89, 0.06);
+}
+/* «+ Crear una tarea»: a todo el ancho, con el color de acento del tema (como los botones principales) */
+.libre-crear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 38px;
+  margin-top: 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--tachit-acento);
+  color: var(--tachit-sobre-acento);
+  box-shadow: 0 5px 12px color-mix(in srgb, var(--tachit-acento) 35%, transparent);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.libre-crear-suelto {
+  margin-top: 0;
+}
+/* «¿Adelantas algo?» */
+.adel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.adel-texto {
+  color: #5b6b7c;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.adel-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.adel-fila {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid #e3e8ef;
+  border-radius: 10px;
+  background: #f9fbfd;
+}
+.adel-movil .adel-fila {
+  padding: 10px;
+  border-radius: 12px;
+  background: #ffffff;
+}
+.adel-dia {
+  flex-shrink: 0;
+  width: 58px;
+  color: #5b6b7c;
+  font-size: 11.5px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.adel-dia b {
+  display: block;
+  color: #f2711c;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+.adel-titulo {
+  flex: 1;
+  min-width: 0;
+  color: #0f1f2e;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.adel-movil .adel-titulo {
+  font-size: 13.5px;
+}
+.adel-traer {
+  flex-shrink: 0;
+  height: 28px;
+  padding: 0 9px;
+  border: 1px dashed var(--tachit-acento-fuerte);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--tachit-acento-fuerte);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.adel-movil .adel-traer {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 12.5px;
+}
+.adel-traer:hover:not(:disabled) {
+  background: var(--tachit-acento-suave);
+}
+.adel-traer:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+.libre-sello:focus-visible {
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 4px;
+}
+.libre-x:focus-visible,
+.libre-crear:focus-visible,
+.adel-traer:focus-visible {
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .libre-sello,
+  .libre-sello:hover,
+  .libre-mas {
+    transition: none;
+  }
+  .libre-pop {
+    animation: none;
+  }
+}
