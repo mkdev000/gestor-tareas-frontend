@@ -20,6 +20,7 @@ import { DibujoIcono } from './PastillaIcono';
 import { BotonPrioridad } from './AnilloPrioridad';
 import { PanelCuandoHoja, PanelDuraHoja, PanelAvisoHoja, PanelRepiteHoja, PanelIconoHoja, PanelCategoriaHoja } from './PanelesHoja';
 import { crearTarea, guardarEdicion, sincronizarSubtareas } from './guardar';
+import { deTextoISO } from '../../utils/dias';
 
 type Seccion = 'cuando' | 'dura' | 'aviso' | 'repite' | 'icono' | 'categoria';
 
@@ -58,16 +59,22 @@ interface Props {
   alBorrar: (tarea: Tarea) => void;
   prioridadPedida?: Prioridad | ''; // con qué prioridad empieza (el atajo de Hoy pide 'alta'; '' = la de siempre)
   horaPedida?: string; // a qué hora empieza ('15:00'; '' = sin hora)
+  fechaPedida?: string; // en qué día ('2026-10-14', desde «+ Añadir tarea este día» del Calendario; '' = el de siempre)
 }
 
-function HojaCrearMovil({ hoy, ahora, tareas, categorias, editando, alCerrar, alGuardar, alError, alBorrar, prioridadPedida = '', horaPedida = '' }: Props) {
+function HojaCrearMovil({ hoy, ahora, tareas, categorias, editando, alCerrar, alGuardar, alError, alBorrar, prioridadPedida = '', horaPedida = '', fechaPedida = '' }: Props) {
   // La hoja se crea de nuevo cada vez que se abre (la pantalla le cambia la "key"), así empieza limpia
-  // (y con la prioridad u hora que pida Mi día, si pide alguna)
-  const [inicial] = useState(() => (editando ? desdeTarea(editando) : { borrador: '', op: { ...OPCIONES_VACIAS, prioridad: prioridadPedida, hora: horaPedida } }));
+  // (y con la prioridad u hora que pida Mi día, o el día que pida el Calendario, si piden alguno)
+  const [inicial] = useState(() =>
+    editando ? desdeTarea(editando) : { borrador: '', op: { ...OPCIONES_VACIAS, prioridad: prioridadPedida, hora: horaPedida, fecha: fechaPedida } },
+  );
   const [borrador, setBorrador] = useState(inicial.borrador);
   const [op, setOp] = useState<OpcionesFrase>(inicial.op);
-  const [seccion, setSeccion] = useState<Seccion | null>(null);
-  const [semana, setSemana] = useState(0);
+  // Si el Calendario pide un día, la hoja se abre con «Cuándo» desplegado y la semana de ese día a la vista
+  const [seccion, setSeccion] = useState<Seccion | null>(!editando && fechaPedida ? 'cuando' : null);
+  const [semana, setSemana] = useState(() =>
+    !editando && fechaPedida ? Math.max(0, Math.floor(Math.round((deTextoISO(fechaPedida).getTime() - deTextoISO(hoy).getTime()) / 86400000) / 7)) : 0,
+  );
   const [subtareas, setSubtareas] = useState<string[]>(() => (editando?.subtareas ?? []).map((s) => s.titulo));
   const [subBorrador, setSubBorrador] = useState('');
   const [subAbierto, setSubAbierto] = useState(false);
