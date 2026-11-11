@@ -3,7 +3,7 @@
 // Se abren con los botones de la barra de herramientas de la hoja (calendario, reloj de arena, campana...).
 // Son distintos de los de la web (PanelesFrase.tsx) porque en el móvil hay menos sitio y se usan con el dedo:
 //  - CUÁNDO: atajos (Hoy, Mañana, Sábado, Lunes), la semana con puntitos de "cuánto tienes ese día",
-//    "Otra fecha" y la HORA en una línea del día donde se ven tus otras tareas (y avisa si se solapan)
+//    "Otra fecha" y la HORA en un reloj con el cielo de esa hora (RelojHora.tsx; avisa si se solapa con otra tarea)
 //  - CUÁNTO DURA · AVISO · SE REPITE · ICONO · CATEGORÍA
 import { sumarDias, deTextoISO } from '../../utils/dias';
 import type { Tarea, CategoriaDeLista } from '../useTareas';
@@ -14,6 +14,7 @@ import {
 } from './frase';
 import { ICONOS_TAREA, CLAVES_ICONO, SIN_ICONO } from './iconosTarea';
 import { DibujoIcono } from './PastillaIcono';
+import RelojHora from './RelojHora';
 
 const MES_CORTO = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const MES_LARGO = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -29,9 +30,6 @@ export interface PropsPanelHoja {
 }
 
 // ---------- CUÁNDO (+ HORA) ----------
-const H0 = 7 * 60; // la línea del día va de 7:00...
-const SPAN = 16 * 60; // ...a 23:00
-const enLinea = (minutos: number) => Math.max(0, Math.min(100, ((minutos - H0) / SPAN) * 100));
 
 export function PanelCuandoHoja({
   op, cambiar, crudo, fin, hayBorrador, hoy, semana, setSemana, tareas, editandoId, ahora,
@@ -71,21 +69,10 @@ export function PanelCuandoHoja({
   const base = inicio ?? (diaElegido === hoy ? Math.ceil(ahora / 15) * 15 : 9 * 60);
   const textoHueco =
     inicio === null
-      ? 'Toca la línea para elegir la hora'
+      ? 'Sin hora · toca una flecha para ponerla'
       : choque
         ? `Se solapa con «${choque.t.titulo}»`
         : `${textoHora(inicio)}–${textoHora((inicio + duracion) % 1440)} · hueco libre`;
-
-  const pulsarLinea = (e: React.MouseEvent<HTMLDivElement>) => {
-    const caja = e.currentTarget.getBoundingClientRect();
-    if (!caja.width) return;
-    const minutos = H0 + ((e.clientX - caja.left) / caja.width) * SPAN;
-    ponerHora(Math.round(minutos / 15) * 15);
-  };
-  const teclaLinea = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); ponerHora(base + 15); }
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); ponerHora(base - 15); }
-  };
 
   const fechaElegida = deTextoISO(diaElegido);
 
@@ -100,8 +87,6 @@ export function PanelCuandoHoja({
     else tramos.push({ mes: d.getMonth(), anio: d.getFullYear(), dias: 1 });
   }
   const anioActual = deTextoISO(hoy).getFullYear();
-  const horas = [];
-  for (let h = 8; h <= 22; h++) horas.push(h);
 
   return (
     <div className="flex flex-col gap-3">
@@ -205,90 +190,19 @@ export function PanelCuandoHoja({
 
       <div className="border-t border-dashed border-[#dde5ee]" />
 
-      {/* HORA: la línea del día */}
-      <div className="flex items-baseline justify-between gap-2">
+      {/* HORA: el reloj con el cielo (y «Quitar hora» si la has elegido tú) */}
+      <div className="flex min-h-[22px] items-center justify-between gap-2">
         <span className="text-[10px] font-extrabold tracking-[1.4px] text-tachit-acento-fuerte">HORA</span>
-        <span className="min-w-0 truncate text-xs font-bold" style={{ color: inicio === null ? '#5b6b7c' : choque ? '#c4320a' : '#1b7a50' }}>
-          {textoHueco}
-        </span>
-      </div>
-      <div
-        role="slider"
-        tabIndex={0}
-        aria-label="Línea del día: toca para elegir la hora"
-        aria-valuemin={0}
-        aria-valuemax={1439}
-        aria-valuenow={inicio ?? base}
-        aria-valuetext={textoHueco}
-        onClick={pulsarLinea}
-        onKeyDown={teclaLinea}
-        className="hoja-linea"
-      >
-        {horas.map((h) => (
-          <span key={h} className="pointer-events-none absolute top-[50px] w-px bg-[#b9cbdc]" style={{ left: `${enLinea(h * 60)}%`, height: h % 2 === 0 ? 6 : 3 }} />
-        ))}
-        {horas
-          .filter((h) => h % 2 === 0)
-          .map((h) => (
-            <span key={h} className="pointer-events-none absolute top-14 -translate-x-1/2 text-[10px] font-bold text-[#5b6b7c]" style={{ left: `${enLinea(h * 60)}%` }}>
-              {h}
-            </span>
-          ))}
-        {ocupadas.map((o) => (
-          <span
-            key={o.t.id}
-            title={`${textoHora(o.ini)} ${o.t.titulo}`}
-            className="hoja-ocupado"
-            style={{ left: `${enLinea(o.ini)}%`, width: `${Math.max(1.2, enLinea(o.fin) - enLinea(o.ini))}%` }}
-          />
-        ))}
-        {diaElegido === hoy && ahora >= H0 && ahora <= H0 + SPAN && <span className="hoja-ahora" style={{ left: `${enLinea(ahora)}%` }} />}
-        {inicio !== null && fin_ !== null && (
-          <span
-            className="hoja-elegida"
-            style={{ left: `${enLinea(inicio)}%`, width: `${Math.max(8, enLinea(fin_) - enLinea(inicio))}%`, background: choque ? '#e0567a' : 'var(--tachit-acento)' }}
-          >
-            {textoHora(inicio)}
-          </span>
-        )}
-      </div>
-      <div className="flex gap-1.5">
-        {[
-          ['9:00', 'de mañana', 540],
-          ['13:00', 'mediodía', 780],
-          ['17:00', 'de tarde', 1020],
-          ['21:00', 'de noche', 1260],
-        ].map(([texto, sub, minutos]) => {
-          const elegido = inicio === minutos;
-          return (
-            <button key={texto} type="button" aria-pressed={elegido} onClick={() => ponerHora(minutos as number)} className={'hoja-rapido' + (elegido ? ' elegido' : '')}
-              style={{ height: 44 }}>
-              <span className="text-sm leading-none font-extrabold">{texto}</span>
-              <span className="hoja-rapido-sub">{sub}</span>
-            </button>
-          );
-        })}
-      </div>
-      <div className="flex items-center gap-2">
-        <button type="button" onClick={() => ponerHora(base - 15)} aria-label="15 minutos antes" className="hoja-mas-menos">
-          −
-        </button>
-        <input
-          type="time"
-          value={op.hora || (inicio !== null ? horaConCeros(inicio) : '')}
-          onChange={(e) => cambiar({ hora: e.target.value })}
-          aria-label="Hora exacta"
-          className="hoja-hora"
-        />
-        <button type="button" onClick={() => ponerHora(base + (inicio !== null ? 15 : 0))} aria-label="15 minutos después" className="hoja-mas-menos">
-          +
-        </button>
         {op.hora && (
           <button type="button" onClick={() => cambiar({ hora: '' })} className="hoja-quitar-hora">
             Quitar hora
           </button>
         )}
       </div>
+      <RelojHora inicio={inicio} propuesta={base} choca={!!choque} alPoner={ponerHora} />
+      <p aria-live="polite" className="m-0 min-w-0 truncate text-xs font-bold" style={{ color: inicio === null ? '#5b6b7c' : choque ? '#c4320a' : '#1b7a50' }}>
+        {textoHueco}
+      </p>
     </div>
   );
 }
