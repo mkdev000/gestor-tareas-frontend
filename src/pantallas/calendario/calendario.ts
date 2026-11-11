@@ -4,7 +4,8 @@
 //  - los 7 días de una semana
 //  - qué tareas tiene cada día, en orden de hora (las que no tienen hora, al final)
 //  - el estado de cada tarea en el calendario: pendiente, hecha o atrasada
-//  - lo que cabe en una casilla del mes ("+6 más") y los títulos ("Septiembre 2026", "28 sep – 4 oct 2026")
+//  - lo que cabe en una casilla del mes ("+3 más") y los títulos ("Septiembre 2026", "28 sep – 4 oct 2026")
+//  - (paso 8.3, «la ficha») cuánto llevas tachado de cada día y del mes
 // Son "funciones puras" (reciben datos y devuelven un resultado), así se prueban solas
 // (calendario.test.ts) y sirven igual aunque más adelante cambiemos el aspecto del Calendario.
 import type { Tarea } from '../useTareas';
@@ -89,9 +90,26 @@ export function estadoEnCalendario(t: Tarea, hoy: string, ahora: number): Estado
   return 'pendiente';
 }
 
-// Lo que cabe en una casilla del mes: las primeras "cuantas" y cuántas quedan ("+6 más")
-export function casilla(tareasDelDia: Tarea[], cuantas = 2) {
-  return { visibles: tareasDelDia.slice(0, cuantas), mas: Math.max(0, tareasDelDia.length - cuantas) };
+// Lo que cabe en una casilla del mes: hasta "cuantas" renglones. Si hay más, el último hueco es
+// para el aviso "+3 más" (así nunca se sale de la casilla): con 4 huecos y 6 tareas → 3 tareas y "+3 más"
+export function casilla(tareasDelDia: Tarea[], cuantas = 4) {
+  if (tareasDelDia.length <= cuantas) return { visibles: tareasDelDia, mas: 0 };
+  return { visibles: tareasDelDia.slice(0, cuantas - 1), mas: tareasDelDia.length - (cuantas - 1) };
+}
+
+// ---------- Lo tachado (paso 8.3, «la ficha») ----------
+// De cada día: cuántas has tachado de cuántas. "parte" va de 0 a 1 y dice cuánto del número del día
+// se ha tachado ya (con 2 de 4, medio trazo); "completo" = todas tachadas (el número sale con su ✓).
+export function resumenTachado(tareasDelDia: Tarea[]) {
+  const total = tareasDelDia.length;
+  const hechas = tareasDelDia.filter(hecha).length;
+  return { hechas, total, parte: total ? hechas / total : 0, completo: total > 0 && hechas === total };
+}
+
+// Del mes de una fecha: "Septiembre: 4 de 11 tachadas" (todas las tareas con fecha de ese mes)
+export function tachadoDelMes(tareas: Tarea[], fecha: string) {
+  const mes = fecha.slice(0, 7);
+  return resumenTachado(tareas.filter((t) => fechaDe(t)?.slice(0, 7) === mes));
 }
 
 // ---------- Textos ----------

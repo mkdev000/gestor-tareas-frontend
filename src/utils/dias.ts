@@ -20,6 +20,12 @@ export function deTextoISO(texto: string) {
   return new Date(anio, mes - 1, dia);
 }
 
+// ¿Es una fecha "2026-10-29" que existe de verdad? ("2026-02-30" o "hola" no). Para lo que llega de fuera
+// (por ejemplo, el día que pide otra pantalla al abrir el Calendario o la hoja de crear), que no se da por bueno sin mirarlo
+export function esFechaValida(texto: unknown): texto is string {
+  return typeof texto === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(texto) && aTextoISO(deTextoISO(texto)) === texto;
+}
+
 export function hoyISO() {
   return aTextoISO(new Date());
 }

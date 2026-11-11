@@ -1,9 +1,11 @@
 // pantallas/calendario/calendario.test.ts
-// Pruebas de los cálculos del Calendario (paso 8.2). Se lanzan con: npm test
+// Pruebas de los cálculos del Calendario (pasos 8.2 y 8.3). Se lanzan con: npm test
 import { describe, expect, it } from 'vitest';
 import type { Tarea } from '../useTareas';
 import {
   casilla,
+  resumenTachado,
+  tachadoDelMes,
   cuadriculaMes,
   estadoEnCalendario,
   mesVecino,
@@ -17,6 +19,7 @@ import {
   tituloMes,
   tituloSemana,
 } from './calendario';
+import { esFechaValida } from '../../utils/dias';
 
 const HOY = '2026-09-29'; // martes, como en el prototipo
 const h = (hora: string) => {
@@ -102,11 +105,34 @@ describe('las tareas de cada día', () => {
     expect(mapa.get('2026-10-01')).toEqual([]);
   });
 
-  it('en una casilla del mes caben 2 y el resto se cuenta («+6 más»)', () => {
+  it('en una casilla del mes caben 4 renglones; si hay más, 3 tareas y «+N más»', () => {
     const ocho = Array.from({ length: 8 }, () => tarea());
-    expect(casilla(ocho).visibles).toHaveLength(2);
-    expect(casilla(ocho).mas).toBe(6);
+    expect(casilla(ocho.slice(0, 4))).toMatchObject({ mas: 0 });
+    expect(casilla(ocho.slice(0, 4)).visibles).toHaveLength(4);
+    expect(casilla(ocho).visibles).toHaveLength(3);
+    expect(casilla(ocho).mas).toBe(5);
+    expect(casilla(ocho, 2)).toMatchObject({ mas: 7 });
     expect(casilla(ocho.slice(0, 1)).mas).toBe(0);
+  });
+});
+
+describe('lo tachado (la ficha)', () => {
+  it('de un día: cuántas de cuántas, qué parte del número se tacha y si está completo', () => {
+    const dia = [tarea({ estado: 'completada' }), tarea(), tarea({ estado: 'completada' }), tarea()];
+    expect(resumenTachado(dia)).toEqual({ hechas: 2, total: 4, parte: 0.5, completo: false });
+    expect(resumenTachado(dia.filter((t) => t.estado === 'completada'))).toMatchObject({ parte: 1, completo: true });
+    expect(resumenTachado([])).toEqual({ hechas: 0, total: 0, parte: 0, completo: false });
+  });
+
+  it('del mes: solo las tareas con fecha de ese mes', () => {
+    const lista = [
+      tarea({ fecha_limite: '2026-09-02', estado: 'completada' }),
+      tarea({ fecha_limite: '2026-09-29' }),
+      tarea({ fecha_limite: '2026-10-01', estado: 'completada' }),
+      tarea({ fecha_limite: null }),
+    ];
+    expect(tachadoDelMes(lista, '2026-09-15')).toMatchObject({ hechas: 1, total: 2 });
+    expect(tachadoDelMes(lista, '2026-11-01')).toMatchObject({ hechas: 0, total: 0 });
   });
 });
 
@@ -135,5 +161,17 @@ describe('los textos', () => {
     expect(textoCuantas(8)).toBe('8 elementos');
     expect(textoCuantas(1)).toBe('1 elemento');
     expect(textoCuantas(3, 'tarea', 'tareas')).toBe('3 tareas');
+  });
+});
+
+describe('las fechas que llegan de otra pantalla', () => {
+  it('solo valen las que existen de verdad', () => {
+    expect(esFechaValida('2026-10-14')).toBe(true);
+    expect(esFechaValida('2028-02-29')).toBe(true); // año bisiesto
+    expect(esFechaValida('2026-02-30')).toBe(false);
+    expect(esFechaValida('2026-13-01')).toBe(false);
+    expect(esFechaValida('14/10/2026')).toBe(false);
+    expect(esFechaValida(undefined)).toBe(false);
+    expect(esFechaValida(20261014)).toBe(false);
   });
 });
