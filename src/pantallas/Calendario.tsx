@@ -6,11 +6,10 @@
 //  - a la derecha, la página de libreta del día elegido (PaginaDia.tsx), donde puedes tachar,
 //    abrir una tarea o «+ Añadir tarea este día»
 // Los cálculos (qué días se ven, qué tareas tiene cada uno, qué está atrasado...) están en calendario/calendario.ts.
-// En el móvil sigue, de momento, el calendario de antes: el del móvil se rehace en el paso 8.5.
+// En el móvil (paso 8.5), la misma ficha en pequeño (calendario/MesMovil.tsx) y la página del día debajo.
 // La vista «Semana» llega en el paso 8.4.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import CalendarioAntiguo from '../components/Calendario';
 import AvisoFlotante, { type DatosAviso } from '../componentes/base/AvisoFlotante';
 import { useTareas, type Tarea } from './useTareas';
 import { alternarCompletada } from './tareas/guardar';
@@ -18,6 +17,7 @@ import { textoDia } from './tareas/frase';
 import { DibujoIcono } from './tareas/PastillaIcono';
 import CasillaMes from './calendario/CasillaMes';
 import PaginaDia from './calendario/PaginaDia';
+import MesMovil from './calendario/MesMovil';
 import { cuadriculaMes, estadoEnCalendario, mesVecino, primeroDeMes, tachadoDelMes, tareasDelDia, tareasPorDia, tituloMes } from './calendario/calendario';
 import { esFechaValida, hoyISO } from '../utils/dias';
 import { useEsWeb } from '../utils/useEsWeb';
@@ -81,14 +81,6 @@ function PantallaCalendario() {
   const alAbrir = (id: number) => navigate('/tareas', { state: { editarTarea: { id, vez: Date.now() } } });
   const alAnadir = () => navigate('/tareas', { state: { nuevaTarea: Date.now(), fecha: elegido } });
 
-  if (!esWeb)
-    return (
-      <div className="flex max-w-[1100px] flex-col">
-        {error && <p className="mb-3 text-sm text-[#b42318]">{error}</p>}
-        <CalendarioAntiguo tareas={tareas} onCambio={alCambiar} />
-      </div>
-    );
-
   const dias = cuadriculaMes(mes, hoy);
   const porDia = tareasPorDia(
     tareas,
@@ -101,6 +93,32 @@ function PantallaCalendario() {
     setMes(primeroDeMes(hoy));
     setElegido(hoy);
   };
+  const pagina = (
+    <PaginaDia fecha={elegido} tareas={tareasDelDia(tareas, elegido)} estadoDe={estadoDe} alTachar={alTachar} alAbrir={alAbrir} alAnadir={alAnadir} />
+  );
+
+  // Móvil: el mes en pequeño y, debajo, la página del día. Si tocas un día gris (de otro mes), se pasa a ese mes
+  if (!esWeb)
+    return (
+      <div className="flex flex-col gap-4">
+        {error && <p className="text-sm text-[#b42318]">{error}</p>}
+        <MesMovil
+          mes={mes}
+          dias={dias}
+          porDia={porDia}
+          elegido={elegido}
+          tachado={delMes}
+          estadoDe={estadoDe}
+          alElegir={(fecha) => {
+            setElegido(fecha);
+            if (primeroDeMes(fecha) !== mes) setMes(primeroDeMes(fecha));
+          }}
+          alMover={(cuanto) => setMes(mesVecino(mes, cuanto))}
+        />
+        {pagina}
+        {aviso && <AvisoFlotante aviso={aviso} alCerrar={cerrarAviso} />}
+      </div>
+    );
 
   return (
     <div className="flex items-start gap-5">
@@ -158,9 +176,7 @@ function PantallaCalendario() {
         </div>
       </div>
 
-      <div className="sticky top-4 w-[330px] shrink-0">
-        <PaginaDia fecha={elegido} tareas={tareasDelDia(tareas, elegido)} estadoDe={estadoDe} alTachar={alTachar} alAbrir={alAbrir} alAnadir={alAnadir} />
-      </div>
+      <div className="sticky top-4 w-[330px] shrink-0">{pagina}</div>
 
       {aviso && <AvisoFlotante aviso={aviso} alCerrar={cerrarAviso} />}
     </div>
