@@ -6,6 +6,8 @@ import {
   casilla,
   resumenTachado,
   tachadoDelMes,
+  tachadoDeLaSemana,
+  vistaDeLaDireccion,
   cuadriculaMes,
   estadoEnCalendario,
   mesVecino,
@@ -161,6 +163,25 @@ describe('los textos', () => {
     expect(textoCuantas(8)).toBe('8 elementos');
     expect(textoCuantas(1)).toBe('1 elemento');
     expect(textoCuantas(3, 'tarea', 'tareas')).toBe('3 tareas');
+  });
+});
+
+describe('la semana (paso 8.4)', () => {
+  it('lo tachado de la semana: de lunes a domingo de esa fecha', () => {
+    const lista = [
+      tarea({ fecha_limite: '2026-09-28', estado: 'completada' }), // lunes
+      tarea({ fecha_limite: '2026-10-04' }), // domingo de la misma semana
+      tarea({ fecha_limite: '2026-10-05', estado: 'completada' }), // lunes de la siguiente
+      tarea({ fecha_limite: '2026-09-27' }), // domingo de la anterior
+    ];
+    expect(tachadoDeLaSemana(lista, HOY)).toMatchObject({ hechas: 1, total: 2 });
+  });
+
+  it('la vista de la dirección: solo "semana" es semana; cualquier otra cosa, mes', () => {
+    expect(vistaDeLaDireccion('semana')).toBe('semana');
+    expect(vistaDeLaDireccion('mes')).toBe('mes');
+    expect(vistaDeLaDireccion(null)).toBe('mes');
+    expect(vistaDeLaDireccion('<script>')).toBe('mes');
   });
 });
 

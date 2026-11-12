@@ -6,6 +6,7 @@
 //  - el estado de cada tarea en el calendario: pendiente, hecha o atrasada
 //  - lo que cabe en una casilla del mes ("+3 más") y los títulos ("Septiembre 2026", "28 sep – 4 oct 2026")
 //  - (paso 8.3, «la ficha») cuánto llevas tachado de cada día y del mes
+//  - (paso 8.4) lo tachado de la semana y qué vista se pide en la dirección (?vista=semana)
 // Son "funciones puras" (reciben datos y devuelven un resultado), así se prueban solas
 // (calendario.test.ts) y sirven igual aunque más adelante cambiemos el aspecto del Calendario.
 import type { Tarea } from '../useTareas';
@@ -111,6 +112,23 @@ export function tachadoDelMes(tareas: Tarea[], fecha: string) {
   const mes = fecha.slice(0, 7);
   return resumenTachado(tareas.filter((t) => fechaDe(t)?.slice(0, 7) === mes));
 }
+
+// De la semana (de lunes a domingo) de una fecha: "Esta semana: 5 de 14 tachadas"
+export function tachadoDeLaSemana(tareas: Tarea[], fecha: string) {
+  const { lunes, domingo } = semanaDe(fecha);
+  return resumenTachado(
+    tareas.filter((t) => {
+      const f = fechaDe(t);
+      return f !== null && f >= lunes && f <= domingo;
+    }),
+  );
+}
+
+// ---------- La vista: Mes o Semana ----------
+// Se guarda en la dirección (/calendario?vista=semana): así al recargar sigues en la misma vista y el botón
+// «atrás» del navegador funciona. Lo que llega en la dirección no se da por bueno: si no es "semana", es "mes".
+export type VistaCalendario = 'mes' | 'semana';
+export const vistaDeLaDireccion = (valor: string | null): VistaCalendario => (valor === 'semana' ? 'semana' : 'mes');
 
 // ---------- Textos ----------
 // "Septiembre 2026"
