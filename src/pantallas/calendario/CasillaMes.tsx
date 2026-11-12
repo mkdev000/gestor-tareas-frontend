@@ -54,7 +54,8 @@ function CasillaMes({ dia, tareas, elegido, estadoDe, alElegir }: Props) {
           className={'cal-renglon' + CLASE_ESTADO[estadoDe(t)]}
           style={{ background: `color-mix(in srgb, ${estiloPrioridad(t.prioridad).color} 26%, transparent)` }}
         >
-          {t.titulo}
+          {/* En el móvil solo se ve la barrita: el nombre se esconde (cal-movil, en index.css) */}
+          <span className="cal-renglon-texto">{t.titulo}</span>
         </span>
       ))}
       {mas > 0 && (

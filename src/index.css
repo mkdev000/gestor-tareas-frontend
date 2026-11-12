@@ -2852,6 +2852,96 @@ button.menu-opcion:active .menu-flecha {
   outline: 2px solid var(--tachit-acento-fuerte);
   outline-offset: 2px;
 }
+/* ---------- Calendario en el MÓVIL (Fase 8, paso 8.5): la misma ficha, en pequeño (calendario/MesMovil.tsx) ---------- */
+.cal-tarjeta-movil {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 12px 12px;
+  border-radius: 22px;
+  border: 1px solid var(--tachit-linea);
+  background: #ffffff;
+}
+.cal-flecha-movil {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--tachit-linea);
+  background: #ffffff;
+  color: #0f1f2e;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.cal-progreso.movil {
+  margin: 0 4px 2px;
+  font-size: 12px;
+}
+.cal-letras {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #5b6b7c;
+}
+.cal-rejilla.cal-movil {
+  gap: 4px;
+}
+/* Cada día, en pequeño: el número y una barrita por tarea (sin nombres, sin "2/4" ni "+3 más") */
+.cal-movil .cal-casilla {
+  height: 54px;
+  padding: 5px 4px 4px;
+  gap: 2px;
+  border-radius: 10px;
+}
+.cal-movil .cal-num {
+  margin: 0 0 3px 1px;
+  font-size: 13px;
+}
+.cal-movil .cal-renglon {
+  height: 4px;
+  padding: 0;
+  border-radius: 2px;
+}
+.cal-movil .cal-renglon.hecha {
+  background: #cfe6d8 !important;
+}
+.cal-movil .cal-renglon.atrasada {
+  box-shadow: none;
+  background: #e4877f !important;
+}
+.cal-movil .cal-renglon-texto,
+.cal-movil .cal-mas,
+.cal-movil .cal-cuenta {
+  display: none;
+}
+.cal-leyenda.movil {
+  gap: 14px;
+  margin-top: 0;
+  padding-top: 6px;
+  font-size: 11px;
+}
+.cal-leyenda i.punto {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  box-shadow: none;
+}
+.cal-leyenda i.punto.pendiente {
+  background: var(--tachit-acento);
+}
+.cal-leyenda i.punto.hecha {
+  background: #17804f;
+}
+.cal-leyenda i.punto.atrasada {
+  background: #c4320a;
+}
+.cal-flecha-movil:focus-visible {
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 2px;
+}
 @media (prefers-reduced-motion: reduce) {
   .cal-barra i,
   .cal-num svg path {
