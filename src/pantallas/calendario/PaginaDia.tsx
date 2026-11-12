@@ -2,8 +2,10 @@
 // La página de libreta del día elegido (Fase 8, paso 8.3), a la derecha del mes:
 //  - arriba, el día ("Martes, 29 de septiembre") y cuántas llevas tachadas
 //  - cada tarea en su renglón: la hora en naranja, el círculo para tacharla y su nombre
-//    (al pulsar el nombre se abre la tarea para editarla)
+//    (al pulsar el nombre se abre la tarea para editarla). El fondo dice el estado y la rayita
+//    de la izquierda, la prioridad, igual que en las fichas
 //  - «+ Añadir tarea este día»: abre la caja (o la hoja) de crear con ese día ya puesto
+import type { CSSProperties } from 'react';
 import type { Tarea } from '../useTareas';
 import { inicioDe } from '../midia/dia';
 import { textoHora } from '../tareas/pulso';
@@ -52,10 +54,11 @@ function PaginaDia({ fecha, tareas, estadoDe, alTachar, alAbrir, alAnadir }: Pro
                 onClick={() => alAbrir(t.id)}
                 title={`Abrir «${t.titulo}»`}
                 className="cal-fila-nombre"
-                style={{ background: `color-mix(in srgb, ${estiloPrioridad(t.prioridad).color} 25%, transparent)` }}
+                style={{ '--prio': estiloPrioridad(t.prioridad).color } as CSSProperties}
               >
                 {t.titulo}
-                {estado === 'atrasada' && <span className="sr-only"> (atrasada)</span>}
+                {/* Para los lectores de pantalla, lo que se ve por colores, dicho con palabras */}
+                <span className="sr-only">{`, prioridad ${estiloPrioridad(t.prioridad).nombre.toLowerCase()}${estado === 'atrasada' ? ', atrasada' : ''}`}</span>
               </button>
             </li>
           );
