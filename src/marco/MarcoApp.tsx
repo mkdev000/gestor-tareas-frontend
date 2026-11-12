@@ -19,6 +19,7 @@ import Cabecera from './Cabecera';
 import BarraInferior from './BarraInferior';
 import MenuMovil from './MenuMovil';
 import DiaEspecial from './DiaEspecial';
+import ConmutadorVista from '../pantallas/calendario/ConmutadorVista';
 import { useResumenBarra } from './useResumenBarra';
 
 // El nombre de cada pantalla, para la cabecera (web) y el título grande (móvil)
@@ -86,7 +87,13 @@ function MarcoApp() {
         <main className="grow px-5 pt-8 pb-[120px] lg:px-8 lg:pt-7 lg:pb-10">
           {/* Móvil: el título grande de la pantalla, como en el prototipo móvil
               (menos en Mi día: allí "Hoy" tiene su propia cabecera con el día, paso 7.6) */}
-          {location.pathname !== '/hoy' && <h1 className="mb-4 text-[30px] font-extrabold tracking-[-1px] lg:hidden">{titulo}</h1>}
+          {/* En el Calendario, al lado del título va «Mes | Semana» (paso 8.4), como en el prototipo móvil */}
+          {location.pathname !== '/hoy' && (
+            <div className="mb-4 flex items-center justify-between gap-3 lg:hidden">
+              <h1 className="m-0 text-[30px] font-extrabold tracking-[-1px]">{titulo}</h1>
+              {location.pathname === '/calendario' && <ConmutadorVista />}
+            </div>
+          )}
           <Outlet />
         </main>
       </div>

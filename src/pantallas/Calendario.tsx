@@ -7,9 +7,11 @@
 //    abrir una tarea o «+ Añadir tarea este día»
 // Los cálculos (qué días se ven, qué tareas tiene cada uno, qué está atrasado...) están en calendario/calendario.ts.
 // En el móvil (paso 8.5), la misma ficha en pequeño (calendario/MesMovil.tsx) y la página del día debajo.
-// La vista «Semana» llega en el paso 8.4.
+// Paso 8.4: «Mes | Semana». La Semana se usa igual que el mes, pero con solo 7 fichas más grandes
+// (con el día de la semana y la hora de cada tarea); ‹ y › mueven el día elegido una semana entera.
+// La vista va en la dirección (/calendario?vista=semana), ver calendario/ConmutadorVista.tsx.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import AvisoFlotante, { type DatosAviso } from '../componentes/base/AvisoFlotante';
 import { useTareas, type Tarea } from './useTareas';
 import { alternarCompletada } from './tareas/guardar';
@@ -18,11 +20,28 @@ import { DibujoIcono } from './tareas/PastillaIcono';
 import CasillaMes from './calendario/CasillaMes';
 import PaginaDia from './calendario/PaginaDia';
 import MesMovil from './calendario/MesMovil';
-import { cuadriculaMes, estadoEnCalendario, mesVecino, primeroDeMes, tachadoDelMes, tareasDelDia, tareasPorDia, tituloMes } from './calendario/calendario';
+import ConmutadorVista from './calendario/ConmutadorVista';
+import Leyenda from './calendario/Leyenda';
+import {
+  cuadriculaMes,
+  estadoEnCalendario,
+  mesVecino,
+  primeroDeMes,
+  semanaCompleta,
+  semanaVecina,
+  tachadoDeLaSemana,
+  tachadoDelMes,
+  tareasDelDia,
+  tareasPorDia,
+  tituloMes,
+  tituloSemana,
+  vistaDeLaDireccion,
+} from './calendario/calendario';
 import { esFechaValida, hoyISO } from '../utils/dias';
 import { useEsWeb } from '../utils/useEsWeb';
 
 const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+const DIAS_SEMANA_CORTOS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 
 const minutosAhora = () => {
   const d = new Date();
@@ -33,6 +52,8 @@ function PantallaCalendario() {
   const esWeb = useEsWeb();
   const navigate = useNavigate();
   const location = useLocation();
+  const [parametros] = useSearchParams();
+  const semana = vistaDeLaDireccion(parametros.get('vista')) === 'semana';
   const { tareas, error, alCambiar, cambiarLocal } = useTareas();
   const hoy = hoyISO();
   const [ahora, setAhora] = useState(minutosAhora);
@@ -81,14 +102,28 @@ function PantallaCalendario() {
   const alAbrir = (id: number) => navigate('/tareas', { state: { editarTarea: { id, vez: Date.now() } } });
   const alAnadir = () => navigate('/tareas', { state: { nuevaTarea: Date.now(), fecha: elegido } });
 
-  const dias = cuadriculaMes(mes, hoy);
+  // En la Semana se ven los 7 días de la semana del día elegido
+  const dias = semana ? semanaCompleta(elegido, hoy) : cuadriculaMes(mes, hoy);
   const porDia = tareasPorDia(
     tareas,
     dias.map((d) => d.fecha),
   );
   const estadoDe = (t: Tarea) => estadoEnCalendario(t, hoy, ahora);
-  const delMes = tachadoDelMes(tareas, mes);
-  const nombreMes = tituloMes(mes).split(' ')[0];
+  const tachado = semana ? tachadoDeLaSemana(tareas, elegido) : tachadoDelMes(tareas, mes);
+  const textoTachado = `${semana ? 'Esta semana' : tituloMes(mes).split(' ')[0]}: ${tachado.hechas} de ${tachado.total} tachadas`;
+  const titulo = semana ? tituloSemana(elegido) : tituloMes(mes);
+  const queMueve = semana ? 'Semana' : 'Mes';
+  // ‹ y ›: en el Mes cambian de mes; en la Semana mueven el día elegido 7 días (y el mes le sigue)
+  const mover = (cuanto: number) => {
+    if (!semana) return setMes(mesVecino(mes, cuanto));
+    const nuevo = semanaVecina(elegido, cuanto);
+    setElegido(nuevo);
+    setMes(primeroDeMes(nuevo));
+  };
+  const elegir = (fecha: string) => {
+    setElegido(fecha);
+    if (primeroDeMes(fecha) !== mes) setMes(primeroDeMes(fecha));
+  };
   const irAHoy = () => {
     setMes(primeroDeMes(hoy));
     setElegido(hoy);
@@ -103,17 +138,16 @@ function PantallaCalendario() {
       <div className="flex flex-col gap-4">
         {error && <p className="text-sm text-[#b42318]">{error}</p>}
         <MesMovil
-          mes={mes}
+          semana={semana}
+          titulo={titulo}
+          textoTachado={textoTachado}
+          parte={tachado.parte}
           dias={dias}
           porDia={porDia}
           elegido={elegido}
-          tachado={delMes}
           estadoDe={estadoDe}
-          alElegir={(fecha) => {
-            setElegido(fecha);
-            if (primeroDeMes(fecha) !== mes) setMes(primeroDeMes(fecha));
-          }}
-          alMover={(cuanto) => setMes(mesVecino(mes, cuanto))}
+          alElegir={elegir}
+          alMover={mover}
         />
         {pagina}
         {aviso && <AvisoFlotante aviso={aviso} alCerrar={cerrarAviso} />}
@@ -125,55 +159,55 @@ function PantallaCalendario() {
       <div className="cal-hoja">
         {error && <p className="mb-3 text-sm text-[#b42318]">{error}</p>}
         <div className="cal-cabecera">
-          <button type="button" onClick={() => setMes(mesVecino(mes, -1))} aria-label="Mes anterior" className="cal-flecha">
+          <button type="button" onClick={() => mover(-1)} aria-label={`${queMueve} anterior`} className="cal-flecha">
             <DibujoIcono trazo="M15 6l-6 6 6 6" tam={18} grosor={2.4} />
           </button>
           <h2 aria-live="polite" className="cal-titulo">
-            {tituloMes(mes)}
+            {titulo}
           </h2>
-          <button type="button" onClick={() => setMes(mesVecino(mes, 1))} aria-label="Mes siguiente" className="cal-flecha">
+          <button type="button" onClick={() => mover(1)} aria-label={`${queMueve} siguiente`} className="cal-flecha">
             <DibujoIcono trazo="M9 6l6 6-6 6" tam={18} grosor={2.4} />
           </button>
           <span className="grow" />
           <button type="button" onClick={irAHoy} className="cal-hoy">
             Hoy
           </button>
+          <ConmutadorVista />
         </div>
 
         <div className="cal-progreso">
-          <span>{`${nombreMes}: ${delMes.hechas} de ${delMes.total} tachadas`}</span>
+          <span>{textoTachado}</span>
           <div className="cal-barra" aria-hidden="true">
-            <i style={{ width: `${delMes.parte * 100}%` }} />
+            <i style={{ width: `${tachado.parte * 100}%` }} />
           </div>
         </div>
 
-        <div className="cal-rejilla mb-1.5" aria-hidden="true">
-          {DIAS_SEMANA.map((d) => (
-            <span key={d} className="cal-dia-semana">
-              {d}
-            </span>
-          ))}
-        </div>
-        <div className="cal-rejilla">
-          {dias.map((d) => (
-            <CasillaMes key={d.fecha} dia={d} tareas={porDia.get(d.fecha) ?? []} elegido={d.fecha === elegido} estadoDe={estadoDe} alElegir={setElegido} />
+        {!semana && (
+          <div className="cal-rejilla mb-1.5" aria-hidden="true">
+            {DIAS_SEMANA.map((d) => (
+              <span key={d} className="cal-dia-semana">
+                {d}
+              </span>
+            ))}
+          </div>
+        )}
+        <div className={'cal-rejilla' + (semana ? ' cal-semana' : '')}>
+          {dias.map((d, i) => (
+            <CasillaMes
+              key={d.fecha}
+              dia={d}
+              tareas={porDia.get(d.fecha) ?? []}
+              elegido={d.fecha === elegido}
+              estadoDe={estadoDe}
+              alElegir={semana ? elegir : setElegido}
+              renglones={semana ? 7 : 4}
+              diaSemana={semana ? DIAS_SEMANA_CORTOS[i] : undefined}
+              conHora={semana}
+            />
           ))}
         </div>
 
-        <div className="cal-leyenda">
-          <span>
-            <i className="pendiente" />
-            Pendiente
-          </span>
-          <span>
-            <i className="hecha" />
-            Hecha
-          </span>
-          <span>
-            <i className="atrasada" />
-            Atrasada
-          </span>
-        </div>
+        <Leyenda />
       </div>
 
       <div className="sticky top-4 w-[330px] shrink-0">{pagina}</div>
