@@ -196,6 +196,3 @@ export function tituloSemana(fecha: string) {
 
 // "Martes, 29 de septiembre" (el título del día elegido)
 export const tituloDia = (fecha: string) => fechaLarga(fecha);
-
-// "1 elemento", "8 elementos" (o con otra palabra: "8 tareas")
-export const textoCuantas = (n: number, singular = 'elemento', plural = 'elementos') => `${n} ${n === 1 ? singular : plural}`;

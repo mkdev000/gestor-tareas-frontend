@@ -21,7 +21,6 @@ import {
   semanaVecina,
   tareasDelDia,
   tareasPorDia,
-  textoCuantas,
   tituloDia,
   tituloMes,
   tituloSemana,
@@ -159,15 +158,12 @@ describe('el estado de cada tarea', () => {
 });
 
 describe('los textos', () => {
-  it('el mes, la semana, el día y el número de elementos', () => {
+  it('el mes, la semana y el día', () => {
     expect(tituloMes('2026-09-29')).toBe('Septiembre 2026');
     expect(tituloSemana(HOY)).toBe('28 sep – 4 oct 2026');
     expect(tituloSemana('2026-10-07')).toBe('5 – 11 oct 2026');
     expect(tituloSemana('2026-12-30')).toBe('28 dic 2026 – 3 ene 2027');
     expect(tituloDia(HOY)).toBe('Martes, 29 de septiembre');
-    expect(textoCuantas(8)).toBe('8 elementos');
-    expect(textoCuantas(1)).toBe('1 elemento');
-    expect(textoCuantas(3, 'tarea', 'tareas')).toBe('3 tareas');
   });
 });
 

@@ -2,23 +2,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
-/* ===== Colores antiguos de KmTask =====
-   Solo quedan los que todavía usan el calendario antiguo y su formulario (Calendario.tsx y FormularioTarea.tsx).
-   Se borran cuando el calendario se rehaga como el prototipo (Fase 8). */
+/* ===== La letra de Tachit para Tailwind (font-jakarta) =====
+   Paso 8.7: aquí estaban los colores antiguos de KmTask; solo los usaba el calendario antiguo, que ya no existe. */
 @theme {
-  --color-fondo: #F7F8FB;
-  --color-texto: #24243A;
-  --color-muted: #8A8AA3;
-
-  --color-azul: #4daeea;
-  --color-azul-suave: #E4E9FF;
-  --color-rosa: #FF6B8A;
-  --color-rosa-suave: #FFE3E9;
-  --color-ambar: #FFB648;
-  --color-verde: #3FBF8F;
-  --color-marino: #0a1e2f;
-  --color-naranja: #F2711C;
-
   --font-jakarta: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
 
