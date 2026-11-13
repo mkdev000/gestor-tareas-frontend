@@ -5,6 +5,8 @@
 //    (al pulsar el nombre se abre la tarea para editarla). El fondo dice el estado y la rayita
 //    de la izquierda, la prioridad, igual que en las fichas
 //  - «+ Añadir tarea este día»: abre la caja (o la hoja) de crear con ese día ya puesto
+//  - (paso 8.6) si aún no tienes ninguna tarea, «Ideas para empezar»: al tocar una, se abre la creación
+//    con ese texto ya escrito y este día puesto (no se guarda sola: la revisas y pulsas Añadir)
 import type { CSSProperties } from 'react';
 import type { Tarea } from '../useTareas';
 import { inicioDe } from '../midia/dia';
@@ -20,11 +22,13 @@ interface Props {
   alTachar: (t: Tarea) => void;
   alAbrir: (id: number) => void;
   alAnadir: () => void;
+  ideas?: string[]; // las ideas para empezar (solo cuando no tienes ninguna tarea)
+  alIdea?: (texto: string) => void;
 }
 
 const CLASE_ESTADO: Record<EstadoCalendario, string> = { pendiente: '', hecha: ' hecha', atrasada: ' atrasada' };
 
-function PaginaDia({ fecha, tareas, estadoDe, alTachar, alAbrir, alAnadir }: Props) {
+function PaginaDia({ fecha, tareas, estadoDe, alTachar, alAbrir, alAnadir, ideas = [], alIdea }: Props) {
   const { hechas, total } = resumenTachado(tareas);
 
   return (
@@ -65,6 +69,19 @@ function PaginaDia({ fecha, tareas, estadoDe, alTachar, alAbrir, alAnadir }: Pro
         })}
       </ul>
       {total === 0 && <p className="cal-vacia">Página en blanco: nada apuntado este día.</p>}
+      {ideas.length > 0 && alIdea && (
+        <div className="cal-ideas">
+          <h3>Ideas para empezar</h3>
+          <div className="cal-ideas-lista">
+            {ideas.map((idea) => (
+              <button key={idea} type="button" onClick={() => alIdea(idea)} className="cal-idea">
+                <span aria-hidden="true">+</span>
+                {idea}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <button type="button" onClick={alAnadir} className="cal-anadir">
         + Añadir tarea este día
       </button>

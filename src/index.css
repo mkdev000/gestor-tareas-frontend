@@ -3017,6 +3017,203 @@ button.menu-opcion:active .menu-flecha {
   margin: 1px 0 4px 1px;
   font-size: 16px;
 }
+/* ---------- El Calendario sin tareas (Fase 8, paso 8.6): «el primer tachado», las ideas y «está libre» ---------- */
+.cal-primer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px dashed #e5dcb8;
+  background: #fffdf3;
+}
+.cal-primer-ficha {
+  position: relative;
+  flex-shrink: 0;
+  width: 58px;
+  height: 52px;
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px solid #e8edf3;
+  background: #ffffff;
+}
+.cal-primer-num {
+  position: relative;
+  display: inline-block;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+}
+.cal-primer-num svg {
+  position: absolute;
+  left: -5px;
+  top: 52%;
+  width: calc(100% + 12px);
+  height: 11px;
+  transform: translateY(-50%);
+  overflow: visible;
+  color: #17804f;
+}
+/* El número se tacha solo, en bucle (y la barrita pasa de pendiente a hecha) */
+.cal-primer-num path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 140;
+  stroke-dashoffset: 140;
+  animation: cal-primer-tacha 3.2s ease-in-out infinite;
+}
+.cal-primer-barra {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 7px;
+  height: 5px;
+  border-radius: 2px;
+  background: #e9eef5;
+  animation: cal-primer-verde 3.2s ease-in-out infinite;
+}
+@keyframes cal-primer-tacha {
+  0%,
+  30% {
+    stroke-dashoffset: 140;
+  }
+  60%,
+  90% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 140;
+  }
+}
+@keyframes cal-primer-verde {
+  0%,
+  30% {
+    background: #e9eef5;
+  }
+  55%,
+  90% {
+    background: #cfe6d8;
+  }
+}
+.cal-primer-texto {
+  flex: 1;
+  min-width: 0;
+}
+.cal-primer-texto h2 {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 800;
+}
+.cal-primer-texto p {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #5b6b7c;
+}
+.cal-primer-boton {
+  flex-shrink: 0;
+  height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--tachit-acento-fuerte);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+/* En el móvil la banda va encima de la tarjeta, y el botón ocupa todo el ancho */
+.cal-movil-arriba .cal-primer {
+  flex-wrap: wrap;
+  margin: 0;
+}
+.cal-movil-arriba .cal-primer-boton {
+  width: 100%;
+}
+.cal-ideas {
+  margin-top: 12px;
+}
+.cal-ideas h3 {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #5b6b7c;
+}
+.cal-ideas-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.cal-idea {
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid #e5dcb8;
+  background: #ffffff;
+  color: #33475b;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.cal-idea span {
+  margin-right: 3px;
+  color: var(--tachit-acento-fuerte);
+}
+.cal-idea:hover {
+  border-color: var(--tachit-acento-fuerte);
+  color: var(--tachit-acento-fuerte);
+}
+.cal-libre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: -6px 0 12px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: var(--tachit-acento-suave);
+  color: #12557f;
+  font-size: 13px;
+  font-weight: 600;
+}
+.cal-libre button {
+  margin-left: auto;
+  padding: 6px 11px;
+  border: 0;
+  border-radius: 9px;
+  background: #ffffff;
+  color: var(--tachit-acento-fuerte);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.cal-movil-arriba .cal-libre {
+  margin: 0;
+}
+.cal-primer-boton:focus-visible,
+.cal-idea:focus-visible,
+.cal-libre button:focus-visible {
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cal-primer-num path {
+    animation: none;
+    stroke-dashoffset: 40;
+  }
+  .cal-primer-barra {
+    animation: none;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .cal-barra i,
   .cal-num svg path {
