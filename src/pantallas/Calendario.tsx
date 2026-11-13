@@ -10,6 +10,8 @@
 // Paso 8.4: «Mes | Semana». La Semana se usa igual que el mes, pero con solo 7 fichas más grandes
 // (con el día de la semana y la hora de cada tarea); ‹ y › mueven el día elegido una semana entera.
 // La vista va en la dirección (/calendario?vista=semana), ver calendario/ConmutadorVista.tsx.
+// Paso 8.6: sin ninguna tarea, «el primer tachado» (PrimerTachado.tsx) e ideas para empezar en la página del día;
+// con tareas pero ninguna en lo que miras, la línea «Diciembre está libre…» (PeriodoLibre.tsx).
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import AvisoFlotante, { type DatosAviso } from '../componentes/base/AvisoFlotante';
@@ -22,9 +24,15 @@ import PaginaDia from './calendario/PaginaDia';
 import MesMovil from './calendario/MesMovil';
 import ConmutadorVista from './calendario/ConmutadorVista';
 import Leyenda from './calendario/Leyenda';
+import PrimerTachado from './calendario/PrimerTachado';
+import PeriodoLibre from './calendario/PeriodoLibre';
 import {
   cuadriculaMes,
   estadoEnCalendario,
+  hayTareasEntre,
+  proximaDespues,
+  rangoVisible,
+  textoLibre,
   mesVecino,
   primeroDeMes,
   semanaCompleta,
@@ -37,11 +45,13 @@ import {
   tituloSemana,
   vistaDeLaDireccion,
 } from './calendario/calendario';
-import { esFechaValida, hoyISO } from '../utils/dias';
+import { esFechaValida, fechaLarga, hoyISO } from '../utils/dias';
 import { useEsWeb } from '../utils/useEsWeb';
 
 const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const DIAS_SEMANA_CORTOS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
+// Ideas para empezar (paso 8.6): cosas de todos los días
+const IDEAS = ['Ir al gimnasio', 'Hacer la compra', 'Llamar a mamá', 'Poner la lavadora'];
 
 const minutosAhora = () => {
   const d = new Date();
@@ -54,7 +64,7 @@ function PantallaCalendario() {
   const location = useLocation();
   const [parametros] = useSearchParams();
   const semana = vistaDeLaDireccion(parametros.get('vista')) === 'semana';
-  const { tareas, error, alCambiar, cambiarLocal } = useTareas();
+  const { tareas, cargadas, error, alCambiar, cambiarLocal } = useTareas();
   const hoy = hoyISO();
   const [ahora, setAhora] = useState(minutosAhora);
   const [mes, setMes] = useState(() => primeroDeMes(hoy)); // el día 1 del mes que se ve
@@ -101,6 +111,10 @@ function PantallaCalendario() {
   };
   const alAbrir = (id: number) => navigate('/tareas', { state: { editarTarea: { id, vez: Date.now() } } });
   const alAnadir = () => navigate('/tareas', { state: { nuevaTarea: Date.now(), fecha: elegido } });
+  // «Apuntar mi primera tarea»: la creación de tareas vacía, para que escribas la tuya (en hoy)
+  const alPrimera = () => navigate('/tareas', { state: { nuevaTarea: Date.now() } });
+  // Una idea: la creación con ese texto ya escrito y el día elegido (no se guarda sola)
+  const alIdea = (texto: string) => navigate('/tareas', { state: { nuevaTarea: Date.now(), fecha: elegido, texto } });
 
   // En la Semana se ven los 7 días de la semana del día elegido
   const dias = semana ? semanaCompleta(elegido, hoy) : cuadriculaMes(mes, hoy);
@@ -128,8 +142,32 @@ function PantallaCalendario() {
     setMes(primeroDeMes(hoy));
     setElegido(hoy);
   };
+  // Sin ninguna tarea (y ya cargadas, para que no parpadee al entrar): «el primer tachado».
+  // Con tareas, pero ninguna en el mes/semana que miras: «… está libre» y, si hay, tu próxima tarea
+  const sinNada = cargadas && tareas.length === 0;
+  const rango = rangoVisible(semana ? elegido : mes, semana);
+  const libre = cargadas && !sinNada && !hayTareasEntre(tareas, rango.desde, rango.hasta);
+  const proxima = libre ? proximaDespues(tareas, rango.hasta) : null;
+  const fechaProxima = proxima?.fecha_limite?.slice(0, 10) ?? null;
+  const aviso8_6 = sinNada ? (
+    <PrimerTachado alApuntar={alPrimera} />
+  ) : libre ? (
+    <PeriodoLibre
+      texto={textoLibre(rango.desde, semana, proxima)}
+      irA={fechaProxima ? { texto: `Ir al ${fechaLarga(fechaProxima).split(', ')[1]} →`, alPulsar: () => elegir(fechaProxima) } : null}
+    />
+  ) : null;
   const pagina = (
-    <PaginaDia fecha={elegido} tareas={tareasDelDia(tareas, elegido)} estadoDe={estadoDe} alTachar={alTachar} alAbrir={alAbrir} alAnadir={alAnadir} />
+    <PaginaDia
+      fecha={elegido}
+      tareas={tareasDelDia(tareas, elegido)}
+      estadoDe={estadoDe}
+      alTachar={alTachar}
+      alAbrir={alAbrir}
+      alAnadir={alAnadir}
+      ideas={sinNada ? IDEAS : []}
+      alIdea={alIdea}
+    />
   );
 
   // Móvil: el mes en pequeño y, debajo, la página del día. Si tocas un día gris (de otro mes), se pasa a ese mes
@@ -137,6 +175,7 @@ function PantallaCalendario() {
     return (
       <div className="flex flex-col gap-4">
         {error && <p className="text-sm text-[#b42318]">{error}</p>}
+        {aviso8_6 && <div className="cal-movil-arriba">{aviso8_6}</div>}
         <MesMovil
           semana={semana}
           titulo={titulo}
@@ -174,6 +213,7 @@ function PantallaCalendario() {
           </button>
           <ConmutadorVista />
         </div>
+        {aviso8_6}
 
         <div className="cal-progreso">
           <span>{textoTachado}</span>
