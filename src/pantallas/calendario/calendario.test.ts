@@ -8,6 +8,11 @@ import {
   tachadoDelMes,
   tachadoDeLaSemana,
   vistaDeLaDireccion,
+  rangoVisible,
+  hayTareasEntre,
+  proximaDespues,
+  textoLibre,
+  textoPedidoValido,
   cuadriculaMes,
   estadoEnCalendario,
   mesVecino,
@@ -182,6 +187,42 @@ describe('la semana (paso 8.4)', () => {
     expect(vistaDeLaDireccion('mes')).toBe('mes');
     expect(vistaDeLaDireccion(null)).toBe('mes');
     expect(vistaDeLaDireccion('<script>')).toBe('mes');
+  });
+});
+
+describe('lo libre (paso 8.6)', () => {
+  it('los días que se miran: el mes entero o la semana', () => {
+    expect(rangoVisible('2026-12-15', false)).toEqual({ desde: '2026-12-01', hasta: '2026-12-31' });
+    expect(rangoVisible('2027-02-10', false)).toEqual({ desde: '2027-02-01', hasta: '2027-02-28' });
+    expect(rangoVisible(HOY, true)).toEqual({ desde: '2026-09-28', hasta: '2026-10-04' });
+  });
+
+  it('si hay tareas en esos días y cuál es la próxima sin hacer', () => {
+    const lista = [
+      tarea({ titulo: 'Hecha antes', fecha_limite: '2027-01-05', estado: 'completada' }),
+      tarea({ titulo: 'Cena', fecha_limite: '2027-01-11', hora_limite: '21:00:00' }),
+      tarea({ titulo: 'Gimnasio', fecha_limite: '2027-01-11', hora_limite: '19:00:00' }),
+      tarea({ titulo: 'Sin fecha', fecha_limite: null }),
+    ];
+    expect(hayTareasEntre(lista, '2026-12-01', '2026-12-31')).toBe(false);
+    expect(hayTareasEntre(lista, '2027-01-01', '2027-01-31')).toBe(true);
+    expect(proximaDespues(lista, '2026-12-31')?.titulo).toBe('Gimnasio');
+    expect(proximaDespues(lista, '2027-01-11')).toBeNull();
+  });
+
+  it('el texto de «libre»', () => {
+    const cena = tarea({ fecha_limite: '2027-01-11' });
+    expect(textoLibre('2026-12-01', false, cena)).toBe('Diciembre está libre. Tu próxima tarea es el lunes 11 de enero.');
+    expect(textoLibre(HOY, true, null)).toBe('Esta semana está libre.');
+  });
+
+  it('el texto de una idea que llega de fuera: solo texto normal y corto', () => {
+    expect(textoPedidoValido('Ir al gimnasio')).toBe(true);
+    expect(textoPedidoValido('   ')).toBe(false);
+    expect(textoPedidoValido('<img src=x onerror=alert(1)>')).toBe(false);
+    expect(textoPedidoValido('línea\notra')).toBe(false);
+    expect(textoPedidoValido('x'.repeat(121))).toBe(false);
+    expect(textoPedidoValido(42)).toBe(false);
   });
 });
 

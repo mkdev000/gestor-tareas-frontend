@@ -7,6 +7,7 @@
 //  - lo que cabe en una casilla del mes ("+3 más") y los títulos ("Septiembre 2026", "28 sep – 4 oct 2026")
 //  - (paso 8.3, «la ficha») cuánto llevas tachado de cada día y del mes
 //  - (paso 8.4) lo tachado de la semana y qué vista se pide en la dirección (?vista=semana)
+//  - (paso 8.6) si lo que miras está libre y cuál es tu próxima tarea; el texto de las ideas que llega de fuera
 // Son "funciones puras" (reciben datos y devuelven un resultado), así se prueban solas
 // (calendario.test.ts) y sirven igual aunque más adelante cambiemos el aspecto del Calendario.
 import type { Tarea } from '../useTareas';
@@ -122,6 +123,51 @@ export function tachadoDeLaSemana(tareas: Tarea[], fecha: string) {
       return f !== null && f >= lunes && f <= domingo;
     }),
   );
+}
+
+// ---------- Libre (paso 8.6) ----------
+// Los días que se están mirando: el mes entero (del 1 al último) o la semana (de lunes a domingo)
+export function rangoVisible(fecha: string, semana: boolean) {
+  if (semana) {
+    const { lunes, domingo } = semanaDe(fecha);
+    return { desde: lunes, hasta: domingo };
+  }
+  const desde = primeroDeMes(fecha);
+  return { desde, hasta: sumarDias(mesVecino(desde, 1), -1) };
+}
+
+// ¿Hay alguna tarea (hecha o no) entre esos dos días?
+export const hayTareasEntre = (tareas: Tarea[], desde: string, hasta: string) =>
+  tareas.some((t) => {
+    const f = fechaDe(t);
+    return f !== null && f >= desde && f <= hasta;
+  });
+
+// La próxima tarea SIN HACER después de un día (la más cercana; si hay varias ese día, la de antes)
+export function proximaDespues(tareas: Tarea[], fecha: string): Tarea | null {
+  const siguientes = tareas.filter((t) => !hecha(t) && (fechaDe(t) ?? '') > fecha);
+  siguientes.sort((a, b) => {
+    const fa = fechaDe(a) ?? '';
+    const fb = fechaDe(b) ?? '';
+    return fa < fb ? -1 : fa > fb ? 1 : (inicioDe(a) ?? 9999) - (inicioDe(b) ?? 9999);
+  });
+  return siguientes[0] ?? null;
+}
+
+// "Diciembre está libre. Tu próxima tarea es el lunes 11 de enero." (o "Esta semana está libre.")
+export function textoLibre(fecha: string, semana: boolean, proxima: Tarea | null) {
+  const inicio = semana ? 'Esta semana está libre.' : `${tituloMes(fecha).split(' ')[0]} está libre.`;
+  if (!proxima) return inicio;
+  const dia = fechaLarga(fechaDe(proxima) ?? '').replace(',', '');
+  return `${inicio} Tu próxima tarea es el ${dia.charAt(0).toLowerCase() + dia.slice(1)}.`;
+}
+
+// El texto de una idea que llega de otra pantalla (en location.state) no se da por bueno sin mirarlo:
+// solo texto normal, sin saltos de línea ni caracteres raros, y no más largo que un título de tarea
+export function textoPedidoValido(texto: unknown): texto is string {
+  if (typeof texto !== 'string' || !texto.trim() || texto.length > 120 || /[<>]/.test(texto)) return false;
+  // Sin caracteres de control (saltos de línea, tabuladores...): todos los códigos desde el espacio (32), y no el 127
+  return [...texto].every((c) => c.charCodeAt(0) >= 32 && c.charCodeAt(0) !== 127);
 }
 
 // ---------- La vista: Mes o Semana ----------
