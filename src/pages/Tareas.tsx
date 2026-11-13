@@ -25,6 +25,7 @@ import { alternarCompletada, borrarTarea, borrarSubtarea, crearSubtarea, marcarS
 import { normalizar, textoDia, type Prioridad } from '../pantallas/tareas/frase';
 import { minutosDe } from '../pantallas/tareas/pulso';
 import { esFechaValida, hoyISO } from '../utils/dias';
+import { textoPedidoValido } from '../pantallas/calendario/calendario';
 
 type Filtro = 'hoy' | 'proximo' | 'todas' | 'hechas';
 
@@ -89,16 +90,18 @@ function Tareas() {
   //  - el atajo de la nota de Mi día (paso 7.4): { nuevaTarea, prioridad: 'alta' } (la caja empieza con esa prioridad)
   //  - un renglón libre de la línea de tiempo (paso 7.5): { nuevaTarea, hora: '15:00' } (empieza a esa hora)
   //  - «+ Añadir tarea este día» del Calendario (paso 8.3): { nuevaTarea, fecha: '2026-10-14' } (empieza en ese día)
+  //  - una idea del Calendario sin tareas (paso 8.6): { nuevaTarea, fecha, texto: 'Ir al gimnasio' } (ya escrita)
   // Se atiende cada petición UNA vez, mientras se dibuja (sin useEffect), comparando con la última
   // atendida: es la forma que recomienda React para reaccionar a un dato nuevo. Se copia a estado
   // propio (focoLocal / editandoId) y después se borra de la dirección (efecto de abajo).
   // Arreglos del paso 6.7: (1) antes, tras crear la primera tarea desde el estado vacío, el + del
   // móvil ya no abría la hoja; (2) al recargar la página (F5), la hoja o el editor se volvían a abrir solos.
-  const pedido = location.state as { nuevaTarea?: number; prioridad?: Prioridad; hora?: string; fecha?: string; editarTarea?: { id: number; vez: number } } | null;
+  const pedido = location.state as { nuevaTarea?: number; prioridad?: Prioridad; hora?: string; fecha?: string; texto?: unknown; editarTarea?: { id: number; vez: number } } | null;
   const [ultimoPedido, setUltimoPedido] = useState<typeof pedido>(null);
   const [prioridadPedida, setPrioridadPedida] = useState<Prioridad | ''>('');
   const [horaPedida, setHoraPedida] = useState('');
   const [fechaPedida, setFechaPedida] = useState('');
+  const [textoPedido, setTextoPedido] = useState('');
   if (pedido && pedido !== ultimoPedido) {
     setUltimoPedido(pedido);
     if (pedido.nuevaTarea) {
@@ -108,6 +111,8 @@ function Tareas() {
       setHoraPedida(typeof pedido.hora === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(pedido.hora) ? pedido.hora : '');
       // Y solo una fecha que exista de verdad ("2026-02-30" no)
       setFechaPedida(esFechaValida(pedido.fecha) ? pedido.fecha : '');
+      // Y solo un texto corto y normal (sin saltos de línea ni < >)
+      setTextoPedido(textoPedidoValido(pedido.texto) ? pedido.texto.trim() : '');
       // En la web, si aún no tienes ninguna tarea, se enseña la caja de crear en vez del estado vacío
       // (igual que "Crear mi primera tarea"); si no, "Nueva tarea" no abría nada
       if (esWeb) setCreandoPrimera(true);
@@ -353,6 +358,7 @@ function Tareas() {
               prioridadPedida={prioridadPedida}
               horaPedida={horaPedida}
               fechaPedida={fechaPedida}
+              textoPedido={textoPedido}
               alGuardar={alGuardarCaja}
               alError={avisarError}
               alCancelarEdicion={() => setEditandoId(null)}
@@ -498,6 +504,7 @@ function Tareas() {
           prioridadPedida={prioridadPedida}
           horaPedida={horaPedida}
           fechaPedida={fechaPedida}
+          textoPedido={textoPedido}
         />
       )}
 

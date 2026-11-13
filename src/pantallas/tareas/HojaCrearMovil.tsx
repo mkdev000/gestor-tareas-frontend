@@ -60,13 +60,14 @@ interface Props {
   prioridadPedida?: Prioridad | ''; // con qué prioridad empieza (el atajo de Hoy pide 'alta'; '' = la de siempre)
   horaPedida?: string; // a qué hora empieza ('15:00'; '' = sin hora)
   fechaPedida?: string; // en qué día ('2026-10-14', desde «+ Añadir tarea este día» del Calendario; '' = el de siempre)
+  textoPedido?: string; // lo que ya viene escrito ('Ir al gimnasio', desde una idea del Calendario sin tareas)
 }
 
-function HojaCrearMovil({ hoy, ahora, tareas, categorias, editando, alCerrar, alGuardar, alError, alBorrar, prioridadPedida = '', horaPedida = '', fechaPedida = '' }: Props) {
+function HojaCrearMovil({ hoy, ahora, tareas, categorias, editando, alCerrar, alGuardar, alError, alBorrar, prioridadPedida = '', horaPedida = '', fechaPedida = '', textoPedido = '' }: Props) {
   // La hoja se crea de nuevo cada vez que se abre (la pantalla le cambia la "key"), así empieza limpia
   // (y con la prioridad u hora que pida Mi día, o el día que pida el Calendario, si piden alguno)
   const [inicial] = useState(() =>
-    editando ? desdeTarea(editando) : { borrador: '', op: { ...OPCIONES_VACIAS, prioridad: prioridadPedida, hora: horaPedida, fecha: fechaPedida } },
+    editando ? desdeTarea(editando) : { borrador: textoPedido, op: { ...OPCIONES_VACIAS, prioridad: prioridadPedida, hora: horaPedida, fecha: fechaPedida } },
   );
   const [borrador, setBorrador] = useState(inicial.borrador);
   const [op, setOp] = useState<OpcionesFrase>(inicial.op);
