@@ -1,7 +1,7 @@
 // pantallas/tareas/OpcionesNota.tsx
-// Las 7 opciones de la nota de crear (rediseño de Tareas web, antes de la Fase 9), como en el prototipo:
+// Las 6 opciones de la nota de crear (rediseño de Tareas web, antes de la Fase 9), como en el prototipo:
 // cada una es una tarjetita con su dibujo y lo que vale ahora:
-//   Cuándo (una ficha del calendario) · Hora (dos fichas con el cielo de esa hora) · Dura (una barrita que se llena)
+//   Cuándo (una ficha del calendario, con el día y la hora: «Mañana · 18:00») · Dura (una barrita que se llena)
 //   Aviso · Se repite · Icono (con su color) · Categoría
 // Al pulsar una se abre su panel debajo (los de PanelesFrase.tsx). Salen al pulsar el celo «Opciones».
 import type { CSSProperties, ReactNode } from 'react';
@@ -9,7 +9,6 @@ import { deTextoISO } from '../../utils/dias';
 import { avisoActual, horaConCeros, textoAviso, textoDia, textoDuracion, textoRepeticion, type FraseLeida, type OpcionesFrase } from './frase';
 import { ICONOS_TAREA } from './iconosTarea';
 import { DibujoIcono } from './PastillaIcono';
-import { cieloDe } from './cielo';
 import type { Seccion } from './PanelesFrase';
 
 const DIA_CORTO = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
@@ -36,7 +35,6 @@ function opcionesDeLaNota(op: OpcionesFrase, crudo: FraseLeida, fin: FraseLeida,
   const duracion = fin.duracion || 30;
   const icono = op.icono ? ICONOS_TAREA[op.icono] : undefined;
   const categoria = op.categoria === '-' ? '' : op.categoria || fin.categorias[0] || '';
-  const cielo = fin.inicio !== null ? cieloDe(fin.inicio) : null;
   const hora = fin.inicio !== null ? horaConCeros(fin.inicio) : '';
   const pastilla = (trazo: string, color: string, fondo: string) => (
     <span className="nota-dib" style={{ color, background: fondo }}>
@@ -47,33 +45,12 @@ function opcionesDeLaNota(op: OpcionesFrase, crudo: FraseLeida, fin: FraseLeida,
     {
       clave: 'cuando',
       nombre: 'Cuándo',
-      valor: textoDia(fecha, hoy),
-      puesta: !!(op.fecha || (hayBorrador && crudo.fecha)),
+      valor: `${textoDia(fecha, hoy)} · ${hora || 'sin hora'}`,
+      puesta: !!(op.fecha || (hayBorrador && crudo.fecha) || hora),
       dibujo: (
         <span className="nota-ficha">
           <small>{fecha === hoy ? 'HOY' : DIA_CORTO[ficha.getDay()]}</small>
           <b>{ficha.getDate()}</b>
-        </span>
-      ),
-    },
-    {
-      clave: 'hora',
-      nombre: 'Hora',
-      valor: hora || 'Sin hora',
-      puesta: !!hora,
-      dibujo: (
-        <span
-          className="nota-reloj"
-          style={
-            cielo
-              ? {
-                  background: `linear-gradient(180deg, ${cielo.arriba}, ${cielo.abajo})`,
-                }
-              : undefined
-          }
-        >
-          <i>{hora ? hora.slice(0, 2) : '--'}</i>
-          <i>{hora ? hora.slice(3, 5) : '--'}</i>
         </span>
       ),
     },

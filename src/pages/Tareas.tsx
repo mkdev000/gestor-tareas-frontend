@@ -344,6 +344,7 @@ function Tareas() {
               key={editando ? `editar-${editando.id}` : 'nueva'}
               hoy={hoy}
               categorias={categorias}
+              tareas={tareas}
               editando={editando}
               pedirFoco={pedirFoco}
               prioridadPedida={prioridadPedida}

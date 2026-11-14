@@ -4,7 +4,7 @@
 //     Tachit entiende el día, la hora, la duración, el aviso, la repetición y la #categoría.
 //  2. La nota es del color del tema, muy clarito (en Cacao, color cacao), y la sujeta un trozo de celo oscuro del tema:
 //     ese celo es el botón «Opciones».
-//     Al pulsarlo salen debajo las 7 opciones con su dibujo (Cuándo, Hora, Dura, Aviso, Se repite, Icono y Categoría);
+//     Al pulsarlo salen debajo las 6 opciones con su dibujo (Cuándo —el día y la hora juntos—, Dura, Aviso, Se repite, Icono y Categoría);
 //     cada una abre su panel para cambiarla (lo que eliges gana a lo escrito). Si Tachit ha entendido algo de la frase,
 //     el celo lleva un puntito naranja.
 //  3. El icono de la lista (al lado de la flecha) abre las subtareas: filas finas debajo de lo que escribes
@@ -18,7 +18,7 @@ import type { Tarea, CategoriaDeLista } from '../useTareas';
 import { leerFrase, aplicarOpciones, avisoActual, desdeTarea, horaConCeros, OPCIONES_VACIAS, type OpcionesFrase, type Prioridad } from './frase';
 import { DibujoIcono } from './PastillaIcono';
 import { BotonPrioridad } from './AnilloPrioridad';
-import { PanelCuando, PanelHora, PanelDura, PanelAviso, PanelRepite, PanelIcono, PanelCategoria, type Seccion } from './PanelesFrase';
+import { PanelCuando, PanelDura, PanelAviso, PanelRepite, PanelIcono, PanelCategoria, type Seccion } from './PanelesFrase';
 import OpcionesNota from './OpcionesNota';
 import { crearTarea, guardarEdicion } from './guardar';
 
@@ -27,6 +27,7 @@ export type ResultadoCaja = { tipo: 'creada'; ids: number[] } | { tipo: 'varias'
 interface Props {
   hoy: string;
   categorias: CategoriaDeLista[];
+  tareas?: Tarea[]; // para decir cuántas tareas tienes ya el día que eliges en «Cuándo»
   editando: Tarea | null; // la tarea que se está editando (o null para crear)
   pedirFoco?: number; // cambia cada vez que pulsas "Nueva tarea" en el marco
   prioridadPedida?: Prioridad | ''; // con qué prioridad empieza (el atajo de Mi día pide 'alta'; '' = la de siempre)
@@ -41,6 +42,10 @@ interface Props {
 
 const EJEMPLO = 'Gimnasio mañana a las 18 #Salud 1h, avísame 10 min antes, cada lunes';
 const MAX_SUBTAREAS = 20;
+const minutosAhora = () => {
+  const d = new Date();
+  return d.getHours() * 60 + d.getMinutes();
+};
 const LISTA = 'M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01';
 const FLECHA = 'M5 12h14M13 6l6 6-6 6';
 const LAPIZ = 'M12 19l7-7 3 3-7 7-3-3zM18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5zM2 2l7.6 7.6M11 11a2 2 0 1 0 0 .01';
@@ -96,6 +101,7 @@ function Explicacion() {
 function CajaCrear({
   hoy,
   categorias,
+  tareas = [],
   editando,
   pedirFoco,
   prioridadPedida = '',
@@ -266,6 +272,7 @@ function CajaCrear({
     hoy,
     alCerrar: cerrar,
   };
+  const tareasDelDia = (fecha: string) => tareas.filter((t) => t.fecha_limite?.slice(0, 10) === fecha && t.id !== editando?.id).length;
   const textoGuardar = editando ? 'Guardar los cambios (o pulsa Enter)' : 'Guardar la tarea (o pulsa Enter)';
 
   return (
@@ -416,10 +423,9 @@ function CajaCrear({
         </div>
       </section>
 
-      {/* Las 7 opciones con su dibujo y, debajo, el panel de la que esté abierta */}
+      {/* Las 6 opciones con su dibujo y, debajo, el panel de la que esté abierta */}
       {opcionesAbiertas && <OpcionesNota op={op} crudo={crudo} fin={fin} hayBorrador={hayBorrador} hoy={hoy} seccion={seccion} alAbrir={abrir} />}
-      {opcionesAbiertas && seccion === 'cuando' && <PanelCuando {...propsPanel} />}
-      {opcionesAbiertas && seccion === 'hora' && <PanelHora {...propsPanel} horaFin={horaFin} />}
+      {opcionesAbiertas && seccion === 'cuando' && <PanelCuando {...propsPanel} ahora={minutosAhora()} tareasDelDia={tareasDelDia} />}
       {opcionesAbiertas && seccion === 'dura' && <PanelDura {...propsPanel} />}
       {opcionesAbiertas && seccion === 'aviso' && <PanelAviso {...propsPanel} />}
       {opcionesAbiertas && seccion === 'repite' && <PanelRepite {...propsPanel} />}
