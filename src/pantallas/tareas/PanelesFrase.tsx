@@ -1,18 +1,19 @@
 // pantallas/tareas/PanelesFrase.tsx
-// Los 6 paneles que se abren al tocar una parte de colores de la frase (Fase 5, paso 5.3), como en el prototipo:
+// Los paneles que se abren al tocar una opción de la caja de crear (Fase 5, paso 5.3), como en el prototipo:
 //   CUÁNDO (7 días + otra fecha) · A QUÉ HORA (arco de mañana a noche + hora exacta)
 //   CUÁNTO DURA (bloques + regla) · AVISO (barras que crecen) · SE REPITE (días) · ICONO
+//   · CATEGORÍA (rediseño de Tareas web: elegir una de tus categorías o ninguna)
 // Solo se abre uno a la vez. Cada panel recibe lo elegido (op) y una función para cambiarlo.
 import type { ReactNode } from 'react';
 import { sumarDias, deTextoISO } from '../../utils/dias';
 import {
-  ORDEN_SEMANA, LETRA_DIA, PASOS_AVISO, avisoActual, nombreDia, diaCorto, textoDuracion, textoHora,
+  ORDEN_SEMANA, LETRA_DIA, PASOS_AVISO, avisoActual, nombreDia, diaCorto, textoDuracion, textoHora, normalizar,
   type FraseLeida, type OpcionesFrase,
 } from './frase';
 import { ICONOS_TAREA, CLAVES_ICONO, SIN_ICONO } from './iconosTarea';
 import { DibujoIcono } from './PastillaIcono';
 
-export type Seccion = 'cuando' | 'hora' | 'dura' | 'aviso' | 'repite' | 'icono';
+export type Seccion = 'cuando' | 'hora' | 'dura' | 'aviso' | 'repite' | 'icono' | 'categoria';
 
 export interface PropsPanel {
   op: OpcionesFrase;
@@ -329,6 +330,35 @@ export function PanelIcono({ op, cambiar, alCerrar }: PropsPanel & { alCerrar: (
           );
         })}
       </div>
+    </MarcoPanel>
+  );
+}
+
+// ---------- CATEGORÍA ----------
+// Tus categorías como pastillas de su color, y «Ninguna». La elegida gana a la #categoría de la frase.
+export function PanelCategoria({ op, cambiar, fin, alCerrar, categorias }: PropsPanel & { alCerrar: () => void; categorias: { id: number; nombre: string; color: string }[] }) {
+  const actual = op.categoria === '-' ? '' : op.categoria || fin.categorias[0] || '';
+  const opciones = [{ id: 0, nombre: '', color: '#4b5a6c' }, ...categorias];
+  return (
+    <MarcoPanel titulo="CATEGORÍA" color="#1b7a50" raya="#cfe8da" alCerrar={alCerrar}>
+      <div className="flex flex-wrap gap-2">
+        {opciones.map((c) => {
+          const elegida = c.nombre ? normalizar(actual) === normalizar(c.nombre) : op.categoria === '-';
+          return (
+            <button
+              key={c.id}
+              type="button"
+              aria-pressed={elegida}
+              onClick={() => cambiar({ categoria: c.nombre || '-' })}
+              className="frase-categoria"
+              style={elegida ? { background: c.color, borderColor: c.color, color: '#ffffff' } : { color: c.color }}
+            >
+              {c.nombre ? `#${c.nombre}` : 'Ninguna'}
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-xs text-[#66788a]">También puedes escribirla en la frase con #, por ejemplo «#Salud».</p>
     </MarcoPanel>
   );
 }

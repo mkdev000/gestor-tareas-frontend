@@ -43,9 +43,12 @@ export interface OpcionesFrase {
   duracion: number | null;
   icono: string; // '' = sin icono
   prioridad: Prioridad | ''; // '' = lo que diga la frase (o media)
+  // La categoría elegida en «Opciones» (rediseño de Tareas web): '' = lo que diga la frase con #,
+  // '-' = ninguna (aunque la frase lleve #), 'Salud' = esa (si no existe, se crea al guardar)
+  categoria: string;
 }
 
-export const OPCIONES_VACIAS: OpcionesFrase = { fecha: '', hora: '', aviso: 'nada', dias: [], mensual: false, duracion: null, icono: '', prioridad: '' };
+export const OPCIONES_VACIAS: OpcionesFrase = { fecha: '', hora: '', aviso: 'nada', dias: [], mensual: false, duracion: null, icono: '', prioridad: '', categoria: '' };
 
 const NOMBRES_DIA: Record<string, number> = { domingo: 0, lunes: 1, martes: 2, miercoles: 3, jueves: 4, viernes: 5, sabado: 6 };
 const DIAS_RE = 'lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo';
@@ -140,6 +143,8 @@ export function aplicarOpciones(p: FraseLeida, op: OpcionesFrase, hoy: string): 
   if (op.fecha) r.fecha = op.fecha;
   if (op.duracion) r.duracion = op.duracion;
   if (op.icono) r.icono = op.icono;
+  if (op.categoria === '-') r.categorias = [];
+  else if (op.categoria) r.categorias = [op.categoria.slice(0, 40)];
   if (op.hora) {
     const [h, m] = op.hora.split(':').map(Number);
     r.inicio = h * 60 + m;
@@ -258,6 +263,7 @@ export function desdeTarea(t: Tarea): { borrador: string; op: OpcionesFrase } {
       duracion: t.duracion_min ?? null,
       icono: t.icono ?? '',
       prioridad: estiloPrioridad(t.prioridad).clave,
+      categoria: '',
     },
   };
 }
