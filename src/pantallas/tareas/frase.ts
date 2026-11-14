@@ -74,7 +74,9 @@ export function leerFrase(frase: string, hoy: string): FraseLeida {
     titulo: '', fecha: null, inicio: null, duracion: null, prioridad: null,
     categorias: [], repeticion: null, dias: null, aviso: null, icono: null,
   };
-  let t = ` ${frase} `;
+  // Las comas y los puntos y coma se separan con espacios («1h, avísame» → «1h , avísame») para que cada dato se reconozca
+  // aunque lleve una coma pegada; al final se quitan las que se queden sueltas en el título
+  let t = ` ${frase.replace(/[,;]/g, ' , ')} `;
   const tachar = (patron: RegExp, apuntar: (...partes: string[]) => void) => {
     t = t.replace(patron, (...coincidencia) => {
       apuntar(...(coincidencia.slice(0, -2) as string[]));
@@ -88,7 +90,19 @@ export function leerFrase(frase: string, hoy: string): FraseLeida {
   });
   // !alta !media !baja → prioridad
   tachar(/!(alta|media|baja)/i, (_, p) => (o.prioridad = p.toLowerCase() as Prioridad));
-  // "avísame", "recuérdamelo"... → aviso 10 minutos antes
+  // "avísame 10 min antes", "recuérdamelo 1 h antes", "1 día antes", "avísame a la hora" → aviso con su tiempo
+  // (el servidor solo guarda 0, 10, 60 o 1440 minutos: se usa el más cercano)
+  const avisoCercano = (minutos: number) => [0, 10, 60, 1440].reduce((a, b) => (Math.abs(b - minutos) < Math.abs(a - minutos) ? b : a));
+  tachar(
+    /\s(?:(?:av[ií]same|recu[eé]rdamelo|recu[eé]rdame|con aviso)\s)?(\d{1,3})\s?(min|minutos|mins|h|horas?|d[ií]as?)\santes(?=\s)/i,
+    (_, n, unidad) => {
+      const u = unidad.toLowerCase();
+      const minutos = +n * (u.startsWith('h') ? 60 : u.startsWith('d') ? 1440 : 1);
+      o.aviso = avisoCercano(minutos);
+    },
+  );
+  tachar(/\s(?:av[ií]same|recu[eé]rdamelo|recu[eé]rdame)\s(?:a la hora|en punto|justo a la hora)(?=\s)/i, () => (o.aviso = 0));
+  // "avísame", "recuérdamelo"... (sin decir cuándo) → aviso 10 minutos antes
   tachar(/\s(av[ií]same|recu[eé]rdamelo|recu[eé]rdame|con aviso)(?=\s)/i, () => (o.aviso = 10));
   // Repeticiones
   tachar(/\s(cada d[ií]a|todos los d[ií]as|diariamente)(?=\s)/i, () => (o.repeticion = 'diaria'));
@@ -129,7 +143,14 @@ export function leerFrase(frase: string, hoy: string): FraseLeida {
   });
 
   // Lo que queda es el título (sin espacios dobles ni una palabra suelta al final como "el" o "para")
-  const titulo = t.replace(/\s+/g, ' ').trim().replace(/\s(el|para|a|de|y)$/i, '').trim();
+  const titulo = t
+    .replace(/\s+/g, ' ')
+    .replace(/\s,/g, ',') // la coma vuelve a pegarse a su palabra
+    .replace(/(,\s*)+/g, ', ') // varias comas seguidas (de datos quitados) → una
+    .replace(/^[,\s]+|[,\s]+$/g, '') // ni al principio ni al final
+    .trim()
+    .replace(/\s(el|para|a|de|y)$/i, '')
+    .trim();
   o.titulo = titulo ? (titulo.charAt(0).toUpperCase() + titulo.slice(1)).slice(0, 150) : '';
   // Límites del servidor: la duración va de 5 min a 24 h
   if (o.duracion !== null) o.duracion = Math.min(1440, Math.max(5, o.duracion));
