@@ -1296,56 +1296,6 @@ button.menu-opcion:active .menu-flecha {
   }
 }
 
-/* ===== Tareas: "Pulso del día" (Fase 5, paso 5.2) ===== */
-/* El anillo se llena con una pequeña animación al marcar una tarea */
-.pulso-anillo {
-  transition: stroke-dasharray 0.6s cubic-bezier(0.2, 0.9, 0.2, 1);
-}
-/* "Ahora: ... / Siguiente: ...": parece un enlace y te lleva a esa tarea */
-.pulso-siguiente {
-  display: block;
-  max-width: 100%;
-  margin-top: 2px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  font-family: inherit;
-  font-size: 13px;
-  color: var(--tachit-acento-fuerte);
-  text-align: left;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-  text-decoration: underline;
-  text-decoration-color: var(--tachit-acento-borde);
-  text-underline-offset: 3px;
-}
-.pulso-siguiente:focus-visible {
-  outline: 2px solid var(--tachit-acento-fuerte);
-  outline-offset: 2px;
-}
-/* Los 7 cuadraditos de la racha: verde si ese día tachaste algo; el de hoy, punteado si aún no */
-.pulso-dia {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-  box-sizing: border-box;
-  background: #cfd8e3;
-}
-.pulso-dia.hecho {
-  background: #17804f;
-}
-.pulso-dia.hoy {
-  background: #ffffff;
-  border: 2px dashed var(--tachit-acento);
-}
-@media (prefers-reduced-motion: reduce) {
-  .pulso-anillo {
-    transition: none;
-  }
-}
-
 /* ===== Tareas (Fase 5, pasos 5.3 a 5.5): caja de crear, paneles de la frase y tarjetas ===== */
 /* Lo que aparece (avisos, paneles): entra con un pequeño fundido, como kmFade en el prototipo */
 @keyframes aparecer-suave {
@@ -1362,77 +1312,6 @@ button.menu-opcion:active .menu-flecha {
   animation: aparecer-suave 0.22s ease;
 }
 
-/* Caja de crear: blanca; en modo "Editando", con borde ámbar */
-.caja-crear {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  border-radius: 16px;
-  background: #ffffff;
-  border: 1px solid var(--tachit-linea);
-  box-shadow: 0 6px 18px rgba(10, 30, 47, 0.05);
-  transition: box-shadow 0.25s, border-color 0.25s;
-}
-.caja-crear.editando {
-  border: 2px solid #f0c46a;
-  box-shadow: 0 0 0 5px rgba(240, 196, 106, 0.18), 0 6px 18px rgba(10, 30, 47, 0.05);
-}
-.caja-crear-boton {
-  height: 44px;
-  padding: 0 18px;
-  border: 0;
-  border-radius: 10px;
-  background: var(--tachit-acento-fuerte);
-  color: #ffffff;
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.caja-crear-boton:disabled {
-  opacity: 0.6;
-  cursor: wait;
-}
-.caja-crear-limpiar,
-.caja-crear-pegar {
-  height: 30px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid #dde3ea;
-  background: #ffffff;
-  color: #4b5a6c;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.caja-crear-limpiar {
-  margin-left: auto;
-}
-.caja-crear-pegar {
-  height: 32px;
-  color: #0f1f2e;
-  font-size: 13px;
-  font-weight: 600;
-}
-.caja-crear-ejemplo {
-  height: 32px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px dashed var(--tachit-acento-borde);
-  background: var(--tachit-acento-claro);
-  color: var(--tachit-acento-fuerte);
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .editando-borrar,
 .editando-cancelar {
   height: 32px;
@@ -1453,23 +1332,6 @@ button.menu-opcion:active .menu-flecha {
   border: 1px solid #e5d3a6;
   background: #ffffff;
   color: #7a4a00;
-}
-
-/* Las palabras de colores de la frase */
-.frase-ficha {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 1px 3px 2px;
-  margin: 0 1px;
-  border: 0;
-  border-radius: 3px;
-  background: transparent;
-  font-family: inherit;
-  font-size: 16px;
-  line-height: 1.35;
-  cursor: pointer;
-  transition: background 0.2s;
 }
 
 /* Paneles */
@@ -1740,13 +1602,6 @@ button.menu-opcion:active .menu-flecha {
   cursor: pointer;
   transition: background 0.2s;
 }
-.tarjeta-pastilla {
-  white-space: nowrap;
-  font-size: 12px;
-  font-weight: 600;
-  border-radius: 999px;
-  padding: 3px 9px;
-}
 .tarjeta-subtareas {
   height: 34px;
   padding: 0 12px;
@@ -1947,18 +1802,733 @@ button.menu-opcion:active .menu-flecha {
   }
 }
 
+/* ===== Tareas web: la parte de arriba con el cielo (rediseño antes de la Fase 9) ===== */
+/* Una franja con el cielo de ahora (--cielo y --fuerza llegan de CabeceraTareas) que se desvanece hacia la derecha */
+.cabecera-cielo {
+  position: relative;
+  isolation: isolate;
+  display: none;
+  align-items: center;
+  gap: 18px;
+  margin: -12px -14px;
+  padding: 12px 14px;
+  border-radius: 18px;
+}
+@media (min-width: 1024px) {
+  .cabecera-cielo {
+    display: flex;
+  }
+}
+.cabecera-cielo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--cielo);
+  opacity: var(--fuerza);
+  -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 25%, transparent 75%);
+  mask-image: linear-gradient(90deg, #000 0%, #000 25%, transparent 75%);
+  transition: opacity 0.6s;
+}
+.cielo-estrellas {
+  position: absolute;
+  left: 30%;
+  right: 30%;
+  top: 0;
+  bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.cielo-estrellas i {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #7d88c4;
+  opacity: 0.75;
+}
+/* Tu inicial en una ficha blanca; el sol o la luna asoman por detrás, arriba a la derecha */
+.cielo-ficha {
+  position: relative;
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+}
+.cielo-inicial {
+  position: relative;
+  z-index: 1;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: #ffffff;
+  color: var(--tachit-acento-fuerte);
+  display: grid;
+  place-items: center;
+  font-size: 21px;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(15, 31, 46, 0.1);
+}
+.cielo-astro {
+  position: absolute;
+  right: -9px;
+  z-index: 0;
+  transition: top 0.6s ease;
+}
+.cielo-sol {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #fff3c4, #ffc94d 60%, #f5a623);
+  box-shadow: 0 0 0 5px rgba(255, 201, 77, 0.18), 0 0 18px 6px rgba(255, 190, 70, 0.35);
+}
+.cielo-sol.bajo {
+  background: radial-gradient(circle at 40% 40%, #ffe0b8, #ff9a4d 60%, #e9692c);
+  box-shadow: 0 0 0 5px rgba(255, 140, 70, 0.18), 0 0 18px 6px rgba(255, 120, 60, 0.3);
+}
+.cielo-luna {
+  display: block;
+  width: 19px;
+  height: 19px;
+  margin-right: -5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff6cf, #e6d88f);
+  box-shadow: 0 0 12px 3px rgba(230, 216, 143, 0.45);
+  -webkit-mask-image: radial-gradient(circle at 72% 30%, transparent 46%, #000 48%);
+  mask-image: radial-gradient(circle at 72% 30%, transparent 46%, #000 48%);
+}
+.cielo-texto {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+}
+.cielo-saludo {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #0f1f2e;
+}
+.cielo-frase {
+  margin: 5px 0 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #3d4a57;
+}
+.cielo-frase b {
+  color: #0f1f2e;
+}
+/* Los días de racha, subrayados a mano en verde */
+.cielo-marca {
+  position: relative;
+  white-space: nowrap;
+  font-weight: 800;
+  color: #0f1f2e;
+}
+.cielo-marca svg {
+  position: absolute;
+  left: -2px;
+  bottom: -5px;
+  width: calc(100% + 4px);
+  height: 8px;
+}
+.cielo-marca path {
+  fill: none;
+  stroke: #17804f;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.cielo-falta {
+  color: #c2500a;
+  font-weight: 700;
+  white-space: nowrap;
+}
+/* La semana: L M X J V S D, tachados (con una raya fina, como de boli) los días en que tachaste algo */
+.cielo-semana {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  padding: 4px 2px 4px 22px;
+  border: 0;
+  border-left: 1px solid #e8edf3;
+  border-radius: 0 10px 10px 0;
+  background: transparent;
+  font-family: inherit;
+  text-align: right;
+  cursor: pointer;
+}
+.cielo-semana:focus-visible {
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 2px;
+}
+.cielo-letras {
+  display: inline-flex;
+  gap: 9px;
+}
+.cielo-letra {
+  position: relative;
+  width: 14px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+  color: #8a96a3;
+}
+.cielo-letra.futuro {
+  color: #c3ccd6;
+}
+.cielo-letra.hoy {
+  color: var(--tachit-acento-fuerte);
+  font-weight: 800;
+}
+.cielo-letra.hoy::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 3px;
+  height: 3px;
+  margin-left: -1.5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.cielo-letra.hecho {
+  color: #8593a1;
+}
+.cielo-letra.hecho::after {
+  content: '';
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  top: 50%;
+  height: 1.3px;
+  border-radius: 2px;
+  background: #17804f;
+  opacity: 0.85;
+  transform: rotate(-10deg);
+}
+.cielo-pie {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #66788a;
+}
+
+/* ===== Tareas web: la nota para crear (rediseño antes de la Fase 9) ===== */
+/* Papel del color del tema (muy clarito), sujeto con un trozo de celo oscuro del tema (el botón «Opciones»).
+   Los colores van en variables para que Cacao tenga su papel color cacao (con el acento solo, quedaba melocotón) */
+.nota-crear {
+  --nota-papel: color-mix(in srgb, var(--tachit-acento) 16%, white);
+  --nota-borde: color-mix(in srgb, var(--tachit-acento) 35%, white);
+  --nota-marca: color-mix(in srgb, var(--tachit-acento) 65%, transparent);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 16px 10px 10px 14px;
+  border-radius: 4px 4px 12px 4px;
+  background: var(--nota-papel);
+  border: 1px solid var(--nota-borde);
+  box-shadow: 0 6px 14px rgba(15, 31, 46, 0.05);
+  transition: box-shadow 0.25s, border-color 0.25s;
+}
+[data-tema='cacao'] .nota-crear {
+  --nota-papel: #ecdfd4;
+  --nota-borde: #d4bdae;
+  --nota-marca: color-mix(in srgb, #7a4f4a 40%, transparent);
+}
+.nota-crear.editando {
+  border: 2px solid #f0c46a;
+  box-shadow: 0 0 0 5px rgba(240, 196, 106, 0.18), 0 6px 14px rgba(15, 31, 46, 0.05);
+}
+.nota-celo {
+  position: absolute;
+  top: -10px;
+  left: 22px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 19px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 2px;
+  background: var(--tachit-acento-fuerte);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  transform: rotate(-3deg);
+  box-shadow: 0 1px 3px rgba(15, 31, 46, 0.18);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+/* Al pasar el ratón o al abrirlo, el celo se despega un poquito */
+.nota-celo:hover,
+.nota-celo.abierto {
+  transform: rotate(0) translateY(-1px);
+}
+.nota-celo circle {
+  transition: cx 0.3s ease;
+}
+.nota-celo-punto {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffb27a;
+}
+/* El icono de subtareas y la flechita de guardar */
+.nota-icono {
+  position: relative;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #66788a;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.nota-icono:hover {
+  background: rgba(15, 31, 46, 0.05);
+  color: #0f1f2e;
+}
+.nota-icono.activo {
+  background: var(--tachit-acento-suave);
+  color: var(--tachit-acento-fuerte);
+}
+.nota-icono-cuenta {
+  position: absolute;
+  top: 3px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  background: var(--tachit-acento-fuerte);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+.nota-guardar {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: var(--tachit-acento-suave);
+  color: var(--tachit-acento-fuerte);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+/* Al pasar el ratón, el color del tema pero clarito (no oscuro) */
+.nota-guardar:hover {
+  background: color-mix(in srgb, var(--tachit-acento) 35%, white);
+}
+.nota-guardar.vacia {
+  background: #eef2f6;
+  color: #8a96a3;
+  cursor: default;
+}
+.nota-guardar:disabled {
+  cursor: wait;
+}
+/* Las subtareas: filas finas con una rayita del tema a la izquierda */
+.nota-subtareas {
+  margin: -2px 0 0 32px;
+  padding: 2px 0 2px 2px;
+  border-left: 2px solid var(--tachit-acento-borde);
+}
+.nota-subtareas ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.nota-subtareas li,
+.nota-subtarea-nueva {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 30px;
+  padding-left: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0f1f2e;
+}
+.nota-casilla {
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+  box-sizing: border-box;
+  border-radius: 4px;
+  border: 1.5px solid #9aa6c7;
+}
+.nota-subtarea-quitar {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: #66788a;
+  font-family: inherit;
+  font-size: 16px;
+  cursor: pointer;
+  opacity: 0;
+}
+.nota-subtareas li:hover .nota-subtarea-quitar,
+.nota-subtarea-quitar:focus-visible {
+  opacity: 1;
+}
+.nota-subtarea-quitar:hover {
+  background: #fdecea;
+  color: #b42318;
+}
+.nota-subtarea-nueva input {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0f1f2e;
+}
+.nota-subtarea-nueva input::placeholder {
+  color: #8193a5;
+  font-weight: 500;
+}
+/* Abajo: «¿Cómo se escribe todo de una vez?» subrayado con rotulador del color del tema (más fuerte que el papel) */
+.nota-pie {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0 0 30px;
+}
+.nota-ayuda {
+  padding: 0 1px;
+  border: 0;
+  background: linear-gradient(
+    transparent 62%,
+    var(--nota-marca) 62%,
+    var(--nota-marca) 92%,
+    transparent 92%
+  );
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: #5b6b7c;
+  cursor: pointer;
+}
+.nota-ayuda:hover,
+.nota-ayuda[aria-expanded='true'] {
+  color: #0f1f2e;
+}
+.nota-quitar {
+  margin-left: auto;
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid #dde3ea;
+  background: #ffffff;
+  color: #4b5a6c;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+/* Las 7 opciones con su dibujo: salen como despegándose, una detrás de otra */
+.nota-opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-left: 4px;
+}
+.nota-opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 12px 0 6px;
+  border-radius: 12px;
+  border: 1px solid #e3e8ef;
+  background: #ffffff;
+  font-family: inherit;
+  box-shadow: 0 1px 2px rgba(15, 31, 46, 0.04);
+  cursor: pointer;
+  animation: nota-despega 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+  animation-delay: calc(var(--i) * 55ms);
+}
+.nota-opcion:hover,
+.nota-opcion.puesta {
+  border-color: var(--tachit-acento-borde);
+}
+.nota-opcion.abierta {
+  box-shadow: 0 0 0 2px var(--tachit-acento-borde);
+}
+@keyframes nota-despega {
+  from {
+    opacity: 0;
+    transform: translate(-18px, -10px) rotate(-6deg) scale(0.85);
+  }
+}
+.nota-opcion-texto {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+}
+.nota-opcion-texto small {
+  font-size: 10px;
+  font-weight: 700;
+  color: #66788a;
+}
+.nota-opcion-texto b {
+  font-size: 12.5px;
+  color: #0f1f2e;
+}
+.nota-dib {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+}
+.nota-dib-vacio {
+  background: transparent;
+}
+.nota-ficha {
+  width: 34px;
+  height: 36px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #e8edf3;
+  box-shadow: inset 0 3px 0 var(--tachit-acento);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.nota-ficha small {
+  font-size: 8px;
+  font-weight: 800;
+  color: #5b6b7c;
+}
+.nota-ficha b {
+  font-size: 15px;
+  color: var(--tachit-acento-fuerte);
+}
+.nota-reloj {
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 8px;
+  background: #eef1f5;
+}
+.nota-reloj i {
+  width: 15px;
+  height: 22px;
+  box-sizing: border-box;
+  border-radius: 4px;
+  background: #ffffff;
+  border: 1px solid #e3e8ef;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  color: #0f1f2e;
+}
+.nota-arena {
+  display: block;
+  width: 34px;
+  height: 8px;
+  border-radius: 4px;
+  background: #eef1f6;
+  overflow: hidden;
+}
+.nota-arena i {
+  display: block;
+  height: 100%;
+  background: #c0306a;
+}
+/* La explicación de la frase por colores */
+.nota-explicacion {
+  margin: -4px 6px 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 2;
+  color: #3d4a57;
+}
+.nota-explicacion p {
+  margin: 0;
+}
+.nota-parte {
+  padding: 1px 3px;
+  border-radius: 4px;
+}
+.nota-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11.5px;
+  color: #66788a;
+  line-height: 1.5;
+}
+.nota-leyenda li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.nota-leyenda i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.nota-explicacion small {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #66788a;
+  line-height: 1.5;
+}
+/* Panel CATEGORÍA: tus categorías como pastillas */
+.frase-categoria {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid #dde3ea;
+  background: #ffffff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ===== Tareas web: las pestañas Hoy · Próximas · Todas · Hechas ===== */
+.pestanas-tareas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 22px;
+}
+.pestana-tarea {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 0 0 10px;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  color: #5b6b7c;
+  cursor: pointer;
+}
+.pestana-tarea:hover {
+  color: #33475b;
+}
+.pestana-tarea.activa {
+  color: #0f1f2e;
+}
+.pestana-cuenta,
+.pestana-x {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #5b6b7c;
+}
+.pestana-tarea.activa .pestana-cuenta {
+  color: #4b5a6c;
+}
+/* La raya de debajo: en «Hoy», gris con el trozo de lo tachado en verde; en las demás, entera */
+.pestana-raya {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.pestana-tarea.activa .pestana-raya {
+  background: #e3e8ef;
+}
+.pestana-raya i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: #0f1f2e;
+  transition: width 0.4s;
+}
+.pestana-tarea.de-hoy .pestana-raya i {
+  background: #17804f;
+}
+/* Los datos de la tarjeta en una línea de texto */
+.tarjeta-datos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  font-size: 12.5px;
+  color: #5b6b7c;
+}
+
+.nota-crear button:focus-visible,
+.nota-crear input:focus-visible,
+.nota-opcion:focus-visible,
+.frase-categoria:focus-visible,
+.pestana-tarea:focus-visible {
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 2px;
+}
+.nota-crear input#tachit-nueva-tarea:focus-visible,
+.nota-subtarea-nueva input:focus-visible {
+  outline: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nota-opcion {
+    animation: none;
+  }
+  .cabecera-cielo::before,
+  .cielo-astro,
+  .nota-celo,
+  .nota-celo circle,
+  .nota-guardar,
+  .pestana-raya i {
+    transition: none;
+  }
+}
+
 /* Contorno visible al moverse con el teclado (Tab) */
-.caja-crear button:focus-visible,
-.caja-crear input:focus-visible,
 .frase-regla:focus-visible,
 .tarjeta-tarea button:focus-visible,
 .subtarea-nueva:focus-visible,
 .tareas-buscar:focus-visible {
   outline: 2px solid var(--tachit-acento-fuerte);
   outline-offset: 2px;
-}
-.caja-crear input#tachit-nueva-tarea:focus-visible {
-  outline: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .aparecer {

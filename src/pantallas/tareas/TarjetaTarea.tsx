@@ -118,27 +118,29 @@ function TarjetaTarea({ tarea, hoy, ahora, abierta, resaltada, editandose, alCom
             <PastillaIcono clave={tarea.icono} />
             <span className={'text-base font-bold ' + (hecha ? 'text-[#66788a] line-through' : 'text-[#0f1f2e]')}>{tarea.titulo}</span>
           </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className={'tarjeta-pastilla font-bold ' + (atrasada ? 'bg-[#fde8e4] text-[#b42318]' : 'bg-[#eef1f5] text-[#33475b]')}>{cuando}</span>
-            <span className="tarjeta-pastilla bg-[#eef1f5] text-[#4b5a6c]">{textoDuracion(duracion)}</span>
+          {/* Los datos en una línea de texto (rediseño antes de la Fase 9): «Hoy · 10:30 · 30 min · aviso a la hora · #Casa» */}
+          <p className="tarjeta-datos">
+            <span className={'font-extrabold ' + (atrasada ? 'text-[#b42318]' : 'text-[#33475b]')}>{cuando}</span>
+            <span>· {textoDuracion(duracion)}</span>
             {tarea.aviso_min !== null && tarea.aviso_min !== undefined && (
-              <span className="tarjeta-pastilla flex items-center gap-1 bg-[#efeafc] text-[#5a3fb8]">
-                <DibujoIcono trazo={CAMPANA} tam={12} grosor={2.4} />
-                {textoAviso(tarea.aviso_min)}
+              <span className="inline-flex items-center gap-1">
+                · <DibujoIcono trazo={CAMPANA} tam={12} grosor={2.4} />
+                {tarea.aviso_min === 0 ? 'aviso a la hora' : `aviso ${textoAviso(tarea.aviso_min).toLowerCase()}`}
               </span>
             )}
-            {tarea.repeticion && (
-              <span className="tarjeta-pastilla bg-[#e2f4f5] text-[#0e6f78]">↻ {repeticion === 'Cada semana' ? 'Semanal' : repeticion}</span>
-            )}
+            {tarea.repeticion && <span>· ↻ {repeticion === 'Cada semana' ? 'Semanal' : repeticion}</span>}
             {(tarea.categorias ?? []).map((c) => (
-              <span key={c.id} className="tarjeta-pastilla font-bold" style={{ background: `${c.color}14`, color: c.color }}>
-                #{c.nombre}
+              <span key={c.id} className="font-bold" style={{ color: c.color }}>
+                · #{c.nombre}
               </span>
             ))}
-            <span className="tarjeta-pastilla font-bold" style={{ background: prioridad.fondo, color: prioridad.texto }}>
-              {prioridad.nombre}
-            </span>
-          </div>
+            {/* La prioridad ya se ve en el color del borde y del círculo; en palabras, solo si es alta (y para el lector de pantalla, siempre) */}
+            {prioridad.clave === 'alta' && !hecha ? (
+              <span className="font-bold text-[#a84a0a]">· prioridad alta</span>
+            ) : (
+              <span className="sr-only">· prioridad {prioridad.nombre.toLowerCase()}</span>
+            )}
+          </p>
         </div>
 
         <div className="flex items-center gap-3.5">

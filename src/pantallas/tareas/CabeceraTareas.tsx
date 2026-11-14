@@ -1,144 +1,167 @@
 // pantallas/tareas/CabeceraTareas.tsx
-// La parte de arriba de Tareas en la web (Fase 5, paso 5.2), igual que en el prototipo:
-//  - el saludo ("Hola, Kevin") con tu inicial y cómo vas hoy
-//  - la tarjeta "Pulso del día": el anillo de lo hecho hoy, lo que toca ahora (o lo siguiente),
-//    la franja del día de 8 a 22 h con tus tareas, y la racha de la semana (lleva a Mi ritmo)
-// En el móvil no sale: en el prototipo móvil, el pulso está en la pantalla Hoy (Fase 7).
-import { useEffect, useState } from 'react';
+// La parte de arriba de Tareas en la web (rediseñada antes de la Fase 9), igual que en el prototipo:
+//  - una franja con el cielo de AHORA (rosa al amanecer, azul de día, dorado por la tarde, coral al anochecer,
+//    azul noche de noche), que se desvanece hacia la derecha; sale y se pone con el sol real de España
+//  - tu inicial en una ficha blanca, con el sol (o la luna) asomando por detrás
+//  - el saludo según la hora y una frase: «Es martes 29: te quedan 3 tareas por tachar hoy y llevas 7 días seguidos tachando algo.»
+//  - a la derecha, la semana (L M X J V S D) con los días en que tachaste algo tachados; al pulsarla, va a Mi ritmo
+// En el móvil no sale (allí la pantalla Hoy ya tiene su resumen).
+import { useEffect, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Tarea } from '../useTareas';
-import { calcularPulso } from './pulso';
 import { calcularRacha } from '../../utils/racha';
-import { sumarDias, hoyISO, deTextoISO } from '../../utils/dias';
+import { deTextoISO, hoyISO } from '../../utils/dias';
+import { useCuenta } from '../../marco/useCuenta';
+import { astroDe, colorFranja, momentoDe, saludoDe, solEnEspana } from './cieloArriba';
+import { textoHora } from './pulso';
 
-const PERIMETRO = 163.4; // 2 · π · 26 (el radio del anillo)
-const DIAS_CORTOS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+const DIA_LARGO = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const LETRAS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+const NOMBRE_LETRA = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+const minutosDe = (d: Date) => d.getHours() * 60 + d.getMinutes();
 
-// Lleva la vista a una tarea de la lista (las tarjetas tienen id="tarea-123", paso 5.4)
-function irATarea(id: number) {
-  const tarjeta = document.getElementById(`tarea-${id}`);
-  if (!tarjeta) return;
-  tarjeta.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  tarjeta.focus({ preventScroll: true });
-}
-
-// alIrATarea: la pantalla de Tareas pone el filtro "Hoy", abre la tarea y la resalta antes de ir a ella
-function CabeceraTareas({ tareas, alIrATarea = irATarea }: { tareas: Tarea[]; alIrATarea?: (id: number) => void }) {
+function CabeceraTareas({ tareas }: { tareas: Tarea[] }) {
   const navigate = useNavigate();
-  // La hora de "ahora" se actualiza cada minuto (para la rayita roja y "lo que toca ahora")
+  const { nombre, inicial } = useCuenta();
+  // La hora de "ahora" se actualiza cada minuto (para el cielo y el saludo)
   const [ahora, setAhora] = useState(() => new Date());
   useEffect(() => {
     const reloj = setInterval(() => setAhora(new Date()), 60_000);
     return () => clearInterval(reloj);
   }, []);
 
-  const pulso = calcularPulso(tareas, ahora);
-  const racha = calcularRacha(tareas);
-  const nombre = localStorage.getItem('nombre') || 'Tú';
-  const inicial = nombre.trim().charAt(0).toUpperCase() || 'T';
   const hoy = hoyISO();
+  const fechaHoy = deTextoISO(hoy);
+  const minutos = minutosDe(ahora);
+  const { sale, pone } = solEnEspana(fechaHoy);
+  const franja = colorFranja(minutos, sale, pone);
+  const astro = astroDe(minutos, sale, pone);
+  const momento = momentoDe(minutos, sale, pone);
+
+  // Lo de hoy y la racha
+  const deHoy = tareas.filter((t) => t.fecha_limite?.slice(0, 10) === hoy);
+  const quedan = deHoy.filter((t) => t.estado !== 'completada').length;
+  const racha = calcularRacha(tareas);
+  const hoyTachado = racha.ultimos7[6];
+  const dias = `${racha.dias} ${racha.dias === 1 ? 'día seguido' : 'días seguidos'}`;
+  const esHoy = `Es ${DIA_LARGO[fechaHoy.getDay()]} ${fechaHoy.getDate()}`;
+
+  // La semana de lunes a domingo; los días pasados salen de los últimos 7 de la racha
+  const hoyEnSemana = (fechaHoy.getDay() + 6) % 7; // lunes = 0 ... domingo = 6
+  const semana = LETRAS.map((letra, i) => {
+    const futuro = i > hoyEnSemana;
+    const hecho = !futuro && racha.ultimos7[6 - (hoyEnSemana - i)];
+    const esHoyLetra = i === hoyEnSemana;
+    const estado = futuro ? 'aún no ha llegado' : hecho ? 'tachaste algo' : esHoyLetra ? 'aún nada' : 'nada tachado';
+    return {
+      letra,
+      hecho,
+      futuro,
+      esHoy: esHoyLetra,
+      titulo: `${esHoyLetra ? 'hoy' : NOMBRE_LETRA[i]}: ${estado}`,
+    };
+  });
+  const tachadosSemana = semana.filter((d) => d.hecho).length;
+
+  // La racha, subrayada a mano en verde
+  const marca = (
+    <span className="cielo-marca">
+      {dias}
+      <svg viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M2 5.5 C 30 2.5, 60 6.5, 98 3" />
+      </svg>
+    </span>
+  );
+  let frase;
+  if (!deHoy.length)
+    frase = racha.dias ? (
+      <>
+        {esHoy} y hoy no tienes nada apuntado. Llevas {marca} tachando algo.
+      </>
+    ) : (
+      <>{esHoy} y hoy no tienes nada apuntado.</>
+    );
+  else if (!quedan)
+    frase = (
+      <>
+        {esHoy} y hoy ya lo tienes <b>todo tachado</b>
+        {racha.dias ? <>. Llevas {marca} tachando algo.</> : '.'}
+      </>
+    );
+  else {
+    const cuantas = <b>{`${quedan} ${quedan === 1 ? 'tarea por tachar' : 'tareas por tachar'}`}</b>;
+    const inicio = (
+      <>
+        {esHoy}: te {quedan === 1 ? 'queda' : 'quedan'} {cuantas} hoy
+      </>
+    );
+    if (!racha.dias) frase = <>{inicio}. Tacha una y empieza tu racha.</>;
+    else if (hoyTachado)
+      frase = (
+        <>
+          {inicio} y llevas {marca} tachando algo.
+        </>
+      );
+    else
+      frase = (
+        <>
+          {inicio}. Llevas {marca}: <span className="cielo-falta">tacha una y serán {racha.dias + 1}</span>.
+        </>
+      );
+  }
+
+  const estiloFranja = {
+    '--cielo': franja.fondo,
+    '--fuerza': franja.fuerza,
+  } as CSSProperties;
+  const estiloAstro = { top: `${3 - astro.alto}px` } as CSSProperties;
 
   return (
-    <section aria-label="Pulso del día" className="hidden flex-col gap-5 lg:flex xl:flex-row xl:items-center">
-      {/* Saludo */}
-      <div className="flex shrink-0 items-center gap-3.5">
-        <span aria-hidden="true" className="flex h-12 w-12 items-center justify-center rounded-full bg-[#7c5cd6] text-xl font-extrabold text-white">
+    <section aria-label="Tu día" className="cabecera-cielo" style={estiloFranja}>
+      {astro.estrellas && (
+        <span aria-hidden="true" className="cielo-estrellas">
+          <i style={{ left: '12%', top: '22%' }} />
+          <i style={{ left: '30%', top: '58%' }} />
+          <i style={{ left: '47%', top: '18%' }} />
+          <i style={{ left: '63%', top: '46%' }} />
+          <i style={{ left: '78%', top: '20%' }} />
+        </span>
+      )}
+      <span
+        className="cielo-ficha"
+        role="img"
+        aria-label={`${nombre}, ${momento}`}
+        title={`Ahora es ${momento}: hoy sale el sol a las ${textoHora(sale)} y se pone a las ${textoHora(pone)}`}
+      >
+        <span aria-hidden="true" className="cielo-astro" style={estiloAstro}>
+          <span className={astro.tipo === 'sol' ? 'cielo-sol' + (astro.bajo ? ' bajo' : '') : 'cielo-luna'} />
+        </span>
+        <span aria-hidden="true" className="cielo-inicial">
           {inicial}
         </span>
-        <div>
-          <p className="text-2xl font-extrabold tracking-[-0.4px]">Hola, {nombre}</p>
-          <p className="text-sm text-[#5b6b7c]">{pulso.saludo}</p>
-        </div>
+      </span>
+      <div className="cielo-texto">
+        <h2 className="cielo-saludo">
+          {saludoDe(minutos)}, {nombre}
+        </h2>
+        <p className="cielo-frase">{frase}</p>
       </div>
-
-      {/* Pulso del día */}
-      <div className="flex min-w-0 grow items-center gap-[22px] rounded-2xl border border-[#e3e8ef] bg-white px-5 py-3">
-        {/* Anillo: se llena con las hechas de hoy */}
-        <div className="relative h-[60px] w-[60px] shrink-0" role="img" aria-label={`${pulso.hechas} de ${pulso.total} tareas de hoy hechas`}>
-          <svg width="60" height="60" viewBox="0 0 64 64" aria-hidden="true">
-            <circle cx="32" cy="32" r="26" fill="none" stroke="#e8edf3" strokeWidth="7" />
-            <circle
-              className="pulso-anillo"
-              cx="32"
-              cy="32"
-              r="26"
-              fill="none"
-              stroke="#17804f"
-              strokeWidth="7"
-              strokeLinecap="round"
-              strokeDasharray={`${pulso.total ? (pulso.hechas / pulso.total) * PERIMETRO : 0} 164`}
-              transform="rotate(-90 32 32)"
-            />
-          </svg>
-          <span aria-hidden="true" className="absolute inset-0 flex items-center justify-center text-sm font-extrabold text-[#0f1f2e]">
-            {pulso.hechas}/{pulso.total}
-          </span>
-        </div>
-
-        {/* Cómo vas y lo que toca */}
-        <div className="w-[210px] min-w-0 shrink-0">
-          <p className="text-[15px] font-extrabold">{pulso.titulo}</p>
-          {pulso.siguiente ? (
-            <button type="button" onClick={() => alIrATarea(pulso.siguiente!.id)} className="pulso-siguiente">
-              {pulso.siguiente.texto}
-            </button>
-          ) : (
-            <p className="mt-0.5 truncate text-[13px] text-[#5b6b7c]">No queda nada programado hoy</p>
-          )}
-        </div>
-
-        {/* La franja del día, de 8:00 a 22:00 */}
-        <div className="min-w-0 grow">
-          <div className="relative h-[22px] rounded-md bg-[#f1f4f8]">
-            {pulso.segmentos.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => alIrATarea(s.id)}
-                title={`${s.inicio} · ${s.titulo} (pulsa para ir)`}
-                aria-label={`Ir a ${s.titulo}, a las ${s.inicio}`}
-                className="absolute top-1 bottom-1 cursor-pointer rounded border-0 p-0"
-                style={{ left: `${s.izquierda}%`, width: `${s.ancho}%`, background: s.color, opacity: s.apagado ? 0.75 : 1 }}
-              />
-            ))}
-            {pulso.ahora !== null && (
-              <span aria-hidden="true" className="absolute -top-1 -bottom-1 w-0.5 rounded-sm bg-[#c4320a]" style={{ left: `${pulso.ahora}%` }} />
-            )}
-          </div>
-          <div className="mt-[5px] flex justify-between text-[11px] text-[#5b6b7c]">
-            <span>8:00</span>
-            <span>tu día de un vistazo</span>
-            <span>22:00</span>
-          </div>
-        </div>
-
-        {/* La racha: lleva a Mi ritmo */}
-        <button
-          type="button"
-          onClick={() => navigate('/ritmo')}
-          aria-label={`${racha.dias} días de racha. Ver la racha en Mi ritmo`}
-          className="flex shrink-0 cursor-pointer flex-col items-end gap-1.5 border-0 bg-transparent py-0 pr-0 pl-[18px] font-jakarta"
-          style={{ borderLeft: '1px solid #edf1f5' }}
-        >
-          <span className="text-[13px] text-[#5b6b7c]">
-            <strong className="text-xl text-[#0f1f2e]">{racha.dias}</strong> {racha.dias === 1 ? 'día de racha' : 'días de racha'}
-          </span>
-          <span className="flex gap-1" aria-hidden="true">
-            {racha.ultimos7.map((hizo, i) => {
-              const dia = sumarDias(hoy, i - 6);
-              const esHoy = i === 6;
-              const nombreDia = esHoy ? 'hoy' : DIAS_CORTOS[deTextoISO(dia).getDay()];
-              return (
-                <span
-                  key={dia}
-                  title={`${nombreDia}: ${hizo ? 'completado' : esHoy ? 'pendiente' : 'sin tareas hechas'}`}
-                  className={'pulso-dia' + (hizo ? ' hecho' : esHoy ? ' hoy' : '')}
-                />
-              );
-            })}
-          </span>
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={() => navigate('/ritmo')}
+        aria-label={`Esta semana has tachado algo ${tachadosSemana} ${tachadosSemana === 1 ? 'día' : 'días'}. Racha: ${dias}. Ver en Mi ritmo`}
+        title="Ver tu racha en Mi ritmo"
+        className="cielo-semana"
+      >
+        <span aria-hidden="true" className="cielo-letras">
+          {semana.map((d) => (
+            <span key={d.letra} title={d.titulo} className={'cielo-letra' + (d.hecho ? ' hecho' : '') + (d.esHoy ? ' hoy' : '') + (d.futuro ? ' futuro' : '')}>
+              {d.letra}
+            </span>
+          ))}
+        </span>
+        <span className="cielo-pie">esta semana</span>
+      </button>
     </section>
   );
 }

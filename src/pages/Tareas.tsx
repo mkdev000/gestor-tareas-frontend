@@ -1,8 +1,9 @@
 // pages/Tareas.tsx
 // La pantalla de Tareas, igual que en el prototipo (Fase 5):
-//  1. Arriba (web): el saludo y el "Pulso del día" (paso 5.2)
-//  2. La caja para crear escribiendo como hablas, con la frase de colores y sus paneles (paso 5.3)
-//  3. Los filtros: Hoy · Próximo · Todas · Completadas · #categorías, y el buscador (paso 5.4)
+//  1. Arriba (web): el cielo de ahora, el saludo, cómo vas hoy y la semana (rediseño antes de la Fase 9)
+//  2. La nota para crear escribiendo como hablas, con «Opciones», subtareas y sus paneles (paso 5.3, rediseñada)
+//  3. Web: las pestañas Hoy · Próximas · Todas · Hechas (la categoría elegida en la barra, como una más) y el buscador.
+//     Móvil: los filtros Hoy · Próximo · Todas · Hechas · #categorías (paso 5.4)
 //  4. Las tarjetas de tarea con sus subtareas (pasos 5.4 y 5.5)
 // En el móvil (paso 5.6), como en el prototipo móvil: filtros que se deslizan de lado, tarjetas que se
 // deslizan con el dedo (derecha = completar, izquierda = borrar, tocar = editar) y, para crear o editar,
@@ -11,7 +12,6 @@
 // lo que se habla con el servidor está en pantallas/tareas/guardar.ts.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import ChipFiltro from '../componentes/base/ChipFiltro';
 import AvisoFlotante, { type DatosAviso } from '../componentes/base/AvisoFlotante';
 import CabeceraTareas from '../pantallas/tareas/CabeceraTareas';
 import CajaCrear, { type ResultadoCaja } from '../pantallas/tareas/CajaCrear';
@@ -35,6 +35,9 @@ const FILTROS: { clave: Filtro; texto: string }[] = [
   { clave: 'todas', texto: 'Todas' },
   { clave: 'hechas', texto: 'Completadas' },
 ];
+
+// Web: el nombre de cada pestaña
+const TEXTO_PESTANA: Record<Filtro, string> = { hoy: 'Hoy', proximo: 'Próximas', todas: 'Todas', hechas: 'Hechas' };
 
 // Paso 6.6: cuánto tiempo hay para pulsar "Deshacer" después de borrar una tarea
 const DESHACER_MS = 5000;
@@ -154,6 +157,10 @@ function Tareas() {
     if (idCategoria !== null) setParametros({}, { replace: true });
   };
   const elegirCategoria = (id: number) => setParametros({ categoria: String(id) }, { replace: true });
+
+  const categoriaActiva = idCategoria !== null ? (categorias.find((c) => c.id === idCategoria) ?? null) : null;
+  const deHoy = tareas.filter((t) => dia(t) === hoy);
+  const hechasHoy = deHoy.filter(hecha).length;
 
   const q = normalizar(busqueda);
   const visibles = tareas
@@ -314,22 +321,6 @@ function Tareas() {
     }
   };
 
-  // Desde el pulso: filtro "Hoy", sin búsqueda, abre sus subtareas, la resalta y va hasta ella
-  const irATarea = (id: number) => {
-    const t = tareas.find((x) => x.id === id);
-    if (!t) return;
-    setFiltro(dia(t) === hoy ? 'hoy' : 'todas');
-    setBusqueda('');
-    if (idCategoria !== null) setParametros({}, { replace: true });
-    if (t.subtareas?.length) setAbiertas((a) => ({ ...a, [id]: true }));
-    resaltar([id]);
-    setTimeout(() => {
-      const tarjeta = document.getElementById(`tarea-${id}`);
-      tarjeta?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      tarjeta?.focus({ preventScroll: true });
-    }, 60);
-  };
-
   const sinTareas = cargadas && tareas.length === 0 && !creandoPrimera;
 
   return (
@@ -345,7 +336,7 @@ function Tareas() {
         />
       ) : (
         <>
-          <CabeceraTareas tareas={tareas} alIrATarea={irATarea} />
+          <CabeceraTareas tareas={tareas} />
 
           {/* Web: la caja de crear escribiendo. En el móvil se crea con la hoja de abajo (al final de la pantalla) */}
           {esWeb && (
@@ -407,28 +398,47 @@ function Tareas() {
             Toca una tarea para editarla · desliza a la derecha para completar, a la izquierda para borrar
           </p>
 
-          {/* Web: filtros y buscador */}
-          <div className="hidden flex-wrap items-center gap-2 lg:flex">
-            <div role="group" aria-label="Filtrar tareas" className="flex flex-wrap items-center gap-2">
-              {FILTROS.map((f) => (
-                <ChipFiltro
-                  key={f.clave}
-                  texto={f.texto}
-                  cantidad={tareas.filter((t) => cumple(t, f.clave)).length}
-                  activo={idCategoria === null && filtro === f.clave}
-                  alPulsar={() => elegirFiltro(f.clave)}
-                />
-              ))}
-              {categorias.map((c) => (
-                <ChipFiltro
-                  key={c.id}
-                  texto={`#${c.nombre}`}
-                  color={c.color}
-                  cantidad={tareas.filter((t) => deCategoria(t, c.id)).length}
-                  activo={idCategoria === c.id}
-                  alPulsar={() => elegirCategoria(c.id)}
-                />
-              ))}
+          {/* Web: las pestañas y el buscador. En «Hoy», la raya verde se llena según lo que has tachado */}
+          <div className="hidden flex-wrap items-end gap-4 lg:flex">
+            <div role="group" aria-label="Filtrar tareas" className="pestanas-tareas">
+              {FILTROS.map((f) => {
+                const activa = idCategoria === null && filtro === f.clave;
+                const lleno = f.clave === 'hoy' ? (deHoy.length ? Math.round((hechasHoy / deHoy.length) * 100) : 0) : 100;
+                return (
+                  <button
+                    key={f.clave}
+                    type="button"
+                    aria-pressed={activa}
+                    aria-label={f.clave === 'hoy' ? `Hoy: ${hechasHoy} de ${deHoy.length} tachadas` : `${TEXTO_PESTANA[f.clave]}: ${tareas.filter((t) => cumple(t, f.clave)).length}`}
+                    onClick={() => elegirFiltro(f.clave)}
+                    className={'pestana-tarea' + (activa ? ' activa' : '') + (f.clave === 'hoy' ? ' de-hoy' : '')}
+                  >
+                    {TEXTO_PESTANA[f.clave]}
+                    <span className="pestana-cuenta">{f.clave === 'hoy' ? `${hechasHoy}/${deHoy.length}` : tareas.filter((t) => cumple(t, f.clave)).length}</span>
+                    <span aria-hidden="true" className="pestana-raya">
+                      <i style={{ width: activa ? `${lleno}%` : 0 }} />
+                    </span>
+                  </button>
+                );
+              })}
+              {categoriaActiva && (
+                <button
+                  type="button"
+                  aria-pressed="true"
+                  aria-label={`#${categoriaActiva.nombre}: ${visibles.length}. Pulsa para quitar este filtro`}
+                  onClick={() => elegirFiltro(filtro)}
+                  className="pestana-tarea activa"
+                >
+                  <span style={{ color: categoriaActiva.color }}>#{categoriaActiva.nombre}</span>
+                  <span className="pestana-cuenta">{tareas.filter((t) => deCategoria(t, categoriaActiva.id)).length}</span>
+                  <span aria-hidden="true" className="pestana-x">
+                    ×
+                  </span>
+                  <span aria-hidden="true" className="pestana-raya">
+                    <i style={{ width: '100%' }} />
+                  </span>
+                </button>
+              )}
             </div>
             <input
               type="search"
