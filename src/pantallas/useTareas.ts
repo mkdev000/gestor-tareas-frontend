@@ -32,6 +32,9 @@ export interface Tarea {
   dias_semana?: number[] | null;
   icono?: string | null;
   subtareas?: { id: number; uuid: string; titulo: string; hecha: boolean; orden: number }[];
+  // Mi ritmo (Fase 9): lo que tardaste de verdad (lo apuntas al tachar) y cuántas veces la has aplazado
+  minutos_reales?: number | null;
+  veces_aplazada?: number;
 }
 
 export interface CategoriaDeLista {
