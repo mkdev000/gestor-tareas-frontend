@@ -6457,3 +6457,403 @@ button.menu-opcion:active .menu-flecha {
     animation: none;
   }
 }
+
+/* ---------- Fase 9, paso 9.4: Mi ritmo ---------- */
+/* «Así va tu semana»: la misma banda que «Así va tu día», con el pulso de la semana */
+.ritmo-banda {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 22px 26px;
+  border-radius: 16px;
+  background: linear-gradient(120deg, var(--tachit-panel) 0%, var(--tachit-panel-activo) 100%);
+  color: var(--tachit-panel-texto);
+}
+.ritmo-banda-texto {
+  flex-grow: 1;
+  min-width: 0;
+}
+.ritmo-ojo {
+  color: var(--tachit-panel-enlace);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+}
+.ritmo-titular {
+  margin-top: 4px;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+/* Lo importante, subrayado con rotulador del color del tema (como «¿Cómo se escribe?» en la nota) */
+.ritmo-rotu {
+  white-space: nowrap;
+  background: linear-gradient(transparent 58%, color-mix(in srgb, var(--tachit-acento) 42%, transparent) 58%, color-mix(in srgb, var(--tachit-acento) 42%, transparent) 92%, transparent 92%);
+  border-radius: 3px;
+  padding: 0 2px;
+}
+.ritmo-detalle {
+  margin-top: 4px;
+  font-size: 15px;
+  color: var(--tachit-panel-texto-detalle);
+}
+.ritmo-pulso {
+  flex-shrink: 0;
+  width: 430px;
+  margin: 0;
+}
+.ritmo-pulso svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.ritmo-pulso-linea {
+  fill: none;
+  stroke: var(--tachit-panel-enlace);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ritmo-pulso-falta {
+  fill: none;
+  stroke: var(--tachit-panel-enlace);
+  stroke-opacity: 0.4;
+  stroke-width: 2.5;
+  stroke-dasharray: 3 6;
+  stroke-linecap: round;
+}
+.ritmo-pulso-num {
+  fill: var(--tachit-panel-enlace);
+  font-size: 11px;
+  font-weight: 800;
+}
+.ritmo-pulso-luna {
+  fill: var(--tachit-panel-texto-tenue);
+}
+.ritmo-pulso-punto {
+  fill: var(--tachit-panel-enlace);
+}
+.ritmo-pulso-halo {
+  fill: none;
+  stroke: var(--tachit-panel-enlace);
+  stroke-opacity: 0.35;
+  stroke-width: 2;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ritmo-latido 2.4s ease-out infinite;
+}
+@keyframes ritmo-latido {
+  0%,
+  60% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+.ritmo-pulso-dias {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-top: 4px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--tachit-panel-texto-suave);
+}
+.ritmo-pulso-dias .hoy {
+  color: var(--tachit-panel-enlace);
+}
+.ritmo-pulso-dias .futuro {
+  color: var(--tachit-panel-texto-tenue);
+}
+
+/* La pantalla vacía: «Mi ritmo se escribe tachando» */
+.ritmo-vacio {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  padding: 26px 30px;
+  border: 1px solid #e3e8ef;
+  border-radius: 18px;
+  background: #fff;
+}
+.ritmo-vacio-texto {
+  flex: 1;
+  min-width: 0;
+}
+.ritmo-vacio-texto h2 {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+.ritmo-vacio-texto p {
+  max-width: 46ch;
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #5b6b7c;
+}
+/* El papel con su trozo de celo del color del tema (como la nota de crear tareas) */
+.ritmo-nota {
+  position: relative;
+  flex-shrink: 0;
+  width: 440px;
+  padding: 24px 24px 18px;
+  border: 1px solid #efe6cf;
+  border-radius: 6px;
+  background: #fffdf6;
+  box-shadow: 0 14px 30px rgba(15, 31, 46, 0.09);
+  transform: rotate(-1deg);
+}
+.ritmo-nota::before {
+  content: '';
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 78px;
+  height: 18px;
+  margin-left: -39px;
+  border-radius: 3px;
+  background: var(--tachit-acento);
+  opacity: 0.55;
+}
+.ritmo-nota h3 {
+  margin-bottom: 8px;
+  font-size: 18px;
+  font-weight: 800;
+}
+.ritmo-nota li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px dashed #e7dcc1;
+}
+.ritmo-nota li:last-child {
+  border-bottom: 0;
+}
+.ritmo-caja {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 2px solid #c9bd9c;
+  border-radius: 7px;
+  color: transparent;
+  font-size: 13px;
+  font-weight: 800;
+}
+.ritmo-nota li.hecho .ritmo-caja {
+  border-color: #17804f;
+  background: #17804f;
+  color: #fff;
+}
+.ritmo-renglon {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+}
+.ritmo-renglon b {
+  position: relative;
+  font-weight: 800;
+}
+.ritmo-renglon small {
+  display: block;
+  margin-top: 1px;
+  font-size: 12.5px;
+  color: #6b6a5c;
+}
+.ritmo-nota li.hecho .ritmo-renglon b {
+  color: #5b6b7c;
+}
+/* Lo conseguido se tacha con el rotulador del tema */
+.ritmo-nota li.hecho .ritmo-renglon b::after {
+  content: '';
+  position: absolute;
+  top: 55%;
+  right: -2px;
+  left: -2px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--tachit-acento);
+  transform: rotate(-2deg);
+}
+.ritmo-cuenta {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #fdf2dc;
+  color: #8a5100;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.ritmo-ir {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  margin-top: 14px;
+  padding: 0 16px;
+  border-radius: 11px;
+  background: var(--tachit-acento-fuerte);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+}
+.ritmo-ir:hover {
+  filter: brightness(1.08);
+}
+.ritmo-ir:focus-visible {
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 2px;
+}
+@media (max-width: 1023px) {
+  .ritmo-banda {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 18px 18px 16px;
+    border-radius: 22px;
+  }
+  .ritmo-ojo {
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 1px;
+  }
+  .ritmo-titular {
+    font-size: 19px;
+    line-height: 1.3;
+  }
+  .ritmo-detalle {
+    font-size: 13.5px;
+  }
+  .ritmo-pulso {
+    width: 100%;
+  }
+  .ritmo-vacio {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 22px;
+    padding: 20px 16px 24px;
+  }
+  .ritmo-vacio-texto h2 {
+    font-size: 21px;
+  }
+  .ritmo-nota {
+    width: auto;
+    padding: 22px 16px 16px;
+    transform: rotate(-0.6deg);
+  }
+}
+
+/* «¿Cuánto has tardado?» en el aviso al tachar (idea C1) */
+.aviso-tachado {
+  position: relative;
+}
+.aviso-tachado::after {
+  content: '';
+  position: absolute;
+  top: 55%;
+  right: -2px;
+  left: -2px;
+  height: 2.5px;
+  border-radius: 3px;
+  background: var(--tachit-acento);
+  transform: rotate(-3deg);
+}
+.aviso-pregunta {
+  margin-top: 8px;
+  font-size: 13.5px;
+  opacity: 0.9;
+}
+.aviso-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+/* Móvil: el aviso tiene el color del panel del tema (claro en Nube, oscuro en Cacao):
+   los botones se hacen con el color de su propio texto, así se ven bien en todos */
+.aviso-chip {
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  color: inherit;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.aviso-chip-previsto {
+  border-color: color-mix(in srgb, currentColor 55%, transparent);
+  background: color-mix(in srgb, currentColor 18%, transparent);
+  font-weight: 800;
+}
+.aviso-chip:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.aviso-barra {
+  display: block;
+  height: 3px;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+.aviso-barra i {
+  display: block;
+  height: 100%;
+  background: var(--tachit-acento);
+  transform-origin: left;
+  animation: aviso-barra 8s linear forwards;
+}
+@keyframes aviso-barra {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+/* Mientras el ratón está encima o el foco dentro, el aviso se espera: la barra y el anillo se paran */
+.aviso-flotante[data-pausado] .aviso-barra i,
+.aviso-flotante[data-pausado] .aviso-deshacer-anillo .lleno {
+  animation-play-state: paused;
+}
+@media (min-width: 1024px) {
+  .aviso-chip {
+    height: 32px;
+    padding: 0 10px;
+    font-size: 12.5px;
+    border-color: #cfd8e3;
+    background: #fff;
+    color: #33475b;
+  }
+  .aviso-chip:hover {
+    border-color: var(--tachit-acento);
+  }
+  .aviso-chip-previsto {
+    border-color: var(--tachit-acento);
+    background: var(--tachit-acento-suave);
+    color: var(--tachit-acento-fuerte);
+  }
+  .aviso-chip:focus-visible {
+    outline-color: var(--tachit-acento-fuerte);
+  }
+  .aviso-barra {
+    background: var(--tachit-acento-suave);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aviso-barra i,
+  .ritmo-pulso-halo {
+    animation: none;
+  }
+}
