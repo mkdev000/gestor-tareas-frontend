@@ -17,7 +17,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import AvisoFlotante, { type DatosAviso } from '../componentes/base/AvisoFlotante';
 import { useTareas, type Tarea } from './useTareas';
 import { alternarCompletada } from './tareas/guardar';
-import { textoDia } from './tareas/frase';
+import { avisoAlTachar } from './tareas/avisoTachada';
 import { DibujoIcono } from './tareas/PastillaIcono';
 import CasillaMes from './calendario/CasillaMes';
 import PaginaDia from './calendario/PaginaDia';
@@ -101,7 +101,9 @@ function PantallaCalendario() {
     cambiarLocal((lista) => lista.map((x) => (x.id === t.id ? { ...x, estado: x.estado === 'completada' ? 'pendiente' : 'completada' } : x)));
     try {
       const siguiente = await alternarCompletada(t);
-      if (siguiente) setAviso({ titulo: 'Tarea recurrente completada', texto: `Se ha creado la siguiente para ${textoDia(siguiente, hoy).toLowerCase()}.` });
+      // Paso 9.4: el aviso pregunta «¿Cuánto has tardado?» (y, si se repite, cuándo es la siguiente)
+      const avisoNuevo = avisoAlTachar(t, siguiente, hoy, setAviso);
+      if (avisoNuevo) setAviso(avisoNuevo);
     } catch (e) {
       setAviso({ titulo: 'No se pudo guardar', texto: e instanceof Error ? e.message : 'No se pudo completar la tarea' });
     } finally {

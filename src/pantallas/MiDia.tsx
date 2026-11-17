@@ -33,7 +33,7 @@ import {
 import { alternarCompletada, cambiarHorario } from './tareas/guardar';
 import { horaConCeros } from './tareas/frase';
 import { textoHora } from './tareas/pulso';
-import { textoDia } from './tareas/frase';
+import { avisoAlTachar } from './tareas/avisoTachada';
 import { hoyISO } from '../utils/dias';
 import { useCuenta } from '../marco/useCuenta';
 import { useEsWeb } from '../utils/useEsWeb';
@@ -239,7 +239,9 @@ function MiDia() {
     cambiarLocal((lista) => lista.map((x) => (x.id === t.id ? { ...x, estado: x.estado === 'completada' ? 'pendiente' : 'completada' } : x)));
     try {
       const siguiente = await alternarCompletada(t);
-      if (siguiente) setAviso({ titulo: 'Tarea recurrente completada', texto: `Se ha creado la siguiente para ${textoDia(siguiente, hoy).toLowerCase()}.` });
+      // Paso 9.4: el aviso pregunta «¿Cuánto has tardado?» (y, si se repite, cuándo es la siguiente)
+      const avisoNuevo = avisoAlTachar(t, siguiente, hoy, setAviso);
+      if (avisoNuevo) setAviso(avisoNuevo);
     } catch (e) {
       setAviso({ titulo: 'No se pudo guardar', texto: e instanceof Error ? e.message : 'No se pudo completar la tarea' });
     } finally {

@@ -22,7 +22,8 @@ import EstadoVacio from '../pantallas/tareas/EstadoVacio';
 import { useEsWeb } from '../utils/useEsWeb';
 import { useTareas, type Tarea } from '../pantallas/useTareas';
 import { alternarCompletada, borrarTarea, borrarSubtarea, crearSubtarea, marcarSubtarea } from '../pantallas/tareas/guardar';
-import { normalizar, textoDia, type Prioridad } from '../pantallas/tareas/frase';
+import { avisoAlTachar } from '../pantallas/tareas/avisoTachada';
+import { normalizar, type Prioridad } from '../pantallas/tareas/frase';
 import { minutosDe } from '../pantallas/tareas/pulso';
 import { esFechaValida, hoyISO } from '../utils/dias';
 import { textoPedidoValido } from '../pantallas/calendario/calendario';
@@ -224,7 +225,9 @@ function Tareas() {
     cambiarLocal((lista) => lista.map((x) => (x.id === t.id ? { ...x, estado: hecha(x) ? 'pendiente' : 'completada' } : x)));
     try {
       const siguiente = await alternarCompletada(t);
-      if (siguiente) avisar('Tarea recurrente completada', `Se ha creado la siguiente para ${textoDia(siguiente, hoy).toLowerCase()}.`);
+      // Paso 9.4: el aviso pregunta «¿Cuánto has tardado?» (y, si se repite, cuándo es la siguiente)
+      const avisoNuevo = avisoAlTachar(t, siguiente, hoy, setAviso);
+      if (avisoNuevo) setAviso(avisoNuevo);
     } catch (e) {
       avisarError(e instanceof Error ? e.message : 'No se pudo completar la tarea');
     } finally {
