@@ -151,6 +151,13 @@ export async function alternarCompletada(t: Tarea): Promise<string | null> {
   return siguiente ? siguiente.fecha_limite : null;
 }
 
+// ---------- Lo que has tardado de verdad (Fase 9, paso 9.4) ----------
+// La pregunta «¿Cuánto has tardado?» del aviso al tachar. El servidor solo lo acepta en tareas tuyas
+// ya tachadas y entre 1 y 720 minutos (paso 9.2). Con esto, Mi ritmo sabe si te quedas corto calculando.
+export function apuntarMinutosReales(id: number, minutos: number) {
+  return pedir(`/api/tareas/${id}/minutos-reales`, 'PATCH', { minutos_reales: minutos });
+}
+
 // ---------- Cambiar el día y la hora de varias tareas a la vez (Fase 7, paso 7.2) ----------
 // Lo usan "Reorganizar mi día" y "Planificar" (y, en el paso 7.5, "Separar" y arrastrar en la línea de tiempo).
 // Una sola petición: el servidor las mueve todas o ninguna.
