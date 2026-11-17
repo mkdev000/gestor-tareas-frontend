@@ -10,7 +10,7 @@
 // La hora: el servidor manda cada momento como milisegundos desde 1970 (igual en todo el mundo).
 // Aquí se pasa a TU hora con new Date(ms), que usa la zona horaria de tu dispositivo.
 import type { Tarea } from '../useTareas';
-import { aTextoISO, esFechaValida, semanaDe, sumarDias } from '../../utils/dias';
+import { aTextoISO, deTextoISO, esFechaValida, semanaDe, sumarDias } from '../../utils/dias';
 
 // ---------- Lo que llega del servidor ----------
 
@@ -168,6 +168,112 @@ export function rachaAmable(tachadas: Tachada[], hoy: string): RachaAmable {
   });
 
   return { dias, descansos, hoyHecho, semana };
+}
+
+// ---------- El pulso de la semana (la cabecera «Así va tu semana», paso 9.4) ----------
+// La semana se dibuja como la línea de pulso del icono de Mi ritmo: cada día sube según cuántas tareas
+// tachaste; el descanso queda plano (con su lunita); hoy lleva un puntito y lo que falta, línea discontinua.
+
+const LETRAS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
+export interface DiaPulso {
+  dia: string;
+  letra: string;
+  n: number; // tareas tachadas ese día
+  estado: EstadoDia;
+  esHoy: boolean;
+}
+
+export interface PulsoSemana {
+  dias: DiaPulso[]; // de lunes a domingo
+  total: number; // tachadas esta semana
+  fuerte: DiaPulso | null; // el día con más tachadas (si hay al menos 2)
+}
+
+export function pulsoSemana(tachadas: Tachada[], racha: RachaAmable, hoy: string): PulsoSemana {
+  const cuantas = new Map<string, number>();
+  for (const t of tachadas) cuantas.set(t.dia, (cuantas.get(t.dia) ?? 0) + 1);
+  const dias = racha.semana.map((d, i) => ({ dia: d.dia, letra: LETRAS[i], n: cuantas.get(d.dia) ?? 0, estado: d.estado, esHoy: d.dia === hoy }));
+  const total = dias.reduce((suma, d) => suma + d.n, 0);
+  // El primero con más tachadas (si empatan, el más temprano de la semana)
+  const fuerte = dias.reduce<DiaPulso | null>((mejor, d) => (d.n > (mejor?.n ?? 1) ? d : mejor), null);
+  return { dias, total, fuerte };
+}
+
+// Los textos de la cabecera: «ASÍ VA TU SEMANA · 16 – 22 NOV», «Llevas 12 días tachando algo.» y el detalle.
+// destacado: la parte que va subrayada con rotulador (dentro de la frase: antes + destacado + despues)
+const DIAS_SEMANA = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+export function textosCabecera(pulso: PulsoSemana, racha: RachaAmable) {
+  const lunes = deTextoISO(pulso.dias[0].dia);
+  const domingo = deTextoISO(pulso.dias[6].dia);
+  const rango =
+    lunes.getMonth() === domingo.getMonth()
+      ? `${lunes.getDate()} – ${domingo.getDate()} ${MESES_CORTOS[domingo.getMonth()]}`
+      : `${lunes.getDate()} ${MESES_CORTOS[lunes.getMonth()]} – ${domingo.getDate()} ${MESES_CORTOS[domingo.getMonth()]}`;
+
+  const titular =
+    racha.dias > 0
+      ? { antes: 'Llevas ', destacado: `${racha.dias} ${racha.dias === 1 ? 'día' : 'días'}`, despues: ' tachando algo.' }
+      : { antes: 'Tacha una tarea y ', destacado: 'empieza tu racha', despues: '.' };
+
+  let detalle = 'Esta semana aún no has tachado nada.';
+  if (pulso.total > 0) {
+    detalle = `Esta semana, ${pulso.total} ${pulso.total === 1 ? 'tarea tachada' : 'tareas tachadas'}.`;
+    const f = pulso.fuerte;
+    if (f) detalle += f.esHoy ? ' Hoy está siendo tu día fuerte.' : ` Tu día fuerte fue el ${DIAS_SEMANA[deTextoISO(f.dia).getDay()]}.`;
+  }
+  return { ojo: `ASÍ VA TU SEMANA · ${rango.toUpperCase()}`, titular, detalle };
+}
+
+// Los trazos del dibujo, en un lienzo de ANCHO x ALTO (el SVG lo escala). Sin pantalla: se puede probar.
+export const LIENZO_PULSO = { ancho: 430, alto: 84, base: 70 };
+
+export interface TrazosPulso {
+  solido: string; // de lunes a hoy
+  discontinuo: string; // de hoy al domingo
+  punto: { x: number; y: number }; // hoy
+  numeros: { x: number; y: number; n: number }[];
+  lunas: { x: number; y: number }[];
+}
+
+export function trazosPulso(dias: DiaPulso[]): TrazosPulso {
+  const { ancho, base } = LIENZO_PULSO;
+  const columna = ancho / 7;
+  // La altura de cada pico, relativa al día con más tachadas (como poco se compara con 3, para que
+  // 1 tarea no parezca un pico enorme)
+  const maximo = Math.max(3, ...dias.map((d) => d.n));
+  const alto = (n: number) => (n > 0 ? Math.round(10 + (n / maximo) * 34) : 0);
+  const r = (x: number) => Math.round(x * 10) / 10;
+
+  const iHoy = dias.findIndex((d) => d.esHoy);
+  const hoyEsta = iHoy >= 0;
+  const ultimo = hoyEsta ? iHoy : 6; // si hoy no está en esa semana (una semana pasada), la línea llega al domingo
+  let solido = `M0 ${base}`;
+  const numeros: TrazosPulso['numeros'] = [];
+  const lunas: TrazosPulso['lunas'] = [];
+  let punto = { x: ancho, y: base };
+
+  dias.forEach((d, i) => {
+    const cx = r(columna * (i + 0.5));
+    const h = alto(d.n);
+    if (i < ultimo || (!hoyEsta && i === ultimo)) {
+      if (h) solido += ` L${r(cx - 12)} ${base} L${cx} ${base - h} L${r(cx + 10)} ${base + 8} L${r(cx + 18)} ${base}`;
+      if (d.n) numeros.push({ x: cx, y: base - h - 8, n: d.n });
+      if (d.estado === 'descanso') lunas.push({ x: cx, y: base - 8 });
+    } else if (i === ultimo) {
+      solido += h ? ` L${r(cx - 12)} ${base} L${cx} ${base - h}` : ` L${cx} ${base}`;
+      punto = { x: cx, y: base - h };
+      if (d.n) numeros.push({ x: cx, y: base - h - 14, n: d.n });
+    }
+  });
+  if (!hoyEsta) {
+    solido += ` L${ancho} ${base}`;
+    return { solido, discontinuo: '', punto: { x: ancho, y: base }, numeros, lunas };
+  }
+  const discontinuo = `M${punto.x} ${punto.y}` + (punto.y !== base ? ` L${r(punto.x + 12)} ${base}` : '') + ` L${ancho} ${base}`;
+  return { solido, discontinuo, punto, numeros, lunas };
 }
 
 // ---------- El mapa de energía ----------

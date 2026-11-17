@@ -15,8 +15,12 @@ import {
   nivelCasilla,
   pendientesParaElLunes,
   progresoPor,
+  pulsoSemana,
   rachaAmable,
   tachadasDe,
+  textosCabecera,
+  trazosPulso,
+  LIENZO_PULSO,
   type EventoRitmo,
 } from './ritmo';
 
@@ -278,5 +282,62 @@ describe('cierre de semana', () => {
     const cierres = [{ semana_inicio: '2026-11-09', completadas: 3, pasadas_al_lunes: 1, foco_categoria_id: null }];
     expect(estaCerrada(cierres, '2026-11-09')).toBe(true);
     expect(estaCerrada(cierres, '2026-11-16')).toBe(false);
+  });
+});
+
+describe('pulsoSemana y trazosPulso (la cabecera «Así va tu semana»)', () => {
+  // Viernes 20: lunes 3, martes 5, miércoles nada (descanso), jueves 2, hoy 1
+  const HOY_V = '2026-11-20';
+  const t = tachadasDe([
+    ...[1, 2, 3].map((i) => tacha(200 + i, en(16, 8 + i))),
+    ...[1, 2, 3, 4, 5].map((i) => tacha(210 + i, en(17, 8 + i))),
+    ...[1, 2].map((i) => tacha(220 + i, en(19, 8 + i))),
+    tacha(230, en(20, 9)),
+  ]);
+  const racha = rachaAmable(t, HOY_V);
+  const p = pulsoSemana(t, racha, HOY_V);
+
+  it('cuenta las tachadas de cada día y encuentra el día fuerte', () => {
+    expect(p.dias.map((d) => d.n)).toEqual([3, 5, 0, 2, 1, 0, 0]);
+    expect(p.dias.map((d) => d.estado)).toEqual(['hecho', 'hecho', 'descanso', 'hecho', 'hecho', 'futuro', 'futuro']);
+    expect(p.dias[4].esHoy).toBe(true);
+    expect(p.total).toBe(11);
+    expect(p.fuerte?.dia).toBe('2026-11-17');
+  });
+
+  it('sin al menos 2 tachadas en un día no hay "día fuerte"', () => {
+    const una = tachadasDe([tacha(1, en(16))]);
+    expect(pulsoSemana(una, rachaAmable(una, HOY_V), HOY_V).fuerte).toBeNull();
+  });
+
+  it('dibuja picos hasta hoy, un punto en hoy y línea discontinua hasta el domingo', () => {
+    const tr = trazosPulso(p.dias);
+    const { base, ancho } = LIENZO_PULSO;
+    expect(tr.numeros.map((x) => x.n)).toEqual([3, 5, 2, 1]);
+    expect(tr.lunas).toHaveLength(1);
+    // El pico del martes (5) es el más alto: su número está más arriba que el del lunes (3)
+    expect(tr.numeros[1].y).toBeLessThan(tr.numeros[0].y);
+    expect(tr.punto.x).toBeCloseTo((ancho / 7) * 4.5, 0);
+    expect(tr.punto.y).toBeLessThan(base); // hoy ya has tachado una: el punto sube
+    expect(tr.discontinuo.endsWith(`L${ancho} ${base}`)).toBe(true);
+    expect(tr.solido.startsWith(`M0 ${base}`)).toBe(true);
+  });
+
+  it('hoy sin tachar: el punto se queda en la línea', () => {
+    const sinHoy = tachadasDe([tacha(1, en(16)), tacha(2, en(17))]);
+    const tr = trazosPulso(pulsoSemana(sinHoy, rachaAmable(sinHoy, HOY_V), HOY_V).dias);
+    expect(tr.punto.y).toBe(LIENZO_PULSO.base);
+  });
+
+  it('los textos de la cabecera', () => {
+    const tx = textosCabecera(p, racha);
+    expect(tx.ojo).toBe('ASÍ VA TU SEMANA · 16 – 22 NOV');
+    expect(tx.titular).toEqual({ antes: 'Llevas ', destacado: '4 días', despues: ' tachando algo.' });
+    expect(tx.detalle).toBe('Esta semana, 11 tareas tachadas. Tu día fuerte fue el martes.');
+    const vacia = pulsoSemana([], rachaAmable([], '2026-11-30'), '2026-11-30');
+    const txv = textosCabecera(vacia, rachaAmable([], '2026-11-30'));
+    expect(txv.ojo).toBe('ASÍ VA TU SEMANA · 30 NOV – 6 DIC');
+    expect(txv.titular.destacado).toBe('empieza tu racha');
+    expect(txv.detalle).toBe('Esta semana aún no has tachado nada.');
   });
 });
