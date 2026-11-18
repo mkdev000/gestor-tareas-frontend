@@ -6857,3 +6857,319 @@ button.menu-opcion:active .menu-flecha {
     animation: none;
   }
 }
+
+/* ---------- Fase 9, paso 9.5: «Tu hora de tachar» (antes «Tu mapa de energía») ---------- */
+.ritmo-rejilla {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.ritmo-hora {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 20px 22px;
+  border: 1px solid #e3e8ef;
+  border-radius: 16px;
+  background: #fff;
+}
+.ritmo-hora-ojo {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding-right: 30px;
+  color: var(--tachit-acento-fuerte);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+}
+.ritmo-hora-frase {
+  font-size: 23px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -0.4px;
+}
+/* La onda del día: el SVG se estira a lo ancho; la cima va encima en HTML para que el círculo no se deforme */
+.ritmo-onda {
+  position: relative;
+  height: 118px;
+  margin-top: 4px;
+}
+.ritmo-onda svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  overflow: visible;
+}
+.ritmo-onda-area {
+  fill: var(--tachit-acento);
+  fill-opacity: 0.16;
+}
+.ritmo-onda-linea {
+  fill: none;
+  stroke: var(--tachit-acento-fuerte);
+  stroke-width: 3;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.ritmo-onda-cima {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: var(--tachit-acento-fuerte);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--tachit-acento-fuerte) 18%, transparent);
+}
+.ritmo-onda-cima-texto {
+  position: absolute;
+  margin-top: -12px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--tachit-acento-fuerte);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  transform: translate(-50%, -100%);
+}
+.ritmo-onda-horas {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  justify-content: space-between;
+  color: #647283;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+/* La mini semana: una barrita por día, se toca para ver su onda */
+.ritmo-semana {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+.ritmo-semana button {
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: #5b6b7c;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+  cursor: pointer;
+}
+.ritmo-semana i {
+  position: relative;
+  display: block;
+  height: 38px;
+  margin-bottom: 5px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: #eef1f6;
+}
+.ritmo-semana em {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 7px 7px 0 0;
+  background: color-mix(in srgb, var(--tachit-acento) 45%, white);
+}
+.ritmo-semana .fuerte em {
+  background: var(--tachit-acento);
+}
+.ritmo-semana button[aria-pressed='true'] {
+  color: var(--tachit-acento-fuerte);
+}
+.ritmo-semana button[aria-pressed='true'] i {
+  border-color: var(--tachit-acento-fuerte);
+}
+.ritmo-semana button[aria-pressed='true'] em {
+  background: var(--tachit-acento-fuerte);
+}
+.ritmo-semana button:focus-visible {
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 2px;
+}
+/* «¿Cómo funciona?»: al pasar el ratón, al tocarla o al llegar con el teclado sale el bocadillo */
+.ritmo-q {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--tachit-acento-fuerte) 40%, transparent);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--tachit-acento-fuerte);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: help;
+}
+.ritmo-q-texto {
+  display: none;
+  position: absolute;
+  top: 48px;
+  right: 12px;
+  z-index: 5;
+  width: 270px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--tachit-acento-borde);
+  border-radius: 14px;
+  background: var(--tachit-acento-suave);
+  box-shadow: 0 8px 18px rgba(27, 37, 89, 0.12);
+  color: var(--tachit-sobre-acento);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.ritmo-q-texto::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  right: 11px;
+  width: 13px;
+  height: 13px;
+  border-top: 1.5px solid var(--tachit-acento-borde);
+  border-left: 1.5px solid var(--tachit-acento-borde);
+  background: var(--tachit-acento-suave);
+  transform: rotate(45deg);
+}
+.ritmo-q-texto b {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--tachit-acento-fuerte);
+  font-size: 13px;
+  font-weight: 800;
+}
+.ritmo-q-texto ul {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 6px;
+}
+.ritmo-q-texto li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.ritmo-q-texto li i {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--tachit-acento-fuerte);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+.ritmo-q:hover + .ritmo-q-texto,
+.ritmo-q:focus + .ritmo-q-texto {
+  display: block;
+}
+.ritmo-q:focus-visible {
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 2px;
+}
+/* El interruptor «Lo importante, a tu mejor hora»: toda la fila se pulsa */
+.ritmo-interruptor {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 0 0;
+  border: 0;
+  border-top: 1px dashed #d8dfe9;
+  background: none;
+  color: #0f1f2e;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ritmo-interruptor:disabled {
+  cursor: progress;
+}
+.ritmo-interruptor-texto {
+  flex: 1;
+  min-width: 0;
+}
+.ritmo-interruptor-texto b {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+}
+.ritmo-interruptor-texto small {
+  display: block;
+  color: #5b6b7c;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.ritmo-interruptor-pista {
+  position: relative;
+  flex-shrink: 0;
+  width: 44px;
+  height: 26px;
+  border-radius: 999px;
+  background: #cfd8e3;
+  transition: background 0.2s;
+}
+.ritmo-interruptor-pista::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 31, 46, 0.25);
+  transition: transform 0.2s;
+}
+.ritmo-interruptor[aria-checked='true'] .ritmo-interruptor-pista {
+  background: var(--tachit-acento-fuerte);
+}
+.ritmo-interruptor[aria-checked='true'] .ritmo-interruptor-pista::after {
+  transform: translateX(18px);
+}
+.ritmo-interruptor:focus-visible {
+  border-radius: 6px;
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 4px;
+}
+@media (max-width: 1023px) {
+  .ritmo-rejilla {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ritmo-hora {
+    padding: 18px;
+    border-radius: 20px;
+  }
+  .ritmo-hora-frase {
+    font-size: 20px;
+  }
+  .ritmo-q-texto {
+    width: 250px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ritmo-interruptor-pista,
+  .ritmo-interruptor-pista::after {
+    transition: none;
+  }
+}
