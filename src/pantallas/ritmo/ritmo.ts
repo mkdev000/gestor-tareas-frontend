@@ -276,42 +276,87 @@ export function trazosPulso(dias: DiaPulso[]): TrazosPulso {
   return { solido, discontinuo, punto, numeros, lunas };
 }
 
-// ---------- El mapa de energía ----------
-// A qué día de la semana y en qué franja del día tachas más. Las franjas de los extremos recogen
-// también lo de antes de las 8 y lo de después de las 22 (madrugadores y noctámbulos también cuentan).
+// ---------- Tu hora de tachar (el mapa de energía) ----------
+// A qué hora y qué día de la semana tachas más. El día va completo, de 0 a 24 h, en 8 tramos de 3 horas
+// (0–3, 3–6 ... 21–24): se cuenta cuándo tachas de verdad, y eso puede ser a cualquier hora.
 
-export const FRANJAS = [
-  { nombre: '8–10', desde: 0 },
-  { nombre: '10–13', desde: 600 },
-  { nombre: '13–16', desde: 780 },
-  { nombre: '16–20', desde: 960 },
-  { nombre: '20–22', desde: 1200 },
-];
-export const MINIMO_PARA_MAPA = 5; // con menos tachadas, "tu mejor franja" sería pura casualidad
+export const FRANJAS = [0, 3, 6, 9, 12, 15, 18, 21].map((h) => ({ nombre: `${h}–${h + 3}`, desde: h * 60 }));
+export const MINIMO_PARA_MAPA = 5; // con menos tachadas, "tu mejor rato" sería pura casualidad
 
 export interface MapaEnergia {
-  celdas: number[][]; // [día 0 = lunes ... 6 = domingo][franja 0...4] → cuántas tachaste
+  celdas: number[][]; // [día 0 = lunes ... 6 = domingo][tramo 0...7] → cuántas tachaste
+  totales: number[]; // cuántas tachaste cada día de la semana
   total: number;
-  mejor: { dow: number; franja: number; n: number } | null;
+  diaFuerte: number | null; // el día de la semana en que más tachas (null si aún hay pocos datos)
+  mejor: { dow: number; franja: number; n: number } | null; // la casilla con más tachadas
   otroDia: number | null; // otro día que rinde bien en esa misma franja
 }
 
-export const franjaDe = (minuto: number) => FRANJAS.reduce((elegida, f, i) => (minuto >= f.desde ? i : elegida), 0);
+export const franjaDe = (minuto: number) => Math.min(FRANJAS.length - 1, Math.max(0, Math.floor(minuto / 180)));
 
 export function mapaEnergia(tachadas: Tachada[]): MapaEnergia {
   const celdas = Array.from({ length: 7 }, () => FRANJAS.map(() => 0));
   for (const t of tachadas) celdas[t.dow][franjaDe(t.minuto)]++;
+  const totales = celdas.map((fila) => fila.reduce((a, b) => a + b, 0));
   const total = tachadas.length;
-  if (total < MINIMO_PARA_MAPA) return { celdas, total, mejor: null, otroDia: null };
+  if (total < MINIMO_PARA_MAPA) return { celdas, totales, total, diaFuerte: null, mejor: null, otroDia: null };
 
-  // La mejor: la casilla con más tachadas (si empatan, la primera de la semana y del día)
+  // El día fuerte: el que más tachadas suma (si empatan, el primero de la semana)
+  const diaFuerte = totales.indexOf(Math.max(...totales));
+  // La mejor casilla: la que más tachadas tiene (si empatan, la primera de la semana y del día)
   let mejor = { dow: 0, franja: 0, n: -1 };
   celdas.forEach((fila, dow) => fila.forEach((n, franja) => n > mejor.n && (mejor = { dow, franja, n })));
   let otroDia: number | null = null;
   celdas.forEach((fila, dow) => {
     if (dow !== mejor.dow && fila[mejor.franja] > 0 && (otroDia === null || fila[mejor.franja] > celdas[otroDia][mejor.franja])) otroDia = dow;
   });
-  return { celdas, total, mejor, otroDia };
+  return { celdas, totales, total, diaFuerte, mejor, otroDia };
+}
+
+// El mejor rato de un día de la semana: el tramo de 3 horas en que más tachas (null si ese día no tachas nunca)
+export function mejorRato(mapa: MapaEnergia, dow: number) {
+  const fila = mapa.celdas[dow];
+  const n = Math.max(...fila);
+  if (n === 0) return null;
+  const franja = fila.indexOf(n);
+  return { franja, n, desde: franja * 3, hasta: franja * 3 + 3 };
+}
+
+const DIAS_PLURAL = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados', 'domingos'];
+const MOMENTOS = ['de madrugada', 'de madrugada', 'a primera hora', 'por la mañana', 'a mediodía', 'por la tarde', 'al caer la tarde', 'por la noche'];
+
+// La frase grande: «Rindes más [los martes por la mañana], de 9 a 12 h.» (el día fuerte)
+// o «Los jueves rindes más [por la mañana], de 9 a 12 h.» (otro día que has tocado)
+export function fraseHoraDeTachar(mapa: MapaEnergia, dow: number) {
+  const rato = mejorRato(mapa, dow);
+  if (!rato) return { antes: `Los ${DIAS_PLURAL[dow]} `, destacado: 'aún no has tachado nada', despues: '.' };
+  const horas = `, de ${rato.desde} a ${rato.hasta} h.`;
+  return dow === mapa.diaFuerte
+    ? { antes: 'Rindes más ', destacado: `los ${DIAS_PLURAL[dow]} ${MOMENTOS[rato.franja]}`, despues: horas }
+    : { antes: `Los ${DIAS_PLURAL[dow]} rindes más `, destacado: MOMENTOS[rato.franja], despues: horas };
+}
+
+// La onda de un día, en un lienzo de 700 x 100 (el SVG la estira a lo ancho). Sube en los tramos en que más tachas;
+// cima = el punto más alto (tu mejor rato). Sin pantalla: se puede probar.
+export const LIENZO_ONDA = { ancho: 700, alto: 100 };
+
+export function ondaEnergia(fila: number[]) {
+  const { ancho, alto } = LIENZO_ONDA;
+  const r = (x: number) => Math.round(x * 10) / 10;
+  const maximo = Math.max(3, ...fila);
+  const puntos = fila.map((n, i) => [r(((i + 0.5) / fila.length) * ancho), r(alto - (n / maximo) * 86)]);
+  // Curvas suaves entre un tramo y el siguiente (el punto de control va a mitad de camino)
+  let linea = `M0 ${alto} L${r(puntos[0][0] - 30)} ${alto}`;
+  puntos.forEach(([x, y], i) => {
+    const [px, py] = i ? puntos[i - 1] : [puntos[0][0] - 30, alto];
+    const mx = r((px + x) / 2);
+    linea += ` C${mx} ${py}, ${mx} ${y}, ${x} ${y}`;
+  });
+  const [ux, uy] = puntos[puntos.length - 1];
+  linea += ` C${r(ux + 30)} ${uy}, ${ancho - 10} ${alto}, ${ancho} ${alto}`;
+  const n = Math.max(...fila);
+  const cima = n > 0 ? { x: puntos[fila.indexOf(n)][0], y: puntos[fila.indexOf(n)][1], n } : null;
+  return { linea, area: `${linea} Z`, cima };
 }
 
 // Lo oscura que va cada casilla: 0 (vacía) a 4 (la que más), relativo a TU mejor casilla

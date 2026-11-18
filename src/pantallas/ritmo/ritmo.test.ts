@@ -7,12 +7,17 @@ import type { Tarea } from '../useTareas';
 import {
   consejosAtasco,
   estaCerrada,
+  FRANJAS,
   franjaDe,
+  fraseHoraDeTachar,
+  LIENZO_ONDA,
   hechasEnSemana,
   leerHistorial,
   mapaEnergia,
+  mejorRato,
   margenTiempos,
   nivelCasilla,
+  ondaEnergia,
   pendientesParaElLunes,
   progresoPor,
   pulsoSemana,
@@ -170,31 +175,55 @@ describe('rachaAmable', () => {
   });
 });
 
-describe('mapaEnergia', () => {
-  it('con pocas tachadas no se inventa tu mejor franja', () => {
+describe('mapaEnergia (tu hora de tachar)', () => {
+  it('con pocas tachadas no se inventa tu mejor rato', () => {
     const m = mapaEnergia(tachadasLosDias(14, 15));
     expect(m.total).toBe(2);
     expect(m.mejor).toBeNull();
+    expect(m.diaFuerte).toBeNull();
   });
 
-  it('encuentra la casilla con más tachadas y otro día que rinde bien a esa hora', () => {
+  it('cuenta por día y por tramo de 3 horas, de 0 a 24 h', () => {
     const t = tachadasDe([
-      tacha(1, en(9, 11)), // lunes 10–13
-      tacha(2, en(9, 12, 30)), // lunes 10–13
-      tacha(3, en(9, 17)), // lunes 16–20
-      tacha(4, en(11, 10, 15)), // miércoles 10–13
-      tacha(5, en(14, 21)), // sábado 20–22
-      tacha(6, en(14, 23, 30)), // sábado de noche → cuenta en 20–22
+      tacha(1, en(9, 10)), // lunes 9–12
+      tacha(2, en(9, 11, 30)), // lunes 9–12
+      tacha(3, en(9, 17)), // lunes 15–18
+      tacha(4, en(11, 10, 15)), // miércoles 9–12
+      tacha(5, en(14, 1)), // sábado de madrugada (0–3)
+      tacha(6, en(14, 23, 30)), // sábado 21–24
     ]);
     const m = mapaEnergia(t);
     expect(m.total).toBe(6);
-    expect(m.mejor).toEqual({ dow: 0, franja: 1, n: 2 });
-    expect(m.otroDia).toBe(2); // miércoles
-    expect(m.celdas[5][4]).toBe(2);
+    expect(m.celdas[0]).toEqual([0, 0, 0, 2, 0, 1, 0, 0]);
+    expect(m.celdas[5]).toEqual([1, 0, 0, 0, 0, 0, 0, 1]);
+    expect(m.totales).toEqual([3, 0, 1, 0, 0, 2, 0]);
+    expect(m.diaFuerte).toBe(0);
+    expect(m.mejor).toEqual({ dow: 0, franja: 3, n: 2 });
+    expect(m.otroDia).toBe(2); // el miércoles también a esa hora
+  });
+
+  it('el mejor rato de cada día y la frase grande', () => {
+    const t = tachadasDe([tacha(1, en(9, 10)), tacha(2, en(9, 11)), tacha(3, en(9, 17)), tacha(4, en(12, 16)), tacha(5, en(12, 19))]);
+    const m = mapaEnergia(t);
+    expect(mejorRato(m, 0)).toEqual({ franja: 3, n: 2, desde: 9, hasta: 12 });
+    expect(mejorRato(m, 1)).toBeNull();
+    expect(fraseHoraDeTachar(m, 0)).toEqual({ antes: 'Rindes más ', destacado: 'los lunes por la mañana', despues: ', de 9 a 12 h.' });
+    expect(fraseHoraDeTachar(m, 3)).toEqual({ antes: 'Los jueves rindes más ', destacado: 'por la tarde', despues: ', de 15 a 18 h.' });
+    expect(fraseHoraDeTachar(m, 1)).toEqual({ antes: 'Los martes ', destacado: 'aún no has tachado nada', despues: '.' });
+  });
+
+  it('la onda: empieza y acaba abajo, y la cima es tu mejor rato', () => {
+    const o = ondaEnergia([0, 0, 1, 6, 2, 3, 1, 0]);
+    expect(o.linea.startsWith(`M0 ${LIENZO_ONDA.alto}`)).toBe(true);
+    expect(o.linea.endsWith(`${LIENZO_ONDA.ancho} ${LIENZO_ONDA.alto}`)).toBe(true);
+    expect(o.area.endsWith('Z')).toBe(true);
+    expect(o.cima).toEqual({ x: 306.3, y: 14, n: 6 });
+    expect(ondaEnergia([0, 0, 0, 0, 0, 0, 0, 0]).cima).toBeNull();
   });
 
   it('franjas y niveles', () => {
-    expect([franjaDe(6 * 60), franjaDe(10 * 60), franjaDe(15 * 60 + 59), franjaDe(16 * 60), franjaDe(23 * 60)]).toEqual([0, 1, 2, 3, 4]);
+    expect([franjaDe(0), franjaDe(2 * 60 + 59), franjaDe(9 * 60), franjaDe(12 * 60), franjaDe(23 * 60 + 59)]).toEqual([0, 0, 3, 4, 7]);
+    expect(FRANJAS.map((f) => f.nombre)).toEqual(['0–3', '3–6', '6–9', '9–12', '12–15', '15–18', '18–21', '21–24']);
     expect([nivelCasilla(0, 6), nivelCasilla(1, 6), nivelCasilla(3, 6), nivelCasilla(6, 6), nivelCasilla(2, 0)]).toEqual([0, 1, 2, 4, 0]);
   });
 });
