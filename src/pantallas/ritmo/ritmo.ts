@@ -378,10 +378,30 @@ export function consejosAtasco(atascadas: Atascada[], tareas: Tarea[]) {
   return atascadas
     .filter((a) => porId.get(a.id)?.estado !== 'completada')
     .map((a) => {
-      const pasos = porId.get(a.id)?.subtareas?.length ?? 0;
+      const subtareas = porId.get(a.id)?.subtareas ?? [];
+      const pasos = subtareas.length;
       const consejo: ConsejoAtasco = pasos > 0 ? 'pasos' : a.veces_aplazada >= 4 ? 'partir' : 'hueco';
-      return { ...a, pasos, consejo };
+      // El primer paso que falta (para el consejo «Empieza por el primero: …»)
+      const primerPaso = subtareas.find((st) => !st.hecha)?.titulo ?? null;
+      return { ...a, pasos, consejo, primerPaso };
     });
+}
+
+// Las hojas de calendario de una tarea atascada (paso 9.5, «las hojas de calendario arrancadas»):
+//  - viejas: los días a los que estaba apuntada y que pasaste a otro (los eventos «movida» hacia más tarde
+//    del historial), de la más antigua a la más nueva; como mucho las 5 últimas (ocultas = las que no caben)
+//  - actual: el día para el que está ahora (o null si no tiene día)
+// Si la moviste hace más de 2 meses, esas fechas ya no están en el historial que se pide: salen las que haya.
+export const MAX_HOJAS = 5;
+
+export function hojasAtasco(atascada: Atascada, eventos: EventoRitmo[]) {
+  const fechas = [...eventos]
+    .filter((e) => e.tipo === 'movida' && e.tarea_id === atascada.id && e.fecha_anterior && e.fecha_nueva && e.fecha_nueva > e.fecha_anterior)
+    .sort((a, b) => a.en - b.en)
+    .map((e) => e.fecha_anterior as string)
+    .filter((f, i, lista) => lista.indexOf(f) === i);
+  const viejas = fechas.slice(-MAX_HOJAS);
+  return { viejas, ocultas: fechas.length - viejas.length, actual: atascada.fecha_limite };
 }
 
 // ---------- Progreso por categoría y por prioridad ----------
