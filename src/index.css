@@ -7173,3 +7173,209 @@ button.menu-opcion:active .menu-flecha {
     transition: none;
   }
 }
+
+/* ---------- Fase 9, paso 9.5: «Lo que se te atasca» (las hojas de calendario arrancadas) ---------- */
+.ritmo-bloque {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 20px 22px;
+  border: 1px solid #e3e8ef;
+  border-radius: 16px;
+  background: #fff;
+}
+.ritmo-atasca-frase {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -0.4px;
+}
+.ritmo-atasca-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ritmo-atasca-tarea {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px dashed #dfe5ee;
+}
+.ritmo-atasca-titulo {
+  font-size: 15.5px;
+  font-weight: 800;
+}
+.ritmo-hojas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 4px;
+}
+/* Cada hoja de calendario: el día de la semana arriba (franja) y el número debajo */
+.ritmo-hoja {
+  position: relative;
+  width: 44px;
+  overflow: hidden;
+  border: 1px solid #e3e8ef;
+  border-radius: 7px;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(15, 31, 46, 0.06);
+  text-align: center;
+}
+.ritmo-hoja small {
+  display: block;
+  padding: 2px 0;
+  background: #5f6b7b;
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+.ritmo-hoja b {
+  display: block;
+  padding: 3px 0 4px;
+  color: #586474;
+  font-size: 17px;
+  font-weight: 800;
+}
+/* Las viejas, tachadas con el rotulador rojo */
+.ritmo-hoja.vieja::after {
+  content: '';
+  position: absolute;
+  top: 58%;
+  right: 4px;
+  left: 4px;
+  height: 3px;
+  border-radius: 3px;
+  background: #d6502e;
+  transform: rotate(-12deg);
+}
+/* La de ahora: derecha, más grande y del color del tema */
+.ritmo-hoja.actual {
+  width: 54px;
+  border: 2px solid var(--tachit-acento-fuerte);
+}
+.ritmo-hoja.actual small {
+  background: var(--tachit-acento-fuerte);
+}
+.ritmo-hoja.actual b {
+  color: var(--tachit-acento-fuerte);
+  font-size: 21px;
+}
+.ritmo-hojas-mas {
+  align-self: center;
+  margin-right: 2px;
+  color: #5b6b7c;
+  font-size: 12px;
+  font-weight: 800;
+}
+.ritmo-veces {
+  align-self: center;
+  margin-left: 8px;
+  color: #a64818;
+  font-size: 12px;
+  font-weight: 800;
+}
+.ritmo-atasca-consejo {
+  color: #4b5a6c;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.ritmo-atasca-consejo b {
+  color: #0f1f2e;
+  font-weight: 800;
+}
+.ritmo-atasca-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ritmo-atasca-boton {
+  height: 34px;
+  padding: 0 13px;
+  border: 1px solid #d5dce6;
+  border-radius: 999px;
+  background: #fff;
+  color: #33475b;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ritmo-atasca-boton:hover:not(:disabled) {
+  border-color: var(--tachit-acento);
+}
+.ritmo-atasca-boton.recomendado {
+  border-color: var(--tachit-acento-fuerte);
+  background: var(--tachit-acento-fuerte);
+  color: #fff;
+}
+.ritmo-atasca-boton.suelta {
+  border-style: dashed;
+  color: #5f6c7c;
+}
+.ritmo-atasca-boton:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+.ritmo-atasca-boton:focus-visible {
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 2px;
+}
+.ritmo-atasca-vacio {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ritmo-atasca-vacio span {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e7f5ee;
+  color: #17804f;
+  font-weight: 800;
+}
+.ritmo-atasca-vacio p {
+  color: #33475b;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.ritmo-atasca-vacio p b {
+  display: block;
+  color: #0f1f2e;
+  font-size: 15px;
+}
+.ritmo-q-texto li b {
+  display: inline;
+  margin: 0;
+  color: inherit;
+  font-size: inherit;
+}
+@media (max-width: 1023px) {
+  .ritmo-hueco {
+    display: none;
+  }
+  .ritmo-bloque {
+    padding: 18px;
+    border-radius: 20px;
+  }
+  .ritmo-atasca-frase {
+    font-size: 18px;
+  }
+  .ritmo-hoja {
+    width: 40px;
+  }
+  .ritmo-hoja.actual {
+    width: 48px;
+  }
+  .ritmo-atasca-boton {
+    height: 38px;
+  }
+}
