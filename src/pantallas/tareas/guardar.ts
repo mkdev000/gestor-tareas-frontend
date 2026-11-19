@@ -158,6 +158,13 @@ export function apuntarMinutosReales(id: number, minutos: number) {
   return pedir(`/api/tareas/${id}/minutos-reales`, 'PATCH', { minutos_reales: minutos });
 }
 
+// ---------- «Hoy, sí» de «Lo que se te atasca» (Fase 9, paso 9.5) ----------
+// La tarea pasa a hoy y sin hora (sale en «Notas sueltas» de Mi día) y deja de contar como atascada.
+// "hoy" va en tu hora (el servidor está en otra zona horaria).
+export function desatascarTarea(id: number) {
+  return pedir(`/api/tareas/${id}/desatascar`, 'PATCH', { hoy: hoyISO() });
+}
+
 // ---------- Cambiar el día y la hora de varias tareas a la vez (Fase 7, paso 7.2) ----------
 // Lo usan "Reorganizar mi día" y "Planificar" (y, en el paso 7.5, "Separar" y arrastrar en la línea de tiempo).
 // Una sola petición: el servidor las mueve todas o ninguna.
