@@ -2,15 +2,15 @@
 // Mi ritmo (Fase 9). Lo que hay ahora:
 //  - arriba, «Así va tu semana» con el pulso de la semana (CabeceraRitmo, paso 9.4)
 //  - si aún tienes menos de 5 tareas tachadas: la nota «Mi ritmo se escribe tachando» (RitmoVacio, paso 9.4)
-//  - si ya tienes más: «Tu hora de tachar» (HoraDeTachar) y «Lo que se te atasca» (LoQueSeAtasca), paso 9.5;
-//    los demás bloques (cuánto te equivocas calculando, el cierre de semana...) llegan en los siguientes pasos.
+//  - si ya tienes más: «Tu hora de tachar» (HoraDeTachar), «Lo que se te atasca» (LoQueSeAtasca)
+//    y «Lo que tardas de verdad» (LoQueTardas), paso 9.5; los demás bloques llegan en los siguientes pasos.
 // Los datos: tu historial (useRitmo → GET /api/ritmo) y tus tareas (useTareas). Los cálculos, en ritmo.ts.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTareas } from './useTareas';
 import { useRitmo } from './ritmo/useRitmo';
-import { useAjusteEnergia } from './ritmo/useAjusteEnergia';
-import { MINIMO_PARA_MAPA, consejosAtasco, mapaEnergia, pulsoSemana, rachaAmable, tachadasDe } from './ritmo/ritmo';
+import { useAjustesRitmo } from './ritmo/useAjustesRitmo';
+import { MINIMO_PARA_MAPA, consejosAtasco, mapaEnergia, pulsoSemana, rachaAmable, tachadasDe, tiemposDeVerdad } from './ritmo/ritmo';
 import { borrarTarea, crearSubtarea, desatascarTarea } from './tareas/guardar';
 import { hoyISO } from '../utils/dias';
 import { useEsWeb } from '../utils/useEsWeb';
@@ -19,6 +19,7 @@ import CabeceraRitmo from './ritmo/CabeceraRitmo';
 import RitmoVacio from './ritmo/RitmoVacio';
 import HoraDeTachar from './ritmo/HoraDeTachar';
 import LoQueSeAtasca, { type AccionesAtasco, type AtascadaConConsejo } from './ritmo/LoQueSeAtasca';
+import LoQueTardas from './ritmo/LoQueTardas';
 
 // «Partirla en pasos»: 3 pasos pequeños; el primero, de solo 15 minutos (como en el prototipo)
 const PASOS = ['Empezar: solo 15 minutos', 'Avanzar lo principal', 'Repasar y cerrar'];
@@ -29,7 +30,7 @@ function MiRitmo() {
   const navigate = useNavigate();
   const { tareas, error: errorTareas, alCambiar } = useTareas();
   const { historial, error } = useRitmo();
-  const energia = useAjusteEnergia();
+  const { energia, tiempos: usarTiempos } = useAjustesRitmo();
   const [aviso, setAviso] = useState<DatosAviso | null>(null);
   const cerrarAviso = useCallback(() => setAviso(null), []);
   const [ocupadas, setOcupadas] = useState<number[]>([]);
@@ -51,6 +52,7 @@ function MiRitmo() {
   );
 
   const conTiempo = tareas.filter((t) => t.estado === 'completada' && t.minutos_reales).length;
+  const tiempos = useMemo(() => tiemposDeVerdad(tareas), [tareas]);
   const fallo = error || errorTareas;
 
   // El interruptor «Lo importante, a tu mejor hora»: se guarda en tu cuenta y avisa de lo que pasará al reorganizar
@@ -59,6 +61,14 @@ function MiRitmo() {
     if (!guardado) setAviso({ titulo: 'No se pudo guardar', texto: 'Revisa la conexión e inténtalo de nuevo.' });
     else if (nuevo) setAviso({ titulo: 'Lo importante, a tu mejor hora', texto: 'Al reorganizar tu día, tus tareas importantes irán a tu mejor rato.' });
     else setAviso({ titulo: 'Reorganizar como siempre', texto: 'Al reorganizar tu día, Tachit usará el primer hueco libre.' });
+  };
+
+  // El interruptor «Usar mis tiempos de verdad»: igual, se guarda en tu cuenta y avisa de lo que pasará al crear tareas
+  const cambiarTiempos = async (nuevo: boolean) => {
+    const guardado = await usarTiempos.cambiar(nuevo);
+    if (!guardado) setAviso({ titulo: 'No se pudo guardar', texto: 'Revisa la conexión e inténtalo de nuevo.' });
+    else if (nuevo) setAviso({ titulo: 'Usar mis tiempos de verdad', texto: 'Las tareas nuevas sin duración se crearán con lo que sueles tardar.' });
+    else setAviso({ titulo: 'Duración de siempre', texto: 'Las tareas nuevas sin duración vuelven a 30 min.' });
   };
 
   // ---------- «Lo que se te atasca»: lo que hace cada botón ----------
@@ -151,14 +161,14 @@ function MiRitmo() {
           ) : (
             <>
               <div className="ritmo-rejilla">
-                <HoraDeTachar
-                  mapa={datos.mapa}
-                  reorganizar={{ activo: energia.activo, disponible: energia.listo && !energia.guardando, alCambiar: cambiarEnergia }}
-                />
+                <HoraDeTachar mapa={datos.mapa} reorganizar={{ activo: energia.activo, disponible: energia.disponible, alCambiar: cambiarEnergia }} />
                 <div className="ritmo-hueco" aria-hidden="true" />
                 <LoQueSeAtasca atascadas={atascadas} eventos={historial.eventos} hoy={hoy} ocupadas={ocupadas} acciones={acciones} />
+                <LoQueTardas tiempos={tiempos} usar={{ activo: usarTiempos.activo, disponible: usarTiempos.disponible, alCambiar: cambiarTiempos }} />
               </div>
-              <p className="text-sm text-[#5b6b7c]">Los demás bloques (cuánto te equivocas calculando y el cierre de semana) llegan en los siguientes pasos.</p>
+              <p className="text-sm text-[#5b6b7c]">
+                Los demás bloques (tus tareas una a una, el progreso por categoría y el cierre de semana) llegan en los siguientes pasos.
+              </p>
             </>
           )}
         </>
