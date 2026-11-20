@@ -11,6 +11,7 @@
 // Aquí se pasa a TU hora con new Date(ms), que usa la zona horaria de tu dispositivo.
 import type { Tarea } from '../useTareas';
 import { aTextoISO, deTextoISO, esFechaValida, semanaDe, sumarDias } from '../../utils/dias';
+import { textoDuracion } from '../tareas/frase';
 
 // ---------- Lo que llega del servidor ----------
 
@@ -448,39 +449,83 @@ export function progresoPor(tareas: Tarea[], desde: string, hasta: string, por: 
   return lista.sort((a, b) => Number(a.clave === '-') - Number(b.clave === '-') || b.total - a.total || a.nombre.localeCompare(b.nombre));
 }
 
-// ---------- Lo que planeas contra lo que tardas (para "Corregir mis tiempos") ----------
+// ---------- Lo que tardas de verdad (bloque «¿Cuánto te equivocas calculando?») ----------
+// Por categoría: lo que sueles apuntar (duración prevista) contra lo que tardas de verdad (lo que dices al tachar).
+// Solo cuentan las tareas tachadas que tienen las dos cosas. Con menos de 3 por categoría, la cuenta no dice nada.
 
-export const MINIMO_PARA_MARGEN = 3; // con menos tareas por categoría, el porcentaje no dice nada
+export const MINIMO_PARA_MARGEN = 3;
 
-export interface Margen {
-  clave: string;
+export type EstadoTiempo = 'corto' | 'sobra' | 'clavado';
+
+export interface TiempoCategoria {
+  clave: string; // id de la categoría; '-' = sin categoría
   nombre: string;
   color: string | null;
-  plan: number; // minutos previstos (sumados)
-  real: number; // minutos de verdad (sumados)
-  porcentaje: number; // +25 = tardas un 25 % más de lo que planeas; -10 = te sobra tiempo
-  n: number;
+  n: number; // cuántas tareas cuentan
+  plan: number; // lo que sueles apuntar (media, redondeada a 5 min)
+  real: number; // lo que tardas de verdad (media, redondeada a 5 min)
+  estado: EstadoTiempo;
 }
 
-// Solo cuentan las tareas tachadas que tienen las dos cosas: duración prevista y minutos reales.
-export function margenTiempos(tareas: Tarea[]): Margen[] {
-  const grupos = new Map<string, Margen>();
+export interface TiemposDeVerdad {
+  listas: TiempoCategoria[]; // las que ya tienen 3 tareas o más: primero donde más te quedas corto
+  faltan: { clave: string; nombre: string; color: string | null; n: number }[]; // las que tienen 1 o 2
+}
+
+// Redondeo a 5 minutos (como los tiempos que se eligen al crear), nunca menos de 5
+const aCinco = (minutos: number) => Math.max(5, Math.round(minutos / 5) * 5);
+
+export function tiemposDeVerdad(tareas: Tarea[]): TiemposDeVerdad {
+  const grupos = new Map<string, { clave: string; nombre: string; color: string | null; plan: number; real: number; n: number }>();
   for (const t of tareas) {
     if (t.estado !== 'completada' || !t.duracion_min || !t.minutos_reales) continue;
     const cats = t.categorias?.length ? t.categorias : [{ id: 0, nombre: 'Sin categoría', color: '' }];
     for (const c of cats) {
       const clave = c.id ? String(c.id) : '-';
-      const g = grupos.get(clave) ?? { clave, nombre: c.nombre, color: c.color || null, plan: 0, real: 0, porcentaje: 0, n: 0 };
+      const g = grupos.get(clave) ?? { clave, nombre: c.nombre, color: c.color || null, plan: 0, real: 0, n: 0 };
       g.plan += t.duracion_min;
       g.real += t.minutos_reales;
       g.n++;
       grupos.set(clave, g);
     }
   }
-  return [...grupos.values()]
+  const todos = [...grupos.values()];
+  const listas = todos
     .filter((g) => g.n >= MINIMO_PARA_MARGEN)
-    .map((g) => ({ ...g, porcentaje: Math.round(((g.real - g.plan) / g.plan) * 100) }))
-    .sort((a, b) => b.porcentaje - a.porcentaje);
+    .map((g): TiempoCategoria => {
+      const plan = aCinco(g.plan / g.n);
+      const real = aCinco(g.real / g.n);
+      return { clave: g.clave, nombre: g.nombre, color: g.color, n: g.n, plan, real, estado: real > plan ? 'corto' : real < plan ? 'sobra' : 'clavado' };
+    })
+    .sort((a, b) => b.real - b.plan - (a.real - a.plan) || b.n - a.n || a.nombre.localeCompare(b.nombre));
+  const faltan = todos
+    .filter((g) => g.n < MINIMO_PARA_MARGEN)
+    .map(({ clave, nombre, color, n }) => ({ clave, nombre, color, n }))
+    .sort((a, b) => b.n - a.n || a.nombre.localeCompare(b.nombre));
+  return { listas, faltan };
+}
+
+// El nombre tal y como se escribe en las frases: «#Trabajo» (o «tus tareas sin categoría»)
+export const nombreCategoria = (c: { clave: string; nombre: string }) => (c.clave === '-' ? 'tus tareas sin categoría' : `#${c.nombre}`);
+
+// La frase de arriba: «Calculas bien, salvo con [#Trabajo]: ahí tus 30 min son 40 min.»
+export function fraseTiempos({ listas }: TiemposDeVerdad) {
+  const cortas = listas.filter((c) => c.estado === 'corto');
+  const peor = cortas[0];
+  if (!listas.length) return { antes: 'Aún no hay ', destacado: 'tiempos suficientes', despues: ' para sacar la cuenta.' };
+  if (!peor) return { antes: '', destacado: 'Calculas bien', despues: ': ninguna categoría se te va de tiempo.' };
+  const cuenta = `tus ${textoDuracion(peor.plan)} son ${textoDuracion(peor.real)}.`;
+  return cortas.length === 1
+    ? { antes: 'Calculas bien, salvo con ', destacado: nombreCategoria(peor), despues: `: ahí ${cuenta}` }
+    : { antes: 'Donde más te quedas corto es ', destacado: nombreCategoria(peor), despues: `: ${cuenta}` };
+}
+
+// «Usar mis tiempos de verdad»: lo que sueles tardar en las categorías de una tarea nueva (la mayor), o null si no se sabe.
+// Lo usa el paso 9.8 al crear tareas sin duración.
+export function duracionHabitual({ listas }: TiemposDeVerdad, categoriaIds: number[]) {
+  const claves = categoriaIds.length ? categoriaIds.map(String) : ['-'];
+  const reales = listas.filter((c) => claves.includes(c.clave)).map((c) => c.real);
+  return reales.length ? Math.max(...reales) : null;
 }
 
 // ---------- El cierre de semana ----------

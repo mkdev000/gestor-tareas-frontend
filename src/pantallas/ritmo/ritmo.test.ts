@@ -16,7 +16,9 @@ import {
   leerHistorial,
   mapaEnergia,
   mejorRato,
-  margenTiempos,
+  duracionHabitual,
+  fraseTiempos,
+  tiemposDeVerdad,
   nivelCasilla,
   ondaEnergia,
   pendientesParaElLunes,
@@ -313,20 +315,50 @@ describe('progresoPor', () => {
   });
 });
 
-describe('margenTiempos', () => {
-  it('compara lo previsto con lo real por categoría, con 3 tareas como mínimo', () => {
-    const estudio = { id: 3, nombre: 'Estudio', color: '#6d4fc9' };
-    const hecha = (plan: number, real: number, cats = [estudio]) => tarea({ estado: 'completada', duracion_min: plan, minutos_reales: real, categorias: cats });
-    const r = margenTiempos([
-      hecha(60, 80),
+describe('lo que tardas de verdad', () => {
+  const estudio = { id: 3, nombre: 'Estudio', color: '#6d4fc9' };
+  const casa = { id: 4, nombre: 'Casa', color: '#9a5b00' };
+  const salud = { id: 5, nombre: 'Salud', color: '#1b7a50' };
+  const hecha = (plan: number, real: number, cats = [estudio]) => tarea({ estado: 'completada', duracion_min: plan, minutos_reales: real, categorias: cats });
+
+  it('compara lo que apuntas con lo que tardas por categoría (media redondeada a 5 min), con 3 tareas como mínimo', () => {
+    const r = tiemposDeVerdad([
       hecha(30, 40),
-      hecha(30, 30),
-      hecha(30, 20, []),
-      hecha(30, 30, []),
+      hecha(30, 42),
+      hecha(30, 38),
+      hecha(30, 25, [casa]),
+      hecha(30, 28, [casa]),
+      hecha(30, 26, [casa]),
+      hecha(45, 45, []),
+      hecha(45, 44, []),
+      hecha(45, 46, []),
+      hecha(20, 30, [salud]),
       tarea({ estado: 'pendiente', duracion_min: 30, minutos_reales: 90, categorias: [estudio] }), // sin tachar: no cuenta
-      tarea({ estado: 'completada', duracion_min: 30, minutos_reales: null, categorias: [estudio] }), // sin tiempo real
+      tarea({ estado: 'completada', duracion_min: 30, minutos_reales: null, categorias: [salud] }), // sin tiempo real: no cuenta
     ]);
-    expect(r).toEqual([{ clave: '3', nombre: 'Estudio', color: '#6d4fc9', plan: 120, real: 150, porcentaje: 25, n: 3 }]);
+    expect(r.listas.map((c) => [c.clave, c.plan, c.real, c.estado, c.n])).toEqual([
+      ['3', 30, 40, 'corto', 3],
+      ['-', 45, 45, 'clavado', 3],
+      ['4', 30, 25, 'sobra', 3],
+    ]);
+    expect(r.faltan).toEqual([{ clave: '5', nombre: 'Salud', color: '#1b7a50', n: 1 }]);
+  });
+
+  it('la frase cambia según dónde te quedas corto', () => {
+    const una = tiemposDeVerdad([hecha(30, 40), hecha(30, 40), hecha(30, 40)]);
+    expect(fraseTiempos(una)).toEqual({ antes: 'Calculas bien, salvo con ', destacado: '#Estudio', despues: ': ahí tus 30 min son 40 min.' });
+    const dos = tiemposDeVerdad([hecha(30, 40), hecha(30, 40), hecha(30, 40), hecha(60, 90, [casa]), hecha(60, 90, [casa]), hecha(60, 90, [casa])]);
+    expect(fraseTiempos(dos)).toEqual({ antes: 'Donde más te quedas corto es ', destacado: '#Casa', despues: ': tus 1 h son 1 h 30 min.' });
+    expect(fraseTiempos(tiemposDeVerdad([hecha(30, 30), hecha(30, 25), hecha(30, 30)])).destacado).toBe('Calculas bien');
+    expect(fraseTiempos(tiemposDeVerdad([hecha(30, 30)])).destacado).toBe('tiempos suficientes');
+  });
+
+  it('lo que sueles tardar en las categorías de una tarea nueva', () => {
+    const r = tiemposDeVerdad([hecha(30, 40), hecha(30, 40), hecha(30, 40), hecha(30, 25, [casa]), hecha(30, 25, [casa]), hecha(30, 25, [casa])]);
+    expect(duracionHabitual(r, [4])).toBe(25);
+    expect(duracionHabitual(r, [3, 4])).toBe(40);
+    expect(duracionHabitual(r, [5])).toBeNull();
+    expect(duracionHabitual(r, [])).toBeNull();
   });
 });
 
