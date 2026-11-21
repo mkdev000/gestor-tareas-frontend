@@ -3,7 +3,8 @@
 //  - arriba, «Así va tu semana» con el pulso de la semana (CabeceraRitmo, paso 9.4)
 //  - si aún tienes menos de 5 tareas tachadas: la nota «Mi ritmo se escribe tachando» (RitmoVacio, paso 9.4)
 //  - si ya tienes más (paso 9.5): la fila de «las tres preguntas» (TresPreguntas), «Tu hora de tachar» (HoraDeTachar),
-//    «Lo que se te atasca» (LoQueSeAtasca) y «Lo que tardas de verdad» (LoQueTardas); los demás bloques llegan después.
+//    «Lo que se te atasca» (LoQueSeAtasca), «Lo que tardas de verdad» (LoQueTardas) y, abajo, «A qué le das tu tiempo»
+//    y «¿Lo importante, primero?» (TiempoEImportante); el cierre de semana llega en el paso 9.6.
 // Los datos: tu historial (useRitmo → GET /api/ritmo) y tus tareas (useTareas). Los cálculos, en ritmo.ts.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -15,16 +16,22 @@ import {
   cabeHoy,
   cadenaRacha,
   consejosAtasco,
+  huecoVale,
+  importantePrimero,
   mapaEnergia,
   pulsoSemana,
   rachaAmable,
+  reciboTiempo,
+  tienePlanDe,
   recordRacha,
   semanaDeTareas,
   tachadasDe,
   tiemposDeVerdad,
+  VALE_MIN,
 } from './ritmo/ritmo';
 import { aCambiosHorario, reorganizar } from './midia/dia';
-import { borrarTarea, cambiarHorario, crearSubtarea, desatascarTarea } from './tareas/guardar';
+import { borrarTarea, cambiarHorario, crearHuecoCategoria, crearSubtarea, desatascarTarea } from './tareas/guardar';
+import { textoHora } from './tareas/pulso';
 import { hoyISO } from '../utils/dias';
 import { useEsWeb } from '../utils/useEsWeb';
 import AvisoFlotante, { type DatosAviso } from '../componentes/base/AvisoFlotante';
@@ -34,6 +41,7 @@ import HoraDeTachar from './ritmo/HoraDeTachar';
 import LoQueSeAtasca, { type AccionesAtasco, type AtascadaConConsejo } from './ritmo/LoQueSeAtasca';
 import LoQueTardas from './ritmo/LoQueTardas';
 import TresPreguntas from './ritmo/TresPreguntas';
+import TiempoEImportante, { type EstadoVale } from './ritmo/TiempoEImportante';
 
 // «Partirla en pasos»: 3 pasos pequeños; el primero, de solo 15 minutos (como en el prototipo)
 const PASOS = ['Empezar: solo 15 minutos', 'Avanzar lo principal', 'Repasar y cerrar'];
@@ -57,6 +65,8 @@ function MiRitmo() {
   const papelera = useRef<{ tarea: AtascadaConConsejo; reloj: ReturnType<typeof setTimeout> } | null>(null);
   const [ahora, setAhora] = useState(minutosAhora);
   const [reorganizando, setReorganizando] = useState(false);
+  const [valeGuardado, setValeGuardado] = useState<{ clave: string; categoria: string; dia: 'hoy' | 'mañana'; inicio: number } | null>(null);
+  const [guardandoVale, setGuardandoVale] = useState(false);
   const hoy = hoyISO();
 
   // La hora avanza cada minuto: así «¿Te cabe lo de hoy?» se recalcula solo
@@ -89,6 +99,45 @@ function MiRitmo() {
   const tiempos = useMemo(() => tiemposDeVerdad(tareas), [tareas]);
   const semana = useMemo(() => semanaDeTareas(tareas, hoy, ahora), [tareas, hoy, ahora]);
   const cabe = useMemo(() => cabeHoy(tareas, hoy, ahora), [tareas, hoy, ahora]);
+  const recibo = useMemo(() => reciboTiempo(tareas, hoy), [tareas, hoy]);
+  const importante = useMemo(() => importantePrimero(tareas, hoy), [tareas, hoy]);
+
+  // «El vale»: guarda 20 min libres (hoy o mañana) para la categoría que se te queda atrás.
+  // Una vez guardado, se queda en «Guardado» mientras sigas en Mi ritmo.
+  const olvidada = recibo.olvidada;
+  // (si ya tienes algo de esa categoría pendiente para hoy o mañana, no se ofrece)
+  const hueco = useMemo(
+    () => (olvidada && olvidada.id !== null && !tienePlanDe(tareas, olvidada.id, hoy) ? huecoVale(tareas, hoy, ahora) : null),
+    [olvidada, tareas, hoy, ahora],
+  );
+  const alGuardarVale = async () => {
+    if (guardandoVale || !olvidada || olvidada.id === null || !hueco) return;
+    const dia = hueco.dia === hoy ? 'hoy' : 'mañana';
+    setGuardandoVale(true);
+    try {
+      await crearHuecoCategoria({ id: olvidada.id, nombre: olvidada.nombre }, hueco.dia, hueco.inicio, VALE_MIN);
+      setValeGuardado({ clave: olvidada.clave, categoria: olvidada.nombre, dia, inicio: hueco.inicio });
+      setAviso({ titulo: 'Hueco guardado', texto: `«Rato para ${olvidada.nombre}», ${dia} a las ${textoHora(hueco.inicio)}. Cámbiale el nombre si quieres.` });
+    } catch (e) {
+      setAviso({ titulo: 'No se pudo guardar', texto: e instanceof Error ? e.message : 'Inténtalo otra vez en un momento.' });
+    } finally {
+      setGuardandoVale(false);
+      alCambiar();
+    }
+  };
+  const vale: EstadoVale =
+    valeGuardado && recibo.lineas.some((l) => l.clave === valeGuardado.clave)
+      ? { tipo: 'guardado', ...valeGuardado }
+      : olvidada && olvidada.id !== null && hueco
+        ? {
+            tipo: 'libre',
+            categoria: olvidada.nombre,
+            dia: hueco.dia === hoy ? 'hoy' : 'mañana',
+            inicio: hueco.inicio,
+            ocupado: guardandoVale,
+            alPulsar: () => void alGuardarVale(),
+          }
+        : { tipo: 'ninguno' };
   const fallo = error || errorTareas;
 
   // El interruptor «Lo importante, a tu mejor hora»: se guarda en tu cuenta y avisa de lo que pasará al reorganizar
@@ -240,7 +289,8 @@ function MiRitmo() {
                 <LoQueSeAtasca atascadas={atascadas} eventos={historial.eventos} hoy={hoy} ocupadas={ocupadas} acciones={acciones} />
                 <LoQueTardas tiempos={tiempos} usar={{ activo: usarTiempos.activo, disponible: usarTiempos.disponible, alCambiar: cambiarTiempos }} />
               </div>
-              <p className="text-sm text-[#5b6b7c]">Los demás bloques (el progreso por categoría y el cierre de semana) llegan en los siguientes pasos.</p>
+              <TiempoEImportante recibo={recibo} importante={importante} vale={vale} />
+              <p className="text-sm text-[#5b6b7c]">El cierre de semana llega en el siguiente paso.</p>
             </>
           )}
         </>

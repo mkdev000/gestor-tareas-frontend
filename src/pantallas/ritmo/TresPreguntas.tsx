@@ -6,7 +6,7 @@
 //  2. «¿Te cabe lo de hoy?»: «Sí, te sobran…» / «No: te faltan…» con su barra; si no cabe, «Reorganizar mi día»
 //  3. «Tu récord»: cuánto te falta para superar tu mejor racha, la cadena de 14 días y el descanso de la semana
 // Los cálculos están en ritmo.ts; aquí solo se dibuja.
-import { useId, type ReactNode } from 'react';
+import TarjetaRitmo from './TarjetaRitmo';
 import { textoDia, textoDuracion } from '../tareas/frase';
 import { FIN_DIA, INICIO_DIA, textoHora } from '../tareas/pulso';
 import { fraseCabe, fraseRecord, fraseSemana, type CabeHoy, type PuntoRacha, type RachaAmable, type RecordRacha, type SemanaTareas } from './ritmo';
@@ -14,54 +14,6 @@ import { fraseCabe, fraseRecord, fraseSemana, type CabeHoy, type PuntoRacha, typ
 const LETRAS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 const ESTADO_RAYA = { hecha: 'tachada', atrasada: 'se te ha pasado', hoy: 'por hacer', pendiente: 'por hacer' } as const;
 const MAX_PUNTOS_FALTAN = 5;
-
-function Ayuda({ lineas }: { lineas: { icono: string; texto: string }[] }) {
-  const id = useId();
-  return (
-    <>
-      <button type="button" className="ritmo-q" aria-label="¿Cómo funciona?" aria-describedby={`${id}-ayuda`}>
-        ?
-      </button>
-      <div id={`${id}-ayuda`} role="tooltip" className="ritmo-q-texto">
-        <b>¿Cómo funciona?</b>
-        <ul>
-          {lineas.map((a) => (
-            <li key={a.icono}>
-              <i aria-hidden="true">{a.icono}</i>
-              <span>{a.texto}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </>
-  );
-}
-
-function Tarjeta({ titulo, icono, ayuda, children }: { titulo: string; icono: ReactNode; ayuda: { icono: string; texto: string }[]; children: ReactNode }) {
-  const id = useId();
-  return (
-    <section aria-labelledby={id} className="ritmo-pregunta">
-      <p id={id} className="ritmo-hora-ojo">
-        <svg
-          width="15"
-          height="15"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          {icono}
-        </svg>
-        {titulo}
-      </p>
-      <Ayuda lineas={ayuda} />
-      {children}
-    </section>
-  );
-}
 
 const Frase = ({ f }: { f: { antes: string; destacado: string; despues: string } }) => (
   <>
@@ -91,7 +43,8 @@ function TresPreguntas({ semana, cabe, ahora, record, racha, cadena, hoy, irATar
 
   return (
     <div className="ritmo-fila">
-      <Tarjeta
+      <TarjetaRitmo
+        clase="ritmo-pregunta"
         titulo="TU SEMANA, TAREA A TAREA"
         icono={
           <>
@@ -145,9 +98,10 @@ function TresPreguntas({ semana, cabe, ahora, record, racha, cadena, hoy, irATar
             Atrasadas · {semana.atrasadas}
           </span>
         </div>
-      </Tarjeta>
+      </TarjetaRitmo>
 
-      <Tarjeta
+      <TarjetaRitmo
+        clase="ritmo-pregunta"
         titulo="¿TE CABE LO DE HOY?"
         icono={
           <>
@@ -192,9 +146,10 @@ function TresPreguntas({ semana, cabe, ahora, record, racha, cadena, hoy, irATar
             {reorganizar.ocupado ? 'Reorganizando…' : 'Reorganizar mi día'}
           </button>
         )}
-      </Tarjeta>
+      </TarjetaRitmo>
 
-      <Tarjeta
+      <TarjetaRitmo
+        clase="ritmo-pregunta"
         titulo="TU RÉCORD"
         icono={
           <>
@@ -239,7 +194,7 @@ function TresPreguntas({ semana, cabe, ahora, record, racha, cadena, hoy, irATar
               ? 'Esta semana ya has usado tu día de descanso.'
               : 'Esta semana aún te queda 1 día de descanso sin perder la racha.'}
         </p>
-      </Tarjeta>
+      </TarjetaRitmo>
     </div>
   );
 }

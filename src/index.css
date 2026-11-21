@@ -7746,3 +7746,237 @@ button.menu-opcion:active .menu-flecha {
     background: repeating-linear-gradient(#fff 0 22px, #e9eef6 22px 23px);
   }
 }
+
+/* ---------- Fase 9, paso 9.5: «A qué le das tu tiempo» (el recibo y el vale) y «¿Lo importante, primero?» ---------- */
+.ritmo-par {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+/* El recibo: como un tique, con letra de máquina y el borde de abajo en zigzag */
+.ritmo-recibo {
+  position: relative;
+  padding: 14px 16px 16px;
+  border: 1px solid #efe6cf;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  background: #fffdf6;
+  color: #3d3626;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+}
+.ritmo-recibo::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  bottom: -8px;
+  left: -1px;
+  height: 8px;
+  background:
+    linear-gradient(-45deg, transparent 6px, #fffdf6 0) 0 0 / 12px 8px repeat-x,
+    linear-gradient(45deg, transparent 6px, #fffdf6 0) 0 0 / 12px 8px repeat-x;
+}
+.ritmo-recibo-titulo {
+  margin-bottom: 8px;
+  color: #6e6142;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-align: center;
+}
+.ritmo-recibo-linea {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 0;
+}
+.ritmo-recibo-linea .nombre {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ritmo-recibo-linea .nombre i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+}
+.ritmo-recibo-linea .puntos {
+  flex: 1;
+  min-width: 12px;
+  border-bottom: 2px dotted #d9cfb3;
+  transform: translateY(-3px);
+}
+.ritmo-recibo-linea .valor {
+  flex-shrink: 0;
+}
+.ritmo-recibo-linea.atras {
+  color: #b42318;
+  font-weight: 700;
+}
+.ritmo-recibo-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1.5px dashed #d9cfb3;
+  font-weight: 700;
+}
+/* El vale: un talón pequeño con «20′» y, tras la línea de recorte, cuándo y para qué */
+.ritmo-vale {
+  position: relative;
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  align-self: flex-start;
+  max-width: 100%;
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ritmo-vale:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+.ritmo-vale-talon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px;
+  border: 1px solid #ddd3f8;
+  border-right: 0;
+  border-radius: 9px 0 0 9px;
+  background: #f4f0fe;
+  color: #5a3fb8;
+}
+.ritmo-vale-talon b {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1;
+}
+.ritmo-vale-talon small {
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+}
+.ritmo-vale-cuerpo {
+  position: relative;
+  padding: 7px 12px 7px 14px;
+  border: 1px solid #ddd3f8;
+  border-left: 1.5px dashed #b9a9ef;
+  border-radius: 0 9px 9px 0;
+  background: #fff;
+}
+.ritmo-vale-tijeras {
+  position: absolute;
+  top: -9px;
+  left: -8px;
+  background: #fff;
+  color: #7d68d6;
+  font-size: 11px;
+  line-height: 1;
+  transform: rotate(-90deg);
+}
+.ritmo-vale-cuerpo b {
+  display: block;
+  color: #1d1450;
+  font-size: 13px;
+  font-weight: 800;
+}
+.ritmo-vale-cuerpo small {
+  display: block;
+  color: #5b6b7c;
+  font-size: 11.5px;
+}
+.ritmo-vale:hover:not(:disabled) .ritmo-vale-talon,
+.ritmo-vale:hover:not(:disabled) .ritmo-vale-cuerpo {
+  border-color: #b9a9ef;
+}
+.ritmo-vale:focus-visible {
+  border-radius: 9px;
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 3px;
+}
+.ritmo-vale.hecho {
+  cursor: default;
+}
+.ritmo-vale.hecho .ritmo-vale-talon {
+  border-color: #cfe9da;
+  background: #eef8f2;
+  color: #17804f;
+}
+.ritmo-vale.hecho .ritmo-vale-cuerpo {
+  border-color: #cfe9da;
+  border-left-color: #9fd2b6;
+}
+.ritmo-vale.hecho .ritmo-vale-cuerpo b {
+  color: #0e3d26;
+}
+/* ¿Lo importante, primero?: una pila de hojitas por prioridad; las tachadas, tachadas */
+.ritmo-pilas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ritmo-pila {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 48px;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+}
+.ritmo-pila b {
+  font-weight: 800;
+}
+.ritmo-pila-hojas {
+  display: grid;
+  grid-template-columns: repeat(16, minmax(0, 1fr));
+  gap: 3px;
+}
+.ritmo-pila-hojas span {
+  position: relative;
+  height: 18px;
+  border: 1.5px solid #c8d1dd;
+  border-radius: 3px;
+  background: #fff;
+}
+.ritmo-pila-hojas span.hecha {
+  border-color: #a9d8be;
+  background: #eef8f2;
+}
+.ritmo-pila-hojas span.hecha::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 1px;
+  left: 1px;
+  height: 2px;
+  background: #17804f;
+  transform: rotate(-30deg);
+}
+.ritmo-pila-porcentaje {
+  font-weight: 800;
+  text-align: right;
+}
+@media (max-width: 1023px) {
+  .ritmo-par {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ritmo-recibo {
+    padding: 12px 12px 14px;
+    font-size: 11.5px;
+  }
+  .ritmo-pila-hojas {
+    gap: 2px;
+  }
+  .ritmo-pila-hojas span {
+    height: 16px;
+  }
+}
