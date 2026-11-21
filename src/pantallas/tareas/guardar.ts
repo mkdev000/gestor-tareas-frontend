@@ -79,6 +79,21 @@ export async function crearTarea(p: FraseLeida, hoy: string, categorias: Categor
   return id;
 }
 
+// «El vale» de Mi ritmo (paso 9.5): guarda un rato para la categoría que se te queda atrás.
+// Una tarea «Rato para Salud» ese día y a esa hora, con su categoría (el nombre luego lo cambias en Mi día).
+export async function crearHuecoCategoria(categoria: { id: number; nombre: string }, fecha: string, inicio: number, minutos: number) {
+  const { id } = await pedir<{ id: number }>('/api/tareas', 'POST', {
+    titulo: `Rato para ${categoria.nombre}`.slice(0, 150),
+    estado: 'pendiente',
+    prioridad: 'media',
+    fecha_limite: fecha,
+    hora_limite: horaConCeros(inicio),
+    duracion_min: minutos,
+  });
+  await guardarCategorias(id, [categoria.id]);
+  return id;
+}
+
 // ---------- Editar ----------
 // El PUT del servidor necesita TODOS los campos básicos (si falta la descripción, la borraría),
 // por eso se parte de la tarea tal y como está y se cambian solo los campos que toquen.

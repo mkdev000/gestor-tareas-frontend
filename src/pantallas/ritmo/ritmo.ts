@@ -12,7 +12,7 @@
 import type { Tarea } from '../useTareas';
 import { aTextoISO, deTextoISO, esFechaValida, semanaDe, sumarDias } from '../../utils/dias';
 import { textoDuracion } from '../tareas/frase';
-import { FIN_DIA, INICIO_DIA, duracion, esDeHoy, estaAtrasada, hecha, inicioDe } from '../midia/dia';
+import { FIN_DIA, INICIO_DIA, buscarHueco, duracion, esDeHoy, estaAtrasada, hecha, inicioDe, redondearArriba } from '../midia/dia';
 
 // ---------- Lo que llega del servidor ----------
 
@@ -659,6 +659,141 @@ export function cadenaRacha(tachadas: Tachada[], racha: RachaAmable, hoy: string
     if (dia === hoy) return 'hoy';
     return racha.descansos.includes(dia) ? 'descanso' : 'nada';
   });
+}
+
+// ---------- A qué le das tu tiempo y ¿lo importante, primero? (paso 9.5, bloque 5) ----------
+// Miran las tareas de las últimas 4 semanas (por su día), para no repetir la barra lateral (que es solo de esta semana).
+
+export const DIAS_RECIBO = 28;
+export const VALE_MIN = 20; // el vale guarda 20 minutos libres para la categoría que se queda atrás
+
+const deLasUltimasSemanas = (tareas: Tarea[], hoy: string) => {
+  const desde = sumarDias(hoy, 1 - DIAS_RECIBO);
+  return tareas.filter((t) => {
+    const f = t.fecha_limite?.slice(0, 10);
+    return !!f && f >= desde && f <= hoy;
+  });
+};
+
+export interface LineaRecibo {
+  clave: string; // id de la categoría; '-' = sin categoría
+  id: number | null;
+  nombre: string;
+  color: string | null;
+  total: number;
+  hechas: number;
+  minutos: number; // lo que te han llevado las tachadas (lo que dijiste al tacharlas o, si no, su duración)
+}
+
+export interface Recibo {
+  lineas: LineaRecibo[]; // primero a la que más tiempo le das
+  olvidada: LineaRecibo | null; // la que se te queda atrás: 2 tareas o más y menos de la mitad tachadas
+  hechas: number;
+  minutos: number;
+}
+
+export function reciboTiempo(tareas: Tarea[], hoy: string): Recibo {
+  const grupos = new Map<string, LineaRecibo>();
+  for (const t of deLasUltimasSemanas(tareas, hoy)) {
+    const cats = t.categorias?.length ? t.categorias : [{ id: 0, nombre: 'Sin categoría', color: '' }];
+    for (const c of cats) {
+      const clave = c.id ? String(c.id) : '-';
+      const g = grupos.get(clave) ?? { clave, id: c.id || null, nombre: c.nombre, color: c.color || null, total: 0, hechas: 0, minutos: 0 };
+      g.total++;
+      if (hecha(t)) {
+        g.hechas++;
+        g.minutos += t.minutos_reales ?? duracion(t);
+      }
+      grupos.set(clave, g);
+    }
+  }
+  const lineas = [...grupos.values()].sort((a, b) => b.minutos - a.minutos || b.hechas - a.hechas || a.nombre.localeCompare(b.nombre));
+  const olvidada =
+    lineas
+      .filter((l) => l.id !== null && l.total >= 2 && l.hechas / l.total < 0.5)
+      .sort((a, b) => a.hechas / a.total - b.hechas / b.total || b.total - a.total)[0] ?? null;
+  return {
+    lineas,
+    olvidada,
+    hechas: lineas.reduce((suma, l) => suma + l.hechas, 0),
+    minutos: lineas.reduce((suma, l) => suma + l.minutos, 0),
+  };
+}
+
+const conAlmohadilla = (l: LineaRecibo) => (l.id === null ? l.nombre : `#${l.nombre}`);
+
+// «Casi todo es [#Trabajo]; #Salud se te queda atrás.» (lo de "rojo" va en rojo)
+export function fraseRecibo(r: Recibo) {
+  const vacia = { antes: '', destacado: '', medio: '', rojo: '', despues: '' };
+  if (!r.lineas.length) return { ...vacia, antes: 'Aún no hay ', destacado: 'tareas', despues: ' en las últimas 4 semanas.' };
+  if (!r.hechas) return { ...vacia, antes: 'Aún no has tachado ', destacado: 'nada', despues: ' en las últimas 4 semanas.' };
+  const primera = r.lineas[0];
+  const antes = r.minutos && primera.minutos / r.minutos >= 0.5 ? 'Casi todo es ' : 'Lo que más tachas es ';
+  return r.olvidada && r.olvidada.clave !== primera.clave
+    ? { ...vacia, antes, destacado: conAlmohadilla(primera), medio: '; ', rojo: conAlmohadilla(r.olvidada), despues: ' se te queda atrás.' }
+    : { ...vacia, antes, destacado: conAlmohadilla(primera), despues: ', y no se te queda nada atrás.' };
+}
+
+// El primer rato libre de 20 minutos: hoy desde ahora o, si hoy ya no queda, mañana desde el principio del día
+export function huecoVale(tareas: Tarea[], hoy: string, ahora: number): { dia: string; inicio: number } | null {
+  const libreEn = (dia: string, desde: number) => {
+    const ocupados = tareas
+      .filter((t) => t.fecha_limite?.slice(0, 10) === dia && !hecha(t))
+      .flatMap((t) => {
+        const inicio = inicioDe(t);
+        return inicio !== null ? [{ desde: inicio, hasta: inicio + duracion(t) }] : [];
+      });
+    return buscarHueco(VALE_MIN, ocupados, desde);
+  };
+  const hoyLibre = libreEn(hoy, redondearArriba(Math.max(ahora, INICIO_DIA)));
+  if (hoyLibre !== null) return { dia: hoy, inicio: hoyLibre };
+  const manana = sumarDias(hoy, 1);
+  const mananaLibre = libreEn(manana, INICIO_DIA);
+  return mananaLibre !== null ? { dia: manana, inicio: mananaLibre } : null;
+}
+
+// Si ya tienes algo de esa categoría pendiente para hoy o mañana, no hace falta el vale
+export function tienePlanDe(tareas: Tarea[], categoriaId: number, hoy: string) {
+  const manana = sumarDias(hoy, 1);
+  return tareas.some((t) => {
+    const f = t.fecha_limite?.slice(0, 10) ?? '';
+    return !hecha(t) && (f === hoy || f === manana) && !!t.categorias?.some((c) => c.id === categoriaId);
+  });
+}
+
+export interface FilaImportante {
+  clave: 'alta' | 'media' | 'baja';
+  nombre: string;
+  total: number;
+  hechas: number;
+  porcentaje: number;
+}
+
+export function importantePrimero(tareas: Tarea[], hoy: string) {
+  const filas: FilaImportante[] = PRIORIDADES.map((p) => {
+    const suyas = deLasUltimasSemanas(tareas, hoy).filter((t) => t.prioridad === p.clave);
+    const hechas = suyas.filter(hecha).length;
+    return {
+      clave: p.clave as FilaImportante['clave'],
+      nombre: p.nombre,
+      total: suyas.length,
+      hechas,
+      porcentaje: suyas.length ? Math.round((hechas / suyas.length) * 100) : 0,
+    };
+  }).filter((f) => f.total > 0);
+  const alta = filas.find((f) => f.clave === 'alta')?.porcentaje ?? null;
+  const otras = filas.filter((f) => f.clave !== 'alta').map((f) => f.porcentaje);
+  const otro = otras.length ? Math.max(...otras) : null;
+  // «No» solo si lo importante va claramente por detrás (más de 5 puntos)
+  const no = alta !== null && otro !== null && alta < otro - 5;
+  return { filas, alta, otro, no };
+}
+
+export function fraseImportante({ alta, otro, no }: ReturnType<typeof importantePrimero>) {
+  if (alta === null) return { respuesta: '', antes: 'Aún no tienes ', destacado: 'tareas importantes', despues: ' en las últimas 4 semanas.' };
+  return no
+    ? { respuesta: 'No:', antes: ' tachas el ', destacado: `${alta} %`, despues: ` de lo importante y el ${otro} % de lo que no lo es.` }
+    : { respuesta: 'Sí:', antes: ' tachas el ', destacado: `${alta} %`, despues: ' de lo importante.' };
 }
 
 // ---------- El cierre de semana ----------

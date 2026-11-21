@@ -16,6 +16,12 @@ import {
   leerHistorial,
   mapaEnergia,
   mejorRato,
+  fraseImportante,
+  fraseRecibo,
+  huecoVale,
+  importantePrimero,
+  reciboTiempo,
+  tienePlanDe,
   cabeHoy,
   cadenaRacha,
   fraseCabe,
@@ -430,6 +436,78 @@ describe('la fila de arriba: las tres preguntas', () => {
       'hecho',
       'hecho',
     ]);
+  });
+});
+
+describe('a qué le das tu tiempo y ¿lo importante, primero?', () => {
+  const trabajo = { id: 1, nombre: 'Trabajo', color: '#17699e' };
+  const salud = { id: 2, nombre: 'Salud', color: '#6d4fc9' };
+  const hecha = (cambios: Partial<Tarea>) => tarea({ estado: 'completada', ...cambios });
+
+  it('el recibo: lo tachado por categoría en las últimas 4 semanas y la que se queda atrás', () => {
+    const r = reciboTiempo(
+      [
+        hecha({ categorias: [trabajo], duracion_min: 60, minutos_reales: 90 }),
+        hecha({ categorias: [trabajo], duracion_min: 60, fecha_limite: '2026-10-20' }), // hace 27 días: cuenta
+        tarea({ categorias: [trabajo], fecha_limite: '2026-10-19' }), // hace 28 días: ya no cuenta
+        hecha({ categorias: [salud], duracion_min: 30 }),
+        tarea({ categorias: [salud] }),
+        tarea({ categorias: [salud], fecha_limite: '2026-11-10' }),
+      ],
+      HOY,
+    );
+    expect(r.lineas.map((l) => [l.nombre, l.hechas, l.total, l.minutos])).toEqual([
+      ['Trabajo', 2, 2, 150],
+      ['Salud', 1, 3, 30],
+    ]);
+    expect(r.olvidada?.nombre).toBe('Salud');
+    expect([r.hechas, r.minutos]).toEqual([3, 180]);
+    expect(fraseRecibo(r)).toEqual({ antes: 'Casi todo es ', destacado: '#Trabajo', medio: '; ', rojo: '#Salud', despues: ' se te queda atrás.' });
+    expect(fraseRecibo(reciboTiempo([], HOY)).destacado).toBe('tareas');
+  });
+
+  it('el vale: el primer rato libre de 20 min hoy o, si no queda, mañana', () => {
+    const ocupada = tarea({ hora_limite: '18:00:00', duracion_min: 60 });
+    expect(huecoVale([ocupada], HOY, 17 * 60 + 50)).toEqual({ dia: HOY, inicio: 19 * 60 });
+    expect(huecoVale([], HOY, 21 * 60 + 50)).toEqual({ dia: '2026-11-17', inicio: 8 * 60 });
+    // Si ya tienes algo de #Salud pendiente para hoy o mañana, no se ofrece el vale
+    expect(tienePlanDe([tarea({ categorias: [salud], fecha_limite: '2026-11-17' })], 2, HOY)).toBe(true);
+    expect(
+      tienePlanDe(
+        [
+          tarea({ categorias: [salud], fecha_limite: '2026-11-20' }),
+          tarea({ categorias: [salud], fecha_limite: '2026-11-10' }),
+          hecha({ categorias: [salud] }),
+        ],
+        2,
+        HOY,
+      ),
+    ).toBe(false);
+  });
+
+  it('¿lo importante, primero?: compara lo tachado de alta con el resto', () => {
+    const lista = [
+      hecha({ prioridad: 'alta' }),
+      tarea({ prioridad: 'alta' }),
+      hecha({ prioridad: 'baja' }),
+      hecha({ prioridad: 'baja' }),
+      hecha({ prioridad: 'media' }),
+      tarea({ prioridad: 'media' }),
+    ];
+    const i = importantePrimero(lista, HOY);
+    expect(i.filas.map((f) => [f.clave, f.hechas, f.total, f.porcentaje])).toEqual([
+      ['alta', 1, 2, 50],
+      ['media', 1, 2, 50],
+      ['baja', 2, 2, 100],
+    ]);
+    expect(fraseImportante(i)).toEqual({
+      respuesta: 'No:',
+      antes: ' tachas el ',
+      destacado: '50 %',
+      despues: ' de lo importante y el 100 % de lo que no lo es.',
+    });
+    expect(fraseImportante(importantePrimero([hecha({ prioridad: 'alta' }), hecha({ prioridad: 'baja' })], HOY)).respuesta).toBe('Sí:');
+    expect(fraseImportante(importantePrimero([], HOY)).destacado).toBe('tareas importantes');
   });
 });
 
