@@ -2,16 +2,29 @@
 // Mi ritmo (Fase 9). Lo que hay ahora:
 //  - arriba, «Así va tu semana» con el pulso de la semana (CabeceraRitmo, paso 9.4)
 //  - si aún tienes menos de 5 tareas tachadas: la nota «Mi ritmo se escribe tachando» (RitmoVacio, paso 9.4)
-//  - si ya tienes más: «Tu hora de tachar» (HoraDeTachar), «Lo que se te atasca» (LoQueSeAtasca)
-//    y «Lo que tardas de verdad» (LoQueTardas), paso 9.5; los demás bloques llegan en los siguientes pasos.
+//  - si ya tienes más (paso 9.5): la fila de «las tres preguntas» (TresPreguntas), «Tu hora de tachar» (HoraDeTachar),
+//    «Lo que se te atasca» (LoQueSeAtasca) y «Lo que tardas de verdad» (LoQueTardas); los demás bloques llegan después.
 // Los datos: tu historial (useRitmo → GET /api/ritmo) y tus tareas (useTareas). Los cálculos, en ritmo.ts.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTareas } from './useTareas';
 import { useRitmo } from './ritmo/useRitmo';
 import { useAjustesRitmo } from './ritmo/useAjustesRitmo';
-import { MINIMO_PARA_MAPA, consejosAtasco, mapaEnergia, pulsoSemana, rachaAmable, tachadasDe, tiemposDeVerdad } from './ritmo/ritmo';
-import { borrarTarea, crearSubtarea, desatascarTarea } from './tareas/guardar';
+import {
+  MINIMO_PARA_MAPA,
+  cabeHoy,
+  cadenaRacha,
+  consejosAtasco,
+  mapaEnergia,
+  pulsoSemana,
+  rachaAmable,
+  recordRacha,
+  semanaDeTareas,
+  tachadasDe,
+  tiemposDeVerdad,
+} from './ritmo/ritmo';
+import { aCambiosHorario, reorganizar } from './midia/dia';
+import { borrarTarea, cambiarHorario, crearSubtarea, desatascarTarea } from './tareas/guardar';
 import { hoyISO } from '../utils/dias';
 import { useEsWeb } from '../utils/useEsWeb';
 import AvisoFlotante, { type DatosAviso } from '../componentes/base/AvisoFlotante';
@@ -20,10 +33,16 @@ import RitmoVacio from './ritmo/RitmoVacio';
 import HoraDeTachar from './ritmo/HoraDeTachar';
 import LoQueSeAtasca, { type AccionesAtasco, type AtascadaConConsejo } from './ritmo/LoQueSeAtasca';
 import LoQueTardas from './ritmo/LoQueTardas';
+import TresPreguntas from './ritmo/TresPreguntas';
 
 // «Partirla en pasos»: 3 pasos pequeños; el primero, de solo 15 minutos (como en el prototipo)
 const PASOS = ['Empezar: solo 15 minutos', 'Avanzar lo principal', 'Repasar y cerrar'];
 const DESHACER_MS = 5000;
+
+const minutosAhora = () => {
+  const d = new Date();
+  return d.getHours() * 60 + d.getMinutes();
+};
 
 function MiRitmo() {
   const esWeb = useEsWeb();
@@ -36,13 +55,28 @@ function MiRitmo() {
   const [ocupadas, setOcupadas] = useState<number[]>([]);
   const [enPapelera, setEnPapelera] = useState<number[]>([]);
   const papelera = useRef<{ tarea: AtascadaConConsejo; reloj: ReturnType<typeof setTimeout> } | null>(null);
+  const [ahora, setAhora] = useState(minutosAhora);
+  const [reorganizando, setReorganizando] = useState(false);
   const hoy = hoyISO();
+
+  // La hora avanza cada minuto: así «¿Te cabe lo de hoy?» se recalcula solo
+  useEffect(() => {
+    const reloj = setInterval(() => setAhora(minutosAhora()), 60_000);
+    return () => clearInterval(reloj);
+  }, []);
 
   const datos = useMemo(() => {
     if (!historial) return null;
     const tachadas = tachadasDe(historial.eventos);
     const racha = rachaAmable(tachadas, hoy);
-    return { tachadas, racha, pulso: pulsoSemana(tachadas, racha, hoy), mapa: mapaEnergia(tachadas) };
+    return {
+      tachadas,
+      racha,
+      pulso: pulsoSemana(tachadas, racha, hoy),
+      mapa: mapaEnergia(tachadas),
+      record: recordRacha(tachadas, racha),
+      cadena: cadenaRacha(tachadas, racha, hoy),
+    };
   }, [historial, hoy]);
 
   // Las atascadas, con su consejo (las que están en la papelera no se ven)
@@ -53,6 +87,8 @@ function MiRitmo() {
 
   const conTiempo = tareas.filter((t) => t.estado === 'completada' && t.minutos_reales).length;
   const tiempos = useMemo(() => tiemposDeVerdad(tareas), [tareas]);
+  const semana = useMemo(() => semanaDeTareas(tareas, hoy, ahora), [tareas, hoy, ahora]);
+  const cabe = useMemo(() => cabeHoy(tareas, hoy, ahora), [tareas, hoy, ahora]);
   const fallo = error || errorTareas;
 
   // El interruptor «Lo importante, a tu mejor hora»: se guarda en tu cuenta y avisa de lo que pasará al reorganizar
@@ -70,6 +106,33 @@ function MiRitmo() {
     else if (nuevo) setAviso({ titulo: 'Usar mis tiempos de verdad', texto: 'Las tareas nuevas sin duración se crearán con lo que sueles tardar.' });
     else setAviso({ titulo: 'Duración de siempre', texto: 'Las tareas nuevas sin duración vuelven a 30 min.' });
   };
+
+  // «¿Te cabe lo de hoy?» → «Reorganizar mi día»: lo mismo que en Mi día (las de hoy sin hora o atrasadas, a los huecos libres),
+  // guardado con una sola petición (PATCH /api/tareas/horario)
+  const alReorganizar = async () => {
+    if (reorganizando) return;
+    setReorganizando(true);
+    try {
+      const plan = reorganizar(tareas, hoy, minutosAhora());
+      if (plan.tipo === 'en-orden') setAviso({ titulo: 'Nada que recolocar', texto: 'Para que te quepa, pasa alguna tarea a mañana.' });
+      else if (plan.tipo === 'sin-hueco') setAviso({ titulo: 'No queda hueco hoy', texto: 'Mueve alguna tarea a mañana.' });
+      else {
+        await cambiarHorario(aCambiosHorario(plan.colocadas, hoy));
+        const n = plan.colocadas.size;
+        setAviso({
+          titulo: 'Día reorganizado',
+          texto: n === 1 ? '1 tarea recolocada en los huecos libres, por prioridad.' : `${n} tareas recolocadas en los huecos libres, por prioridad.`,
+        });
+      }
+    } catch (e) {
+      setAviso({ titulo: 'No se pudo guardar', texto: e instanceof Error ? e.message : 'No se pudo cambiar el horario' });
+    } finally {
+      setReorganizando(false);
+      alCambiar();
+    }
+  };
+
+  const irATarea = (id: number) => navigate('/tareas', { state: { editarTarea: { id, vez: Date.now() } } });
 
   // ---------- «Lo que se te atasca»: lo que hace cada botón ----------
   // Mientras una tarea tiene una acción en marcha, sus botones se desactivan (nada de dobles clics).
@@ -135,7 +198,7 @@ function MiRitmo() {
         for (const paso of PASOS) await crearSubtarea(a.id, paso);
         setAviso({ titulo: 'Partida en 3 pasos', texto: `El primero de «${a.titulo}» dura solo 15 minutos.` });
       }),
-    verPasos: (a) => navigate('/tareas', { state: { editarTarea: { id: a.id, vez: Date.now() } } }),
+    verPasos: (a) => irATarea(a.id),
     soltar: (a) => {
       if (ocupadas.includes(a.id) || enPapelera.includes(a.id)) return;
       void vaciarPapelera(); // si ya había otra en la papelera, esa se borra ya (solo se deshace la última)
@@ -160,15 +223,24 @@ function MiRitmo() {
             <RitmoVacio hechas={datos.tachadas.length} conTiempo={conTiempo} textoIr={esWeb ? 'Ir a Mi día' : 'Ir a Hoy'} />
           ) : (
             <>
+              <TresPreguntas
+                semana={semana}
+                cabe={cabe}
+                ahora={ahora}
+                record={datos.record}
+                racha={datos.racha}
+                cadena={datos.cadena}
+                hoy={hoy}
+                irATarea={irATarea}
+                reorganizar={{ ocupado: reorganizando, alPulsar: () => void alReorganizar() }}
+              />
               <div className="ritmo-rejilla">
                 <HoraDeTachar mapa={datos.mapa} reorganizar={{ activo: energia.activo, disponible: energia.disponible, alCambiar: cambiarEnergia }} />
                 <div className="ritmo-hueco" aria-hidden="true" />
                 <LoQueSeAtasca atascadas={atascadas} eventos={historial.eventos} hoy={hoy} ocupadas={ocupadas} acciones={acciones} />
                 <LoQueTardas tiempos={tiempos} usar={{ activo: usarTiempos.activo, disponible: usarTiempos.disponible, alCambiar: cambiarTiempos }} />
               </div>
-              <p className="text-sm text-[#5b6b7c]">
-                Los demás bloques (tus tareas una a una, el progreso por categoría y el cierre de semana) llegan en los siguientes pasos.
-              </p>
+              <p className="text-sm text-[#5b6b7c]">Los demás bloques (el progreso por categoría y el cierre de semana) llegan en los siguientes pasos.</p>
             </>
           )}
         </>

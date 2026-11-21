@@ -7503,3 +7503,246 @@ button.menu-opcion:active .menu-flecha {
     grid-column: 1 / -1;
   }
 }
+
+/* ---------- Fase 9, paso 9.5: la fila de arriba («las tres preguntas») ---------- */
+.ritmo-fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
+  border: 1px solid #e3e8ef;
+  border-radius: 16px;
+  background: #fff;
+}
+.ritmo-pregunta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 20px 24px;
+}
+.ritmo-pregunta + .ritmo-pregunta {
+  border-left: 1px dashed #d8dfe9;
+}
+.ritmo-pregunta-frase {
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -0.4px;
+}
+.ritmo-pregunta-sub {
+  color: #5b6b7c;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.ritmo-pregunta-boton {
+  align-self: flex-start;
+}
+.ritmo-si {
+  color: #17804f;
+}
+.ritmo-no {
+  color: #b42318;
+}
+/* La hoja de libreta: una columna por día y una raya por tarea */
+.ritmo-libreta {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  min-height: 62px;
+  padding: 9px 10px 8px;
+  border: 1px solid #e6ebf2;
+  border-radius: 10px;
+  background: repeating-linear-gradient(#fff 0 17px, #e9eef6 17px 18px);
+}
+.ritmo-libreta-dia {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.ritmo-raya {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 13px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.ritmo-raya span {
+  display: block;
+  height: 4px;
+  border-radius: 3px;
+  background: #b0bac8;
+}
+.ritmo-raya.hoy span {
+  background: var(--tachit-acento);
+}
+.ritmo-raya.hecha span {
+  background: #c4ccd8;
+}
+.ritmo-raya.hecha::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 28%;
+  left: -2px;
+  height: 2.5px;
+  border-radius: 2px;
+  background: #17804f;
+  transform: rotate(-8deg);
+}
+.ritmo-raya.atrasada span {
+  background: #c4320a;
+}
+.ritmo-raya:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 2px;
+}
+.ritmo-raya-mas {
+  color: #5b6b7c;
+  font-size: 10px;
+  font-weight: 800;
+}
+.ritmo-libreta-letras {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  padding: 0 10px;
+  color: #5b6b7c;
+  font-size: 10.5px;
+  font-weight: 800;
+  text-align: center;
+}
+.ritmo-libreta-letras .hoy {
+  color: var(--tachit-acento-fuerte);
+}
+.ritmo-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  color: #5b6b7c;
+  font-size: 12px;
+}
+.ritmo-leyenda i {
+  display: inline-block;
+  width: 14px;
+  height: 4px;
+  margin-right: 6px;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+.ritmo-leyenda i.hecha {
+  background: #17804f;
+}
+.ritmo-leyenda i.pendiente {
+  background: #b0bac8;
+}
+.ritmo-leyenda i.atrasada {
+  background: #c4320a;
+}
+/* ¿Te cabe lo de hoy?: la barra es lo que queda; lo rayado, lo que sobra */
+.ritmo-cabe {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ritmo-cabe-barra {
+  position: relative;
+  height: 16px;
+  overflow: hidden;
+  border: 1px solid #e3e8ef;
+  border-radius: 999px;
+  background: repeating-linear-gradient(45deg, #eef1f6 0 5px, #f7f9fc 5px 10px);
+}
+.ritmo-cabe-barra span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 999px;
+  background: var(--tachit-acento);
+}
+.ritmo-cabe-barra.no span {
+  background: #d6502e;
+}
+.ritmo-marcas {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: #5b6b7c;
+  font-size: 11px;
+  font-weight: 700;
+}
+/* Tu récord: la cadena de 14 días y, si falta, los puntitos hasta la bandera */
+.ritmo-cadena {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 24px;
+}
+.ritmo-cadena::before {
+  content: '';
+  position: absolute;
+  top: 11px;
+  right: 6px;
+  left: 6px;
+  height: 2px;
+  background: #dce5ee;
+}
+.ritmo-punto {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--tachit-acento);
+}
+.ritmo-punto.descanso {
+  border: 2px solid #b0bac8;
+  background: #fff;
+}
+.ritmo-punto.nada {
+  border: 2px solid #dce5ee;
+  background: #fff;
+}
+.ritmo-punto.hoy {
+  border: 2px dashed var(--tachit-acento);
+  background: #fff;
+}
+.ritmo-punto.falta {
+  border: 2px dashed #c4ccd8;
+  background: #fff;
+}
+.ritmo-bandera {
+  position: relative;
+  color: var(--tachit-acento-fuerte);
+  font-size: 15px;
+  line-height: 1;
+}
+/* En el móvil (y en la web estrecha): una tarjeta debajo de otra */
+@media (max-width: 1023px) {
+  .ritmo-fila {
+    grid-template-columns: minmax(0, 1fr);
+    border-radius: 20px;
+  }
+  .ritmo-pregunta {
+    padding: 18px;
+  }
+  .ritmo-pregunta + .ritmo-pregunta {
+    border-top: 1px dashed #d8dfe9;
+    border-left: 0;
+  }
+  .ritmo-pregunta-frase {
+    font-size: 18px;
+  }
+  .ritmo-raya {
+    height: 18px;
+  }
+  .ritmo-libreta {
+    background: repeating-linear-gradient(#fff 0 22px, #e9eef6 22px 23px);
+  }
+}
