@@ -16,6 +16,13 @@ import {
   leerHistorial,
   mapaEnergia,
   mejorRato,
+  cabeHoy,
+  cadenaRacha,
+  fraseCabe,
+  fraseRecord,
+  fraseSemana,
+  recordRacha,
+  semanaDeTareas,
   duracionHabitual,
   fraseTiempos,
   tiemposDeVerdad,
@@ -359,6 +366,70 @@ describe('lo que tardas de verdad', () => {
     expect(duracionHabitual(r, [3, 4])).toBe(40);
     expect(duracionHabitual(r, [5])).toBeNull();
     expect(duracionHabitual(r, [])).toBeNull();
+  });
+});
+
+describe('la fila de arriba: las tres preguntas', () => {
+  it('tu semana, tarea a tarea: una raya por tarea en su día, como mucho 5 por día', () => {
+    const ahora = 10 * 60;
+    const s = semanaDeTareas(
+      [
+        tarea({ estado: 'completada', duracion_min: 120 }),
+        tarea({ hora_limite: '09:00:00', duracion_min: 30 }), // hoy, ya ha pasado su hora → atrasada
+        tarea({ fecha_limite: '2026-11-15' }), // la semana pasada: no cuenta
+        tarea({ fecha_limite: '2026-11-17' }),
+        ...Array.from({ length: 6 }, () => tarea({ fecha_limite: '2026-11-18' })),
+      ],
+      HOY,
+      ahora,
+    );
+    expect([s.total, s.hechas, s.atrasadas]).toEqual([9, 1, 1]);
+    expect(s.dias[0].rayas.map((r) => [r.estado, r.ancho])).toEqual([
+      ['hecha', 100],
+      ['atrasada', 51],
+    ]);
+    expect(s.dias[1].rayas.map((r) => r.estado)).toEqual(['pendiente']);
+    expect([s.dias[2].rayas.length, s.dias[2].mas]).toEqual([5, 1]);
+    expect(fraseSemana(s)).toEqual({ antes: 'Llevas ', destacado: '1 de 9', despues: ' tachada; 1 se te ha quedado atrás.' });
+    expect(fraseSemana(semanaDeTareas([], HOY, ahora)).destacado).toBe('no tienes tareas');
+  });
+
+  it('¿te cabe lo de hoy?: lo que queda contra el día que queda', () => {
+    const tareas = [tarea({ duracion_min: 60 }), tarea({ duracion_min: 90 }), tarea({ estado: 'completada', duracion_min: 45 })];
+    const tarde = cabeHoy(tareas, HOY, 20 * 60); // quedan 2 h de día y 2 h 30 min de tareas
+    expect(tarde).toEqual({ quedan: 2, quedaMin: 150, hechoMin: 45, diaMin: 120, cabe: false });
+    expect(fraseCabe(tarde)).toEqual({ respuesta: 'No:', antes: ' te faltan ', destacado: '30 min', despues: '.' });
+    const pronto = cabeHoy(tareas, HOY, 6 * 60); // antes de las 8 cuenta desde las 8
+    expect([pronto.diaMin, fraseCabe(pronto).destacado]).toEqual([14 * 60, '11 h 30 min']);
+    expect(fraseCabe(cabeHoy([], HOY, 600)).destacado).toBe('Nada pendiente');
+  });
+
+  it('tu récord: la mejor racha de antes de la de ahora', () => {
+    const tachadas = tachadasLosDias(1, 2, 3, 4, 5, 9, 10, 13, 14, 15, 16);
+    const racha = rachaAmable(tachadas, HOY);
+    const r = recordRacha(tachadas, racha);
+    expect(r).toEqual({ actual: 4, anterior: 5 });
+    expect(fraseRecord(r)).toEqual({ antes: 'Te faltan ', destacado: '2 días', despues: ' para superar tu récord de 5.' });
+    expect(fraseRecord({ actual: 5, anterior: 5 }).antes).toBe('Igualas tu récord: ');
+    expect(fraseRecord({ actual: 6, anterior: 5 }).destacado).toBe('¡Nuevo récord!');
+    expect(fraseRecord({ actual: 3, anterior: 0 }).despues).toBe(': es tu mejor racha.');
+    expect(fraseRecord({ actual: 0, anterior: 5 }).destacado).toBe('empezar una racha');
+    expect(cadenaRacha(tachadas, racha, HOY)).toEqual([
+      'hecho',
+      'hecho',
+      'hecho',
+      'nada',
+      'nada',
+      'nada',
+      'hecho',
+      'hecho',
+      'nada',
+      'nada',
+      'hecho',
+      'hecho',
+      'hecho',
+      'hecho',
+    ]);
   });
 });
 

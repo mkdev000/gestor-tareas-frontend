@@ -12,6 +12,7 @@
 import type { Tarea } from '../useTareas';
 import { aTextoISO, deTextoISO, esFechaValida, semanaDe, sumarDias } from '../../utils/dias';
 import { textoDuracion } from '../tareas/frase';
+import { FIN_DIA, INICIO_DIA, duracion, esDeHoy, estaAtrasada, hecha, inicioDe } from '../midia/dia';
 
 // ---------- Lo que llega del servidor ----------
 
@@ -526,6 +527,138 @@ export function duracionHabitual({ listas }: TiemposDeVerdad, categoriaIds: numb
   const claves = categoriaIds.length ? categoriaIds.map(String) : ['-'];
   const reales = listas.filter((c) => claves.includes(c.clave)).map((c) => c.real);
   return reales.length ? Math.max(...reales) : null;
+}
+
+// ---------- La fila de arriba: «las tres preguntas» (paso 9.5, bloque 4) ----------
+// 1. «Tu semana, tarea a tarea»: cada tarea de esta semana (de lunes a domingo) es una raya en su día.
+// 2. «¿Te cabe lo de hoy?»: lo que te queda por hacer hoy contra el tiempo que queda de día (hasta FIN_DIA).
+// 3. «Tu récord»: cuánto te falta para superar tu mejor racha (de lo que se ve en el historial: los últimos 2 meses).
+
+export type EstadoRaya = 'hecha' | 'atrasada' | 'hoy' | 'pendiente';
+
+export interface Raya {
+  id: number;
+  titulo: string;
+  dia: string;
+  estado: EstadoRaya;
+  ancho: number; // % del ancho del día: más larga cuanto más dura (de 35 a 100)
+}
+
+export interface SemanaTareas {
+  dias: { dia: string; rayas: Raya[]; mas: number }[]; // de lunes a domingo; "mas" = las que no caben
+  total: number;
+  hechas: number;
+  atrasadas: number;
+}
+
+export const MAX_RAYAS = 5; // rayas por día; las demás salen como «+3»
+
+export function semanaDeTareas(tareas: Tarea[], hoy: string, ahora: number): SemanaTareas {
+  const { lunes } = semanaDe(hoy);
+  const domingo = sumarDias(lunes, 6);
+  const deSemana = tareas.filter((t) => {
+    const f = t.fecha_limite?.slice(0, 10);
+    return !!f && f >= lunes && f <= domingo;
+  });
+  const estadoDe = (t: Tarea): EstadoRaya => {
+    const f = (t.fecha_limite as string).slice(0, 10);
+    if (hecha(t)) return 'hecha';
+    if (f < hoy || estaAtrasada(t, hoy, ahora)) return 'atrasada';
+    return f === hoy ? 'hoy' : 'pendiente';
+  };
+  const rayas = deSemana.map((t): Raya => ({
+    id: t.id,
+    titulo: t.titulo,
+    dia: (t.fecha_limite as string).slice(0, 10),
+    estado: estadoDe(t),
+    ancho: Math.round(Math.min(100, 35 + (duracion(t) / 120) * 65)),
+  }));
+  const inicio = (id: number) => inicioDe(deSemana.find((t) => t.id === id) as Tarea) ?? 24 * 60;
+  const dias = [0, 1, 2, 3, 4, 5, 6].map((n) => {
+    const dia = sumarDias(lunes, n);
+    // Primero las tachadas; luego, por hora (las que no tienen hora, al final)
+    const suyas = rayas.filter((r) => r.dia === dia).sort((a, b) => Number(b.estado === 'hecha') - Number(a.estado === 'hecha') || inicio(a.id) - inicio(b.id));
+    return { dia, rayas: suyas.slice(0, MAX_RAYAS), mas: Math.max(0, suyas.length - MAX_RAYAS) };
+  });
+  return {
+    dias,
+    total: rayas.length,
+    hechas: rayas.filter((r) => r.estado === 'hecha').length,
+    atrasadas: rayas.filter((r) => r.estado === 'atrasada').length,
+  };
+}
+
+export function fraseSemana(s: SemanaTareas) {
+  if (!s.total) return { antes: 'Esta semana aún ', destacado: 'no tienes tareas', despues: '.' };
+  const atras = s.atrasadas === 0 ? '.' : s.atrasadas === 1 ? '; 1 se te ha quedado atrás.' : `; ${s.atrasadas} se te han quedado atrás.`;
+  return { antes: 'Llevas ', destacado: `${s.hechas} de ${s.total}`, despues: (s.hechas === 1 ? ' tachada' : ' tachadas') + atras };
+}
+
+export interface CabeHoy {
+  quedan: number; // tareas de hoy sin tachar
+  quedaMin: number; // lo que duran
+  hechoMin: number; // lo que duran las que ya has tachado hoy
+  diaMin: number; // lo que queda de día (desde ahora, o desde INICIO_DIA si aún no ha empezado, hasta FIN_DIA)
+  cabe: boolean;
+}
+
+export function cabeHoy(tareas: Tarea[], hoy: string, ahora: number): CabeHoy {
+  const deHoy = tareas.filter((t) => esDeHoy(t, hoy));
+  const pendientes = deHoy.filter((t) => !hecha(t));
+  const quedaMin = pendientes.reduce((suma, t) => suma + duracion(t), 0);
+  const diaMin = Math.max(0, FIN_DIA - Math.max(ahora, INICIO_DIA));
+  return {
+    quedan: pendientes.length,
+    quedaMin,
+    hechoMin: deHoy.filter(hecha).reduce((suma, t) => suma + duracion(t), 0),
+    diaMin,
+    cabe: quedaMin <= diaMin,
+  };
+}
+
+export function fraseCabe(c: CabeHoy) {
+  if (!c.quedan) return { respuesta: '', antes: '', destacado: 'Nada pendiente', despues: ' para hoy.' };
+  return c.cabe
+    ? { respuesta: 'Sí,', antes: ' te sobran ', destacado: textoDuracion(c.diaMin - c.quedaMin), despues: '.' }
+    : { respuesta: 'No:', antes: ' te faltan ', destacado: textoDuracion(c.quedaMin - c.diaMin), despues: '.' };
+}
+
+export interface RecordRacha {
+  actual: number; // tu racha de ahora
+  anterior: number; // tu mejor racha antes de la de ahora (0 si no hay ninguna)
+}
+
+// La racha de ahora son sus días tachados más recientes; el récord anterior se busca en los días de antes:
+// para cada día tachado, la racha que llevabas ese día (con las mismas reglas: 1 descanso por semana).
+export function recordRacha(tachadas: Tachada[], racha: RachaAmable): RecordRacha {
+  const dias = [...new Set(tachadas.map((t) => t.dia))].sort();
+  const inicioActual = racha.dias > 0 ? dias[dias.length - racha.dias] : null;
+  const antes = inicioActual ? tachadas.filter((t) => t.dia < inicioActual) : tachadas;
+  let anterior = 0;
+  for (const dia of new Set(antes.map((t) => t.dia))) anterior = Math.max(anterior, rachaAmable(antes, dia).dias);
+  return { actual: racha.dias, anterior };
+}
+
+export function fraseRecord({ actual, anterior }: RecordRacha) {
+  const dias = (n: number) => (n === 1 ? '1 día' : `${n} días`);
+  if (!actual) return { antes: 'Tacha algo hoy para ', destacado: 'empezar una racha', despues: '.' };
+  if (!anterior) return { antes: 'Llevas ', destacado: dias(actual), despues: ': es tu mejor racha.' };
+  if (actual > anterior) return { antes: '', destacado: '¡Nuevo récord!', despues: ` Llevas ${dias(actual)} seguidos.` };
+  if (actual === anterior) return { antes: 'Igualas tu récord: ', destacado: dias(actual), despues: '. Mañana lo superas.' };
+  return { antes: 'Te faltan ', destacado: dias(anterior - actual + 1), despues: ` para superar tu récord de ${anterior}.` };
+}
+
+// Los últimos 14 días, para la cadena de puntos (el último es hoy)
+export type PuntoRacha = 'hecho' | 'descanso' | 'hoy' | 'nada';
+
+export function cadenaRacha(tachadas: Tachada[], racha: RachaAmable, hoy: string): PuntoRacha[] {
+  const conTachadas = new Set(tachadas.map((t) => t.dia));
+  return Array.from({ length: 14 }, (_, i) => {
+    const dia = sumarDias(hoy, i - 13);
+    if (conTachadas.has(dia)) return 'hecho';
+    if (dia === hoy) return 'hoy';
+    return racha.descansos.includes(dia) ? 'descanso' : 'nada';
+  });
 }
 
 // ---------- El cierre de semana ----------
