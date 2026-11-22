@@ -7980,3 +7980,144 @@ button.menu-opcion:active .menu-flecha {
     height: 16px;
   }
 }
+
+/* ---------- Fase 9, paso 9.5: las secciones sin datos (un ejemplo sujeto con un clip y «Para ver lo tuyo») ---------- */
+.ritmo-ejemplo {
+  position: relative;
+  margin-top: 8px;
+  padding: 22px 14px 12px;
+  border: 1.5px dashed var(--tachit-acento-borde);
+  border-radius: 10px;
+  background: repeating-linear-gradient(-45deg, transparent 0 9px, rgb(228 233 241 / 0.55) 9px 10px);
+}
+.ritmo-ejemplo-clip {
+  position: absolute;
+  top: -16px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ritmo-ejemplo-clip svg {
+  display: block;
+}
+.ritmo-ejemplo-clip > span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 4px 11px 4px 10px;
+  border-radius: 6px;
+  background: var(--tachit-acento-fuerte);
+  box-shadow: 0 3px 8px rgb(27 37 89 / 0.22);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.6px;
+  transform: rotate(-2deg);
+}
+.ritmo-ejemplo-clip em {
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0;
+  opacity: 0.9;
+}
+/* El ejemplo, apagado: se ve, pero no se toca */
+.ritmo-ejemplo-contenido {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  filter: saturate(0.55);
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
+}
+.ritmo-boton-falso {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 11px;
+  border: 1px solid #d5dce6;
+  border-radius: 999px;
+  color: #33475b;
+  font-size: 12px;
+  font-weight: 700;
+}
+.ritmo-boton-falso.recomendado {
+  border-color: var(--tachit-acento-fuerte);
+  background: var(--tachit-acento-fuerte);
+  color: #fff;
+}
+.ritmo-ejemplo-bien {
+  color: #17804f;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+/* «Para ver lo tuyo»: lo que tienes que hacer, con su casilla (un pelín a mano) y el enlace para empezar */
+.ritmo-reto {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid #e3e8ef;
+  border-radius: 10px;
+  background: #fff;
+  color: #0f1f2e;
+  font-size: 13.5px;
+}
+.ritmo-reto-casilla {
+  flex-shrink: 0;
+  width: 19px;
+  height: 19px;
+  border: 1.8px solid var(--tachit-acento);
+  border-radius: 4px 6px 5px 3px;
+  transform: rotate(-3deg);
+}
+.ritmo-reto-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  font-weight: 600;
+}
+.ritmo-reto-texto small {
+  color: var(--tachit-acento-fuerte);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+}
+.ritmo-reto-cuenta {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--tachit-acento-suave);
+  color: var(--tachit-acento-fuerte);
+  font-size: 12px;
+  font-weight: 800;
+}
+.ritmo-reto-ir {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 0 0 1px;
+  border: 0;
+  border-bottom: 2px solid var(--tachit-acento-borde);
+  background: none;
+  color: var(--tachit-acento-fuerte);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.ritmo-reto-ir:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid var(--tachit-acento-fuerte);
+  outline-offset: 3px;
+}
+@media (max-width: 1023px) {
+  .ritmo-reto {
+    flex-wrap: wrap;
+  }
+  .ritmo-reto-ir {
+    margin-left: 29px;
+  }
+}

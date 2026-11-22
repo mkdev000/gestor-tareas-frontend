@@ -4,15 +4,21 @@
 //  - cada día al que estaba apuntada y que pasaste a otro es una hojita de calendario tachada; la última es para cuándo es ahora
 //  - un consejo según el caso y 3 botones claros, con el recomendado primero y en color:
 //    «Hoy, sí» (la pasa a hoy) · «Partirla en pasos» o «Ver los pasos» · «Ya no la hago» (la borra, con Deshacer)
-//  - la «?» con cómo funciona, y un sello verde cuando no hay nada atascado
+//  - la «?» con cómo funciona y, cuando no hay nada atascado, la buena noticia y un ejemplo de cómo se verá (EjemploRitmo)
 // Los cálculos están en ritmo.ts (consejosAtasco y hojasAtasco); lo que hace cada botón lo decide MiRitmo.
 import { useId } from 'react';
 import { deTextoISO } from '../../utils/dias';
 import { textoDia } from '../tareas/frase';
+import { EjemploRitmo, BotonFalso } from './EjemploRitmo';
 import { hojasAtasco, type Atascada, type ConsejoAtasco, type EventoRitmo } from './ritmo';
 
 const DIA_CORTO = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
 const GIROS = [-4, 3, -2, 4, -3];
+const EJEMPLO_HOJAS = [
+  ['LUN', 9],
+  ['MIÉ', 11],
+  ['VIE', 13],
+] as const;
 
 export type AtascadaConConsejo = Atascada & { pasos: number; consejo: ConsejoAtasco; primerPaso: string | null };
 
@@ -105,13 +111,35 @@ function LoQueSeAtasca({ atascadas, eventos, hoy, ocupadas, acciones }: Props) {
       </div>
 
       {n === 0 ? (
-        <div className="ritmo-atasca-vacio">
-          <span aria-hidden="true">✓</span>
-          <p>
-            <b>Nada atascado.</b>
-            No hay ninguna tarea que vayas pasando de un día a otro.
-          </p>
-        </div>
+        <>
+          <EjemploRitmo reto="Pasa una tarea de día 2 veces" nota="✓ Ahora no tienes nada atascado." enlace={{ texto: 'Ver mis tareas', a: '/tareas' }}>
+            <p className="ritmo-atasca-frase">
+              Hay <span className="ritmo-rotu">1 tarea</span> que vas pasando de un día a otro.
+            </p>
+            <p className="ritmo-atasca-titulo">Ordenar el trastero</p>
+            <div className="ritmo-hojas">
+              {EJEMPLO_HOJAS.map(([dia, num], i) => (
+                <span key={num} className="ritmo-hoja vieja" style={{ transform: `rotate(${GIROS[i]}deg)` }}>
+                  <small>{dia}</small>
+                  <b>{num}</b>
+                </span>
+              ))}
+              <span className="ritmo-hoja actual">
+                <small>HOY</small>
+                <b>16</b>
+              </span>
+              <span className="ritmo-veces">3 veces</span>
+            </div>
+            <p className="ritmo-atasca-consejo">
+              <b>Suele ser demasiado grande.</b> Pártela y empieza por solo 15 minutos.
+            </p>
+            <div className="ritmo-atasca-botones">
+              <BotonFalso texto="Partirla en pasos" recomendado />
+              <BotonFalso texto="Hoy, sí" />
+              <BotonFalso texto="Ya no la hago" />
+            </div>
+          </EjemploRitmo>
+        </>
       ) : (
         <>
           <p className="ritmo-atasca-frase">
