@@ -804,6 +804,13 @@ export function semanaACerrar(hoy: string) {
 }
 
 export const estaCerrada = (cierres: CierreSemana[], lunes: string) => cierres.some((c) => c.semana_inicio === lunes);
+export const cierreDe = (cierres: CierreSemana[], lunes: string) => cierres.find((c) => c.semana_inicio === lunes) ?? null;
+
+// La semana se puede cerrar a partir del viernes (viernes, sábado y domingo)
+export const puedeCerrarse = (hoy: string) => (deTextoISO(hoy).getDay() + 6) % 7 >= 4;
+
+// Como mucho 100 tareas pasan al lunes en un cierre (lo mismo que acepta el servidor)
+export const MAX_PASAR_AL_LUNES = 100;
 
 // Paso 1: cuántas tareas tachaste esa semana (el día de verdad en que las tachaste)
 export const hechasEnSemana = (tachadas: Tachada[], lunes: string) => tachadas.filter((t) => t.dia >= lunes && t.dia <= sumarDias(lunes, 6)).length;

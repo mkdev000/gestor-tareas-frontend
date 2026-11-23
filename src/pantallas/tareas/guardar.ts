@@ -94,6 +94,12 @@ export async function crearHuecoCategoria(categoria: { id: number; nombre: strin
   return id;
 }
 
+// ---------- Cierre de semana (Mi ritmo, paso 9.6) ----------
+// Una sola petición: el servidor guarda el cierre y pasa al lunes las tareas elegidas (todo o nada).
+export function cerrarSemana(datos: { semana_inicio: string; completadas: number; pasar_al_lunes: number[]; foco_categoria_id: number | null }) {
+  return pedir<{ lunes: string }>('/api/ritmo/cierres', 'POST', datos);
+}
+
 // ---------- Editar ----------
 // El PUT del servidor necesita TODOS los campos básicos (si falta la descripción, la borraría),
 // por eso se parte de la tarea tal y como está y se cambian solo los campos que toquen.

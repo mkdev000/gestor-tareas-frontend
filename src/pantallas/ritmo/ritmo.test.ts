@@ -7,6 +7,8 @@ import type { Tarea } from '../useTareas';
 import {
   consejosAtasco,
   estaCerrada,
+  cierreDe,
+  puedeCerrarse,
   FRANJAS,
   franjaDe,
   fraseHoraDeTachar,
@@ -529,6 +531,12 @@ describe('cierre de semana', () => {
     const cierres = [{ semana_inicio: '2026-11-09', completadas: 3, pasadas_al_lunes: 1, foco_categoria_id: null }];
     expect(estaCerrada(cierres, '2026-11-09')).toBe(true);
     expect(estaCerrada(cierres, '2026-11-16')).toBe(false);
+    expect(cierreDe(cierres, '2026-11-09')?.completadas).toBe(3);
+    expect(cierreDe(cierres, '2026-11-16')).toBeNull();
+  });
+
+  it('la semana se puede cerrar a partir del viernes', () => {
+    expect(['2026-11-16', '2026-11-19', '2026-11-20', '2026-11-21', '2026-11-22'].map(puedeCerrarse)).toEqual([false, false, true, true, true]);
   });
 });
 
