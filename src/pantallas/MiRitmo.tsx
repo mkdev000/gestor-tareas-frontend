@@ -4,7 +4,7 @@
 //  - si aún tienes menos de 5 tareas tachadas: la nota «Mi ritmo se escribe tachando» (RitmoVacio, paso 9.4)
 //  - si ya tienes más (paso 9.5): la fila de «las tres preguntas» (TresPreguntas), «Tu hora de tachar» (HoraDeTachar),
 //    «Lo que se te atasca» (LoQueSeAtasca), «Lo que tardas de verdad» (LoQueTardas) y, abajo, «A qué le das tu tiempo»
-//    y «¿Lo importante, primero?» (TiempoEImportante); el cierre de semana llega en el paso 9.6.
+//    y «¿Lo importante, primero?» (TiempoEImportante), y el «Cierre de semana» (CierreSemana, paso 9.6).
 // Los datos: tu historial (useRitmo → GET /api/ritmo) y tus tareas (useTareas). Los cálculos, en ritmo.ts.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -15,22 +15,27 @@ import {
   MINIMO_PARA_MAPA,
   cabeHoy,
   cadenaRacha,
+  cierreDe,
   consejosAtasco,
+  hechasEnSemana,
   huecoVale,
   importantePrimero,
   mapaEnergia,
+  pendientesParaElLunes,
+  puedeCerrarse,
   pulsoSemana,
   rachaAmable,
   reciboTiempo,
   tienePlanDe,
   recordRacha,
+  semanaACerrar,
   semanaDeTareas,
   tachadasDe,
   tiemposDeVerdad,
   VALE_MIN,
 } from './ritmo/ritmo';
 import { aCambiosHorario, reorganizar } from './midia/dia';
-import { borrarTarea, cambiarHorario, crearHuecoCategoria, crearSubtarea, desatascarTarea } from './tareas/guardar';
+import { borrarTarea, cambiarHorario, cerrarSemana, crearHuecoCategoria, crearSubtarea, desatascarTarea } from './tareas/guardar';
 import { textoHora } from './tareas/pulso';
 import { hoyISO } from '../utils/dias';
 import { useEsWeb } from '../utils/useEsWeb';
@@ -41,6 +46,7 @@ import HoraDeTachar from './ritmo/HoraDeTachar';
 import LoQueSeAtasca, { type AccionesAtasco, type AtascadaConConsejo } from './ritmo/LoQueSeAtasca';
 import LoQueTardas from './ritmo/LoQueTardas';
 import TresPreguntas from './ritmo/TresPreguntas';
+import CierreSemana from './ritmo/CierreSemana';
 import TiempoEImportante, { type EstadoVale } from './ritmo/TiempoEImportante';
 
 // «Partirla en pasos»: 3 pasos pequeños; el primero, de solo 15 minutos (como en el prototipo)
@@ -55,7 +61,7 @@ const minutosAhora = () => {
 function MiRitmo() {
   const esWeb = useEsWeb();
   const navigate = useNavigate();
-  const { tareas, error: errorTareas, alCambiar } = useTareas();
+  const { tareas, categorias, error: errorTareas, alCambiar } = useTareas();
   const { historial, error } = useRitmo();
   const { energia, tiempos: usarTiempos } = useAjustesRitmo();
   const [aviso, setAviso] = useState<DatosAviso | null>(null);
@@ -100,6 +106,37 @@ function MiRitmo() {
   const semana = useMemo(() => semanaDeTareas(tareas, hoy, ahora), [tareas, hoy, ahora]);
   const cabe = useMemo(() => cabeHoy(tareas, hoy, ahora), [tareas, hoy, ahora]);
   const recibo = useMemo(() => reciboTiempo(tareas, hoy), [tareas, hoy]);
+
+  // «Cierre de semana» (paso 9.6): la semana de hoy (de lunes a domingo), lo que tachaste y lo que te queda
+  const { lunes } = semanaACerrar(hoy);
+  const cierre = useMemo(() => {
+    if (!datos || !historial) return null;
+    const ids = datos.tachadas.filter((t) => t.dia >= lunes && t.dia <= hoy && t.tarea_id !== null).map((t) => t.tarea_id);
+    return {
+      cierre: cierreDe(historial.cierres, lunes),
+      nTachadas: hechasEnSemana(datos.tachadas, lunes),
+      // los títulos, sacados de tus tareas (las tachadas de tareas ya borradas cuentan, pero no tienen título)
+      tachadas: ids.map((id) => tareas.find((t) => t.id === id)?.titulo).filter((t): t is string => !!t),
+      pendientes: pendientesParaElLunes(tareas, lunes),
+    };
+  }, [datos, historial, tareas, lunes, hoy]);
+  const alCerrarSemana = async (ids: number[], foco: number | null) => {
+    try {
+      await cerrarSemana({ semana_inicio: lunes, completadas: Math.min(cierre?.nTachadas ?? 0, 1000), pasar_al_lunes: ids, foco_categoria_id: foco });
+      setAviso({
+        titulo: 'Semana cerrada',
+        texto: ids.length
+          ? `${ids.length === 1 ? '1 tarea pasa' : `${ids.length} tareas pasan`} al lunes. El lunes empiezas con todo claro.`
+          : 'El lunes empiezas con todo claro.',
+      });
+      return true;
+    } catch (e) {
+      setAviso({ titulo: 'No se pudo cerrar la semana', texto: e instanceof Error ? e.message : 'Inténtalo otra vez en un momento.' });
+      return false;
+    } finally {
+      alCambiar();
+    }
+  };
   const importante = useMemo(() => importantePrimero(tareas, hoy), [tareas, hoy]);
 
   // «El vale»: guarda 20 min libres (hoy o mañana) para la categoría que se te queda atrás.
@@ -285,12 +322,22 @@ function MiRitmo() {
               />
               <div className="ritmo-rejilla">
                 <HoraDeTachar mapa={datos.mapa} reorganizar={{ activo: energia.activo, disponible: energia.disponible, alCambiar: cambiarEnergia }} />
-                <div className="ritmo-hueco" aria-hidden="true" />
+                {cierre && (
+                  <CierreSemana
+                    lunes={lunes}
+                    abierta={puedeCerrarse(hoy)}
+                    cierre={cierre.cierre}
+                    tachadas={cierre.tachadas}
+                    nTachadas={cierre.nTachadas}
+                    pendientes={cierre.pendientes}
+                    categorias={categorias}
+                    alCerrar={alCerrarSemana}
+                  />
+                )}
                 <LoQueSeAtasca atascadas={atascadas} eventos={historial.eventos} hoy={hoy} ocupadas={ocupadas} acciones={acciones} />
                 <LoQueTardas tiempos={tiempos} usar={{ activo: usarTiempos.activo, disponible: usarTiempos.disponible, alCambiar: cambiarTiempos }} />
               </div>
               <TiempoEImportante recibo={recibo} importante={importante} vale={vale} />
-              <p className="text-sm text-[#5b6b7c]">El cierre de semana llega en el siguiente paso.</p>
             </>
           )}
         </>
