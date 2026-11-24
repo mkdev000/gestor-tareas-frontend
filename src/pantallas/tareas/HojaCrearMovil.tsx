@@ -12,7 +12,7 @@ import HojaInferior from '../../componentes/base/HojaInferior';
 import LogoTachit from '../../components/LogoTachit';
 import type { Tarea, CategoriaDeLista } from '../useTareas';
 import {
-  leerFrase, aplicarOpciones, avisoActual, desdeTarea, normalizar, textoDia, textoDuracion, textoAviso, textoRepeticion, textoHora,
+  leerFrase, aplicarOpciones, avisoActual, desdeTarea, quitarLoCargado, normalizar, textoDia, textoDuracion, textoAviso, textoRepeticion, textoHora,
   horaConCeros, OPCIONES_VACIAS, type OpcionesFrase, type Prioridad,
 } from './frase';
 import { ICONOS_TAREA } from './iconosTarea';
@@ -86,27 +86,29 @@ function HojaCrearMovil({ hoy, ahora, tareas, categorias, editando, alCerrar, al
 
   const hayBorrador = !!borrador.trim();
   const crudo = leerFrase(borrador, hoy);
-  const fin = aplicarOpciones(crudo, op, hoy);
+  // Lo escrito en la frase gana a lo que venía cargado (al editar, los datos de la tarea); lo cambiado en las opciones, también
+  const opVale = quitarLoCargado(op, inicial.op, crudo);
+  const fin = aplicarOpciones(crudo, opVale, hoy);
   const horaFin = fin.inicio !== null ? horaConCeros(fin.inicio) : '';
   const duracion = fin.duracion || 30;
-  const aviso = avisoActual(op, fin);
-  const prioridadActual = op.prioridad || crudo.prioridad || 'media';
-  const hayOpciones = !!(op.fecha || op.hora || op.aviso !== 'nada' || op.dias.length || op.mensual || op.duracion || op.icono || op.prioridad);
+  const aviso = avisoActual(opVale, fin);
+  const prioridadActual = opVale.prioridad || crudo.prioridad || 'media';
+  const hayOpciones = !!(opVale.fecha || opVale.hora || opVale.aviso !== 'nada' || opVale.dias.length || opVale.mensual || opVale.duracion || opVale.icono || opVale.prioridad);
 
   // ¿Qué herramientas están "puestas"? (salen en su color, con un puntito)
   const puesta: Record<Seccion, boolean> = {
-    cuando: !!(op.fecha || (hayBorrador && crudo.fecha)),
-    dura: !!(op.duracion || crudo.duracion),
+    cuando: !!(opVale.fecha || (hayBorrador && crudo.fecha)),
+    dura: !!(opVale.duracion || crudo.duracion),
     aviso: aviso.indice > 0,
     repite: !!fin.repeticion,
-    icono: !!op.icono,
+    icono: !!opVale.icono,
     categoria: fin.categorias.length > 0,
   };
-  const numeroDia = Number((op.fecha || (hayBorrador && crudo.fecha) || hoy).slice(8, 10));
+  const numeroDia = Number((opVale.fecha || (hayBorrador && crudo.fecha) || hoy).slice(8, 10));
 
   const textoAvisoCorto = aviso.indice > 0 ? (aviso.valor === '0' ? 'A la hora' : textoAviso(Number(aviso.valor))) : 'Sin aviso';
   const resumen = [
-    op.fecha ? textoDia(op.fecha, hoy) : fin.fecha ? textoDia(fin.fecha, hoy) : 'Hoy',
+    opVale.fecha ? textoDia(opVale.fecha, hoy) : fin.fecha ? textoDia(fin.fecha, hoy) : 'Hoy',
     horaFin ? `${horaFin}–${textoHora((fin.inicio! + duracion) % 1440)}` : `sin hora · ${textoDuracion(duracion)}`,
     aviso.indice > 0 ? `aviso ${aviso.valor === '0' ? 'a la hora' : textoAviso(Number(aviso.valor)).toLowerCase()}` : 'sin aviso',
     fin.repeticion ? textoRepeticion(fin.repeticion, fin.dias).toLowerCase() : 'una vez',
@@ -114,11 +116,11 @@ function HojaCrearMovil({ hoy, ahora, tareas, categorias, editando, alCerrar, al
   ].join(' · ');
 
   const leyenda: Record<Seccion, string> = {
-    cuando: `${op.fecha ? textoDia(op.fecha, hoy) : hayBorrador && crudo.fecha ? textoDia(crudo.fecha, hoy) : 'Hoy'} · ${horaFin || 'Sin hora'}`,
+    cuando: `${opVale.fecha ? textoDia(opVale.fecha, hoy) : hayBorrador && crudo.fecha ? textoDia(crudo.fecha, hoy) : 'Hoy'} · ${horaFin || 'Sin hora'}`,
     dura: textoDuracion(duracion),
     aviso: textoAvisoCorto,
     repite: fin.repeticion ? textoRepeticion(fin.repeticion, fin.dias) : 'Una vez',
-    icono: op.icono ? ICONOS_TAREA[op.icono].nombre : 'Sin icono',
+    icono: opVale.icono ? ICONOS_TAREA[opVale.icono].nombre : 'Sin icono',
     categoria: fin.categorias.length ? fin.categorias.map((n) => `#${n}`).join(' ') : 'Sin categoría',
   };
 

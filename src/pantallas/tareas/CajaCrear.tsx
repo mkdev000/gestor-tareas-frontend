@@ -15,7 +15,17 @@
 // (al editar no salen las subtareas: se cambian en la propia tarjeta).
 import { useEffect, useRef, useState } from 'react';
 import type { Tarea, CategoriaDeLista } from '../useTareas';
-import { leerFrase, aplicarOpciones, avisoActual, desdeTarea, horaConCeros, OPCIONES_VACIAS, type OpcionesFrase, type Prioridad } from './frase';
+import {
+  leerFrase,
+  aplicarOpciones,
+  avisoActual,
+  desdeTarea,
+  horaConCeros,
+  quitarLoCargado,
+  OPCIONES_VACIAS,
+  type OpcionesFrase,
+  type Prioridad,
+} from './frase';
 import { DibujoIcono } from './PastillaIcono';
 import { BotonPrioridad } from './AnilloPrioridad';
 import { PanelCuando, PanelDura, PanelAviso, PanelRepite, PanelIcono, PanelCategoria, type Seccion } from './PanelesFrase';
@@ -171,19 +181,30 @@ function CajaCrear({
 
   const hayBorrador = !!borrador.trim();
   const crudo = leerFrase(borrador, hoy);
-  const fin = aplicarOpciones(crudo, op, hoy);
+  // Lo escrito en la frase gana a lo que venía cargado (al editar, los datos de la tarea); lo cambiado en las opciones, también
+  const opVale = quitarLoCargado(op, inicial.op, crudo);
+  const fin = aplicarOpciones(crudo, opVale, hoy);
   const horaFin = fin.inicio !== null ? horaConCeros(fin.inicio) : '';
-  const prioridadActual = op.prioridad || crudo.prioridad || 'media';
-  const hayOpciones = !!(op.fecha || op.hora || op.aviso !== 'nada' || op.dias.length || op.mensual || op.icono || op.duracion || op.categoria);
+  const prioridadActual = opVale.prioridad || crudo.prioridad || 'media';
+  const hayOpciones = !!(
+    opVale.fecha ||
+    opVale.hora ||
+    opVale.aviso !== 'nada' ||
+    opVale.dias.length ||
+    opVale.mensual ||
+    opVale.icono ||
+    opVale.duracion ||
+    opVale.categoria
+  );
   // Cuántas opciones tienen algo (elegido o entendido de la frase): si hay alguna, el celo lleva un puntito
   const cambiadas = [
-    op.fecha || (hayBorrador && crudo.fecha),
+    opVale.fecha || (hayBorrador && crudo.fecha),
     horaFin,
-    op.duracion || crudo.duracion,
-    avisoActual(op, fin).indice > 0,
+    opVale.duracion || crudo.duracion,
+    avisoActual(opVale, fin).indice > 0,
     fin.repeticion,
-    op.icono,
-    op.categoria === '-' ? '' : op.categoria || fin.categorias[0],
+    opVale.icono,
+    opVale.categoria === '-' ? '' : opVale.categoria || fin.categorias[0],
   ].filter(Boolean).length;
   const verSubtareas = !editando && (subAbiertas || subtareas.length > 0);
 
