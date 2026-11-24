@@ -52,6 +52,9 @@ export const OPCIONES_VACIAS: OpcionesFrase = { fecha: '', hora: '', aviso: 'nad
 
 const NOMBRES_DIA: Record<string, number> = { domingo: 0, lunes: 1, martes: 2, miercoles: 3, jueves: 4, viernes: 5, sabado: 6 };
 const DIAS_RE = 'lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo';
+// Los meses, con su nombre entero o abreviado («1 de diciembre», «20 dic»)
+const MESES_RE = 'enero|ene|febrero|feb|marzo|mar|abril|abr|mayo|may|junio|jun|julio|jul|agosto|ago|septiembre|setiembre|sept|sep|octubre|oct|noviembre|nov|diciembre|dic';
+const NUM_MES: Record<string, number> = { ene: 1, feb: 2, mar: 3, abr: 4, may: 5, jun: 6, jul: 7, ago: 8, sep: 9, set: 9, oct: 10, nov: 11, dic: 12 };
 
 // Quita tildes, pone minúsculas y cambia _ por espacio: "Mi_Casa" → "mi casa" (para comparar nombres)
 export function normalizar(texto: string) {
@@ -127,6 +130,23 @@ export function leerFrase(frase: string, hoy: string): FraseLeida {
   tachar(/\s(hoy)(?=\s)/i, () => (o.fecha = hoy));
   // "el jueves", "este viernes", "domingo"
   tachar(new RegExp(`\\s(?:el |este )?(${DIAS_RE})(?=\\s)`, 'i'), (_, dia) => (o.fecha = proximoDia(dia, hoy)));
+  // "el 1 de diciembre", "20 de dic", "el 5 de enero de 2027", "1/12" → ese día de ese mes
+  // (sin año: este año o, si ya ha pasado, el que viene; si el mes no tiene ese día, su último día)
+  const diaDeMes = (d: number, mes: number, anioEscrito?: string) => {
+    const base = deTextoISO(hoy);
+    let anio = anioEscrito ? (anioEscrito.length === 2 ? 2000 + +anioEscrito : +anioEscrito) : base.getFullYear();
+    const ultimo = (a: number) => new Date(a, mes, 0).getDate();
+    let fecha = `${anio}-${dosCifras(mes)}-${dosCifras(Math.min(Math.max(1, d), ultimo(anio)))}`;
+    if (!anioEscrito && fecha < hoy) {
+      anio += 1;
+      fecha = `${anio}-${dosCifras(mes)}-${dosCifras(Math.min(Math.max(1, d), ultimo(anio)))}`;
+    }
+    o.fecha = fecha;
+  };
+  tachar(new RegExp(`\\s(?:el\\s)?(?:d[ií]a\\s)?(\\d{1,2})\\s(?:de\\s)?(${MESES_RE})\\.?(?:\\s(?:de\\s)?(\\d{4}))?(?=\\s)`, 'i'), (_, d, mes, anio) =>
+    diaDeMes(+d, NUM_MES[normalizar(mes).slice(0, 3)], anio),
+  );
+  tachar(/\s(?:el\s)?(\d{1,2})\/(0?[1-9]|1[0-2])(?:\/(\d{4}|\d{2}))?(?=\s)/, (_, d, m, anio) => diaDeMes(+d, +m, anio));
   // "el 3", "el día 15" → ese día de este mes (o del que viene, si ya ha pasado)
   tachar(/\sel (?:d[ií]a )?(\d{1,2})(?=\s)/i, (_, d) => {
     const base = deTextoISO(hoy);
@@ -155,6 +175,23 @@ export function leerFrase(frase: string, hoy: string): FraseLeida {
   // Límites del servidor: la duración va de 5 min a 24 h
   if (o.duracion !== null) o.duracion = Math.min(1440, Math.max(5, o.duracion));
   return o;
+}
+
+// Lo que escribes en la frase gana a lo que venía puesto de antes (al editar, los datos de la tarea; desde el Calendario,
+// ese día; desde Mi día, esa hora...), salvo que lo hayas cambiado tú después en las opciones.
+// Ejemplo: editas una tarea de hoy y escribes «el 1 de diciembre» → vale el 1 de diciembre, no «hoy».
+export function quitarLoCargado(op: OpcionesFrase, cargado: OpcionesFrase, p: FraseLeida): OpcionesFrase {
+  const r: OpcionesFrase = { ...op };
+  if (p.fecha && op.fecha === cargado.fecha) r.fecha = '';
+  if (p.inicio !== null && op.hora === cargado.hora) r.hora = '';
+  if (p.duracion !== null && op.duracion === cargado.duracion) r.duracion = null;
+  if (p.prioridad && op.prioridad === cargado.prioridad) r.prioridad = '';
+  if (p.aviso !== null && op.aviso === cargado.aviso) r.aviso = 'nada';
+  if (p.repeticion && op.mensual === cargado.mensual && op.dias.join() === cargado.dias.join()) {
+    r.mensual = false;
+    r.dias = [];
+  }
+  return r;
 }
 
 // Junta la frase con lo que has elegido en los paneles (lo elegido gana)
