@@ -389,21 +389,31 @@ export function consejosAtasco(atascadas: Atascada[], tareas: Tarea[]) {
     });
 }
 
-// Las hojas de calendario de una tarea atascada (paso 9.5, «las hojas de calendario arrancadas»):
-//  - viejas: los días a los que estaba apuntada y que pasaste a otro (los eventos «movida» hacia más tarde
-//    del historial), de la más antigua a la más nueva; como mucho las 5 últimas (ocultas = las que no caben)
-//  - actual: el día para el que está ahora (o null si no tiene día)
-// Si la moviste hace más de 2 meses, esas fechas ya no están en el historial que se pide: salen las que haya.
-export const MAX_HOJAS = 5;
+// Los «mañana» tachados de una tarea atascada («Lo que se te atasca», idea B):
+//  - dichos: lo que «dijiste» cada vez que la pasaste a otro día (los eventos «movida» hacia más tarde del historial),
+//    contado desde el día en que la moviste: «mañana», «el viernes», «el 3 dic»; de la más antigua a la más nueva,
+//    como mucho los 5 últimos (ocultos = los que no caben)
+//  - ahora: para cuándo está ahora, contado desde hoy («hoy», «mañana», «el sábado»…), o null si no tiene día
+// Si la moviste hace más de 2 meses, eso ya no está en el historial que se pide: salen los que haya.
+export const MAX_DICHOS = 5;
 
-export function hojasAtasco(atascada: Atascada, eventos: EventoRitmo[]) {
-  const fechas = [...eventos]
+// (los nombres de los días y los meses cortos son los de la cabecera, más arriba)
+// Cómo se dice un día visto desde otro: «hoy», «mañana», «el viernes» (dentro de una semana) o «el 3 dic»
+export function comoSeDice(dia: string, desde: string) {
+  if (dia === desde) return 'hoy';
+  if (dia === sumarDias(desde, 1)) return 'mañana';
+  const d = deTextoISO(dia);
+  if (dia > desde && dia <= sumarDias(desde, 6)) return `el ${DIAS_SEMANA[d.getDay()]}`;
+  return `el ${d.getDate()} ${MESES_CORTOS[d.getMonth()]}`;
+}
+
+export function excusasAtasco(atascada: Atascada, eventos: EventoRitmo[], hoy: string) {
+  const todos = [...eventos]
     .filter((e) => e.tipo === 'movida' && e.tarea_id === atascada.id && e.fecha_anterior && e.fecha_nueva && e.fecha_nueva > e.fecha_anterior)
     .sort((a, b) => a.en - b.en)
-    .map((e) => e.fecha_anterior as string)
-    .filter((f, i, lista) => lista.indexOf(f) === i);
-  const viejas = fechas.slice(-MAX_HOJAS);
-  return { viejas, ocultas: fechas.length - viejas.length, actual: atascada.fecha_limite };
+    .map((e) => comoSeDice(e.fecha_nueva as string, aTextoISO(new Date(e.en))));
+  const dichos = todos.slice(-MAX_DICHOS);
+  return { dichos, ocultos: todos.length - dichos.length, ahora: atascada.fecha_limite ? comoSeDice(atascada.fecha_limite, hoy) : null };
 }
 
 // ---------- Progreso por categoría y por prioridad ----------

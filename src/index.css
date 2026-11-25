@@ -1,5 +1,5 @@
 /* La letra de Tachit: Plus Jakarta Sans (las antiguas de KmTask, Quicksand e Inter, ya no se descargan) */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 /* ===== La letra de Tachit para Tailwind (font-jakarta) =====
@@ -7208,77 +7208,9 @@ button.menu-opcion:active .menu-flecha {
   font-size: 15.5px;
   font-weight: 800;
 }
-.ritmo-hojas {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 4px;
-}
 /* Cada hoja de calendario: el día de la semana arriba (franja) y el número debajo */
-.ritmo-hoja {
-  position: relative;
-  width: 44px;
-  overflow: hidden;
-  border: 1px solid #e3e8ef;
-  border-radius: 7px;
-  background: #fff;
-  box-shadow: 0 2px 4px rgba(15, 31, 46, 0.06);
-  text-align: center;
-}
-.ritmo-hoja small {
-  display: block;
-  padding: 2px 0;
-  background: #5f6b7b;
-  color: #fff;
-  font-size: 9.5px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-}
-.ritmo-hoja b {
-  display: block;
-  padding: 3px 0 4px;
-  color: #586474;
-  font-size: 17px;
-  font-weight: 800;
-}
 /* Las viejas, tachadas con el rotulador rojo */
-.ritmo-hoja.vieja::after {
-  content: '';
-  position: absolute;
-  top: 58%;
-  right: 4px;
-  left: 4px;
-  height: 3px;
-  border-radius: 3px;
-  background: #d6502e;
-  transform: rotate(-12deg);
-}
 /* La de ahora: derecha, más grande y del color del tema */
-.ritmo-hoja.actual {
-  width: 54px;
-  border: 2px solid var(--tachit-acento-fuerte);
-}
-.ritmo-hoja.actual small {
-  background: var(--tachit-acento-fuerte);
-}
-.ritmo-hoja.actual b {
-  color: var(--tachit-acento-fuerte);
-  font-size: 21px;
-}
-.ritmo-hojas-mas {
-  align-self: center;
-  margin-right: 2px;
-  color: #5b6b7c;
-  font-size: 12px;
-  font-weight: 800;
-}
-.ritmo-veces {
-  align-self: center;
-  margin-left: 8px;
-  color: #a64818;
-  font-size: 12px;
-  font-weight: 800;
-}
 .ritmo-atasca-consejo {
   color: #4b5a6c;
   font-size: 13px;
@@ -7325,33 +7257,6 @@ button.menu-opcion:active .menu-flecha {
   outline: 2px solid var(--tachit-acento-fuerte);
   outline-offset: 2px;
 }
-.ritmo-atasca-vacio {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.ritmo-atasca-vacio span {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #e7f5ee;
-  color: #17804f;
-  font-weight: 800;
-}
-.ritmo-atasca-vacio p {
-  color: #33475b;
-  font-size: 14px;
-  line-height: 1.45;
-}
-.ritmo-atasca-vacio p b {
-  display: block;
-  color: #0f1f2e;
-  font-size: 15px;
-}
 .ritmo-q-texto li b {
   display: inline;
   margin: 0;
@@ -7368,12 +7273,6 @@ button.menu-opcion:active .menu-flecha {
   }
   .ritmo-atasca-frase {
     font-size: 18px;
-  }
-  .ritmo-hoja {
-    width: 40px;
-  }
-  .ritmo-hoja.actual {
-    width: 48px;
   }
   .ritmo-atasca-boton {
     height: 38px;
@@ -8406,4 +8305,41 @@ button.menu-opcion:active .menu-flecha {
   .ritmo-cierre-fila {
     padding: 9px 10px;
   }
+}
+
+/* ---------- Mi ritmo: «Lo que se te atasca», los «mañana» tachados (escritos a mano, con letra Caveat) ---------- */
+.ritmo-excusas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 12px;
+  color: #5b6777;
+  font-family: 'Caveat', cursive;
+  font-size: 21px;
+  line-height: 1.25;
+}
+.ritmo-excusas s {
+  position: relative;
+  text-decoration: none;
+}
+.ritmo-excusas s::after {
+  content: '';
+  position: absolute;
+  top: 54%;
+  right: -3px;
+  left: -3px;
+  height: 2px;
+  border-radius: 2px;
+  background: #d6502e;
+  transform: rotate(-6deg);
+}
+.ritmo-excusas-mas {
+  color: #5b6b7c;
+  font-family: var(--font-jakarta);
+  font-size: 11.5px;
+  font-weight: 800;
+}
+.ritmo-excusas-ahora {
+  color: var(--tachit-acento-fuerte);
+  font-weight: 700;
 }

@@ -1,24 +1,15 @@
 // pantallas/ritmo/LoQueSeAtasca.tsx
-// «Lo que se te atasca» de Mi ritmo (Fase 9, paso 9.5, idea A «las hojas de calendario arrancadas»), igual que el prototipo:
+// «Lo que se te atasca» de Mi ritmo (Fase 9, paso 9.5; idea B «los "mañana" tachados»), igual que el prototipo:
 //  - las tareas que has pasado a otro día 2 veces o más
-//  - cada día al que estaba apuntada y que pasaste a otro es una hojita de calendario tachada; la última es para cuándo es ahora
+//  - cada vez que la pasaste a otro día sale lo que «dijiste» (mañana, el viernes…), escrito a mano y tachado,
+//    y al final, cuándo toca ahora («→ hoy»)
 //  - un consejo según el caso y 3 botones claros, con el recomendado primero y en color:
 //    «Hoy, sí» (la pasa a hoy) · «Partirla en pasos» o «Ver los pasos» · «Ya no la hago» (la borra, con Deshacer)
 //  - la «?» con cómo funciona y, cuando no hay nada atascado, la buena noticia y un ejemplo de cómo se verá (EjemploRitmo)
-// Los cálculos están en ritmo.ts (consejosAtasco y hojasAtasco); lo que hace cada botón lo decide MiRitmo.
+// Los cálculos están en ritmo.ts (consejosAtasco y excusasAtasco); lo que hace cada botón lo decide MiRitmo.
 import { useId } from 'react';
-import { deTextoISO } from '../../utils/dias';
-import { textoDia } from '../tareas/frase';
 import { EjemploRitmo, BotonFalso } from './EjemploRitmo';
-import { hojasAtasco, type Atascada, type ConsejoAtasco, type EventoRitmo } from './ritmo';
-
-const DIA_CORTO = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
-const GIROS = [-4, 3, -2, 4, -3];
-const EJEMPLO_HOJAS = [
-  ['LUN', 9],
-  ['MIÉ', 11],
-  ['VIE', 13],
-] as const;
+import { excusasAtasco, type Atascada, type ConsejoAtasco, type EventoRitmo } from './ritmo';
 
 export type AtascadaConConsejo = Atascada & { pasos: number; consejo: ConsejoAtasco; primerPaso: string | null };
 
@@ -39,7 +30,7 @@ interface Props {
 
 const AYUDA = [
   { icono: '↻', texto: <>Aquí salen las tareas que has pasado a otro día 2 veces o más.</> },
-  { icono: '✕', texto: <>Cada hoja tachada es un día al que estaba apuntada y que pasaste a otro.</> },
+  { icono: '✕', texto: <>Cada «mañana» tachado es una vez que la pasaste a otro día; la flecha dice cuándo toca ahora.</> },
   { icono: '●', texto: <>El botón en color es lo más recomendable para esa tarea.</> },
   {
     icono: '✓',
@@ -51,13 +42,16 @@ const AYUDA = [
   },
 ];
 
-function Hoja({ fecha, hoy, actual, giro }: { fecha: string | null; hoy: string; actual: boolean; giro: number }) {
-  const dia = fecha ? deTextoISO(fecha) : null;
+// Los «mañana» tachados: lo que «dijiste» cada vez, tachado, y al final cuándo toca ahora
+function Excusas({ dichos, ocultos, ahora, etiqueta }: { dichos: string[]; ocultos: number; ahora: string; etiqueta?: string }) {
   return (
-    <span className={'ritmo-hoja' + (actual ? ' actual' : ' vieja')} style={actual ? undefined : { transform: `rotate(${giro}deg)` }}>
-      <small>{!dia ? 'SIN DÍA' : fecha === hoy ? 'HOY' : DIA_CORTO[dia.getDay()]}</small>
-      <b>{dia ? dia.getDate() : '—'}</b>
-    </span>
+    <p className="ritmo-excusas" role={etiqueta ? 'img' : undefined} aria-label={etiqueta}>
+      {ocultos > 0 && <span className="ritmo-excusas-mas">+{ocultos}</span>}
+      {dichos.map((d, i) => (
+        <s key={i}>{d}</s>
+      ))}
+      <span className="ritmo-excusas-ahora">→ {ahora}</span>
+    </p>
   );
 }
 
@@ -114,22 +108,10 @@ function LoQueSeAtasca({ atascadas, eventos, hoy, ocupadas, acciones }: Props) {
         <>
           <EjemploRitmo reto="Pasa una tarea de día 2 veces" nota="✓ Ahora no tienes nada atascado." enlace={{ texto: 'Ver mis tareas', a: '/tareas' }}>
             <p className="ritmo-atasca-frase">
-              Hay <span className="ritmo-rotu">1 tarea</span> que vas pasando de un día a otro.
+              Hay <span className="ritmo-rotu">1 tarea</span> que vas dejando para mañana.
             </p>
             <p className="ritmo-atasca-titulo">Ordenar el trastero</p>
-            <div className="ritmo-hojas">
-              {EJEMPLO_HOJAS.map(([dia, num], i) => (
-                <span key={num} className="ritmo-hoja vieja" style={{ transform: `rotate(${GIROS[i]}deg)` }}>
-                  <small>{dia}</small>
-                  <b>{num}</b>
-                </span>
-              ))}
-              <span className="ritmo-hoja actual">
-                <small>HOY</small>
-                <b>16</b>
-              </span>
-              <span className="ritmo-veces">3 veces</span>
-            </div>
+            <Excusas dichos={['mañana', 'mañana', 'el viernes']} ocultos={0} ahora="hoy" />
             <p className="ritmo-atasca-consejo">
               <b>Suele ser demasiado grande.</b> Pártela y empieza por solo 15 minutos.
             </p>
@@ -143,11 +125,14 @@ function LoQueSeAtasca({ atascadas, eventos, hoy, ocupadas, acciones }: Props) {
       ) : (
         <>
           <p className="ritmo-atasca-frase">
-            Hay <span className="ritmo-rotu">{n === 1 ? '1 tarea' : `${n} tareas`}</span> que vas pasando de un día a otro.
+            Hay <span className="ritmo-rotu">{n === 1 ? '1 tarea' : `${n} tareas`}</span> que vas dejando para mañana.
           </p>
           <ul className="ritmo-atasca-lista">
             {atascadas.map((a) => {
-              const h = hojasAtasco(a, eventos);
+              const e = excusasAtasco(a, eventos, hoy);
+              // Si alguna vez la moviste hace más de 2 meses, eso no está en el historial: se cuenta en el «+N»
+              const ocultos = Math.max(e.ocultos, a.veces_aplazada - e.dichos.length);
+              const ahora = e.ahora ?? 'sin día';
               const c = consejo(a);
               const ocupada = ocupadas.includes(a.id);
               const partir = {
@@ -156,24 +141,15 @@ function LoQueSeAtasca({ atascadas, eventos, hoy, ocupadas, acciones }: Props) {
               };
               const hoyBoton = { texto: 'Hoy, sí', accion: () => acciones.hoy(a) };
               const orden = a.consejo === 'hueco' ? [hoyBoton, partir] : [partir, hoyBoton];
-              const ahora = h.actual ? (h.actual === hoy ? 'hoy' : textoDia(h.actual, hoy).toLowerCase()) : 'sin día';
               return (
                 <li key={a.id} className="ritmo-atasca-tarea">
                   <p className="ritmo-atasca-titulo">{a.titulo}</p>
-                  <div
-                    className="ritmo-hojas"
-                    role="img"
-                    aria-label={`La has pasado de día ${a.veces_aplazada} veces${h.viejas.length ? ` (${h.viejas.map((f) => textoDia(f, hoy).toLowerCase()).join(', ')})` : ''}. Ahora es para ${ahora}.`}
-                  >
-                    {h.ocultas > 0 && <span className="ritmo-hojas-mas">+{h.ocultas}</span>}
-                    {h.viejas.map((f, i) => (
-                      <Hoja key={f} fecha={f} hoy={hoy} actual={false} giro={GIROS[i % GIROS.length]} />
-                    ))}
-                    <Hoja fecha={h.actual} hoy={hoy} actual giro={0} />
-                    <span className="ritmo-veces" aria-hidden="true">
-                      {a.veces_aplazada} veces
-                    </span>
-                  </div>
+                  <Excusas
+                    dichos={e.dichos}
+                    ocultos={ocultos}
+                    ahora={ahora}
+                    etiqueta={`La has dejado para otro día ${a.veces_aplazada} veces${e.dichos.length ? ` (${e.dichos.join(', ')})` : ''}. Ahora toca ${ahora}.`}
+                  />
                   <p className="ritmo-atasca-consejo">
                     <b>{c.fuerte}</b>
                     {c.resto}

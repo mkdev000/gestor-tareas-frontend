@@ -12,7 +12,8 @@ import {
   FRANJAS,
   franjaDe,
   fraseHoraDeTachar,
-  hojasAtasco,
+  comoSeDice,
+  excusasAtasco,
   LIENZO_ONDA,
   hechasEnSemana,
   leerHistorial,
@@ -268,7 +269,7 @@ describe('consejosAtasco', () => {
   });
 });
 
-describe('hojasAtasco (las hojas de calendario arrancadas)', () => {
+describe('excusasAtasco (los «mañana» tachados)', () => {
   const mueve = (tarea_id: number, de: string, a: string, momento: number): EventoRitmo => ({
     tipo: 'movida',
     tarea_id,
@@ -276,30 +277,33 @@ describe('hojasAtasco (las hojas de calendario arrancadas)', () => {
     fecha_anterior: de,
     fecha_nueva: a,
   });
-  const trastero = { id: 7, titulo: 'Ordenar el trastero', veces_aplazada: 4, fecha_limite: '2026-11-19', prioridad: 'media' };
+  const trastero = { id: 7, titulo: 'Ordenar el trastero', veces_aplazada: 4, fecha_limite: HOY, prioridad: 'media' };
 
-  it('las fechas que fuiste pasando, en orden, y la de ahora', () => {
-    const h = hojasAtasco(trastero, [
-      mueve(7, '2026-11-13', '2026-11-16', en(13, 20)),
-      mueve(7, '2026-11-09', '2026-11-11', en(9, 20)),
-      mueve(7, '2026-11-11', '2026-11-13', en(11, 20)),
-      mueve(7, '2026-11-16', '2026-11-19', en(16, 20)),
-      mueve(8, '2026-11-10', '2026-11-12', en(10, 20)), // de otra tarea
-      mueve(7, '2026-11-19', '2026-11-18', en(17, 9)), // hacia antes: no es un aplazamiento
-      tacha(7, en(1)),
-    ]);
-    expect(h).toEqual({ viejas: ['2026-11-09', '2026-11-11', '2026-11-13', '2026-11-16'], ocultas: 0, actual: '2026-11-19' });
+  it('lo que «dijiste» cada vez que la pasaste a otro día, en orden, y cuándo toca ahora', () => {
+    const e = excusasAtasco(
+      trastero,
+      [
+        mueve(7, '2026-11-11', '2026-11-13', en(11, 20)), // el miércoles 11 la pasaste al viernes 13
+        mueve(7, '2026-11-09', '2026-11-10', en(9, 20)), // el lunes 9, a mañana
+        mueve(7, '2026-11-13', '2026-11-16', en(13, 20)),
+        mueve(7, '2026-11-16', '2026-11-30', en(15, 20)),
+        mueve(8, '2026-11-10', '2026-11-12', en(10, 20)), // de otra tarea
+        mueve(7, '2026-11-19', '2026-11-18', en(17, 9)), // hacia antes: no es un aplazamiento
+        tacha(7, en(1)),
+      ],
+      HOY,
+    );
+    expect(e).toEqual({ dichos: ['mañana', 'el viernes', 'el lunes', 'el 30 nov'], ocultos: 0, ahora: 'hoy' });
   });
 
-  it('como mucho 5 hojas; el resto se cuentan como ocultas', () => {
+  it('como mucho 5; el resto se cuentan como ocultos. Sin día, «ahora» es null', () => {
     const ev = [1, 2, 3, 4, 5, 6, 7].map((d) => mueve(7, `2026-11-0${d}`, `2026-11-0${d + 1}`, en(d, 20)));
-    const h = hojasAtasco(trastero, ev);
-    expect(h.viejas).toEqual(['2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06', '2026-11-07']);
-    expect(h.ocultas).toBe(2);
-  });
-
-  it('sin historial (de hace más de 2 meses) solo queda la de ahora', () => {
-    expect(hojasAtasco({ ...trastero, fecha_limite: null }, [])).toEqual({ viejas: [], ocultas: 0, actual: null });
+    const e = excusasAtasco({ ...trastero, fecha_limite: null }, ev, HOY);
+    expect(e.dichos).toHaveLength(5);
+    expect(e.ocultos).toBe(2);
+    expect(e.ahora).toBeNull();
+    expect(comoSeDice('2026-11-17', HOY)).toBe('mañana');
+    expect(comoSeDice('2026-11-21', HOY)).toBe('el sábado');
   });
 });
 
