@@ -7018,6 +7018,13 @@ button.menu-opcion:active .menu-flecha {
   font-weight: 800;
   cursor: help;
 }
+.ritmo-q::before {
+  /* 9.7: se ve pequeña (22 px), pero se toca en 44 px, lo comodo para un dedo */
+  content: '';
+  position: absolute;
+  inset: -11px;
+  border-radius: 50%;
+}
 .ritmo-q-texto {
   display: none;
   position: absolute;
@@ -7639,10 +7646,10 @@ button.menu-opcion:active .menu-flecha {
     font-size: 18px;
   }
   .ritmo-raya {
-    height: 18px;
+    height: 24px; /* 9.7: 24 px, lo mínimo para tocarla con el dedo */
   }
   .ritmo-libreta {
-    background: repeating-linear-gradient(#fff 0 22px, #e9eef6 22px 23px);
+    background: repeating-linear-gradient(#fff 0 28px, #e9eef6 28px 29px);
   }
 }
 
